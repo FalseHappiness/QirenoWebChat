@@ -524,7 +524,7 @@ const fetchCategoricalFriends = async () => {
 }
 
 const fetchGroupList = async () => {
-  return fetchActionData('get_group_list')
+  return await fetchActionData('get_group_list')
 }
 
 const fetchForwardSingleMsg = async (message_id, contact) => {
@@ -892,6 +892,27 @@ const setGroupUserNameCache = (group_id, user_id, name) => {
 }
 
 const fetchContacts = async () => {
+  /*
+  const recentContacts = convertContactsSL(await fetchBackendData("contacts"))
+  if (!isSnowLuma()) {
+    return recentContacts
+  }
+  const friends = await fetchFriendList() || []
+  const groups = await fetchGroupList() || [];
+  for (const contact of [
+    ...friends.map(friend => ({
+      contact_id: friend.user_id, name: friend.nickname, real_name: friend.nickname, type: 'private'
+    })),
+    ...groups.map(group => ({
+      contact_id: group.group_id, name: group.group_name, real_name: group.group_name, type: 'group'
+    }))
+  ]) {
+    if (!recentContacts.find(c => c.contact_id === contact.contact_id && c.type === contact.type)) {
+      recentContacts.push(contact)
+    }
+  }
+  return recentContacts
+  */
   return convertContactsSL(await fetchBackendData("contacts"))
 }
 

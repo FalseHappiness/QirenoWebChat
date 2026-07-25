@@ -92,10 +92,10 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <div v-if="loading" style="text-align: center">加载中...</div>
+    <div v-if="loading" class="text-center">加载中...</div>
     <VirtualScroller :item-height="60"
                      :items="sortedContacts"
-                     v-else
+                     v-else-if="sortedContacts?.length"
                      class="contacts-list"
                      :thumb-right="1" :thumb-width="7">
       <template #default="{ item: contact }">
@@ -107,6 +107,9 @@ onMounted(() => {
         />
       </template>
     </VirtualScroller>
+    <div v-else class="text-center">
+      暂无最近会话
+    </div>
   </vue-resizable>
 </template>
 
