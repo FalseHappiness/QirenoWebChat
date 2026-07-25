@@ -210,7 +210,7 @@ const getMessages = async (
           value: id
         }
       })
-    } else if (messages.length < count) {
+    } else if (messages.length && messages.length < count) {
       const msg = direction === 'prev' ? messages[0] : messages[messages.length - 1]
       activeContact.value[direction === 'prev' ? "min_cursor" : "max_cursor"] = {
         type: msg.real_seq ? "real_seq" : "id",
@@ -218,7 +218,7 @@ const getMessages = async (
       }
     }
 
-    if (direction === 'prev' && message_id === 0 && !id) {
+    if (messages.length && direction === 'prev' && message_id === 0 && !id) {
       const msg = messages[messages.length - 1]
       activeContact.value.max_cursor = {
         type: msg.real_seq ? "real_seq" : "id",

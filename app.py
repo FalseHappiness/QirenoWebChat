@@ -317,7 +317,7 @@ async def get_messages_core(params: dict):
             messages = sorted_messages[:limit] if limit else []
 
         if message_id == 0:
-            result['max_real_seq'] = int(messages[-1]["real_seq"] or -1)
+            result['max_real_seq'] = int(messages[-1]["real_seq"] or -1) if len(messages) else -1
     else:
         messages = db_messages
 
