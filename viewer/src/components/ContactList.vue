@@ -17,10 +17,19 @@ const emit = defineEmits(['select', 'change-self-long-nick'])
 
 // 按最后联系时间排序
 const sortedContacts = computed(() => {
-  return [...props.contacts].sort((a, b) =>
-    (b.last_timestamp || 0 - a.last_timestamp || 0) ||
-    (new Date(b.last_time) - new Date(a.last_time))
-  );
+  return props.contacts.sort((a, b) => {
+    // 兜底，无时间戳给0
+    const tsA = a.last_timestamp ?? 0
+    const tsB = b.last_timestamp ?? 0
+    // 优先时间戳倒序
+    const tsDiff = tsB - tsA
+    if (tsDiff !== 0) return tsDiff
+
+    // 时间戳相同/无时间戳，使用last_time日期倒序
+    const timeA = a.last_time ? new Date(a.last_time).getTime() : 0
+    const timeB = b.last_time ? new Date(b.last_time).getTime() : 0
+    return timeB - timeA
+  })
 })
 
 const selectContact = (contact) => {

@@ -357,40 +357,37 @@ onMounted(() => {
     },
     onNewContact: (newContact) => {
       // 检查是否已存在该联系人
-      const contactExists = contacts.value.some(
-        c => c.contact_id === newContact.contact_id && c.type === newContact.type
-      )
+      const findTarget = () => {
+        return contacts.value.find((c) => c.contact_id === newContact.contact_id && c.type === newContact.type)
+      }
+      let target = findTarget()
 
-      if (!contactExists) {
+      if (!target) {
+        // 构造新联系人对象
         contacts.value.unshift({
           contact_id: newContact.contact_id,
           type: newContact.type,
-          name: newContact.name,
-          last_time: newContact.last_time,
-          latest_msg: newContact.latest_msg,
-          // min_id: newContact.min_id,
-          // max_id: newContact.max_id,
-          // max_real_seq: newContact.max_real_seq,
-          // min_real_seq: newContact.min_real_seq,
-          max_cursor: newContact.max_cursor,
-          min_cursor: newContact.min_cursor,
         })
-      } else {
-        const index = contacts.value.findIndex(
-          c => c.contact_id === newContact.contact_id && c.type === newContact.type
-        )
-        if (index !== -1) {
-          contacts.value[index].name = newContact.name
-          contacts.value[index].last_time = newContact.last_time
-          contacts.value[index].latest_msg = newContact.latest_msg
-          // contacts.value[index].min_id = newContact.min_id
-          // contacts.value[index].max_id = newContact.max_id
-          // contacts.value[index].max_real_seq = newContact.max_real_seq
-          // contacts.value[index].min_real_seq = newContact.min_real_seq
-          contacts.value[index].max_cursor = newContact.max_cursor
-          contacts.value[index].min_cursor = newContact.min_cursor
-          const [contact] = contacts.value.splice(index, 1)
-          contacts.value.unshift(contact)
+        target = findTarget()
+      }
+
+      if (target) {
+        // 需要同步的字段列表，注释字段直接注释在数组内
+        const syncFields = [
+          'name',
+          'last_time',
+          'last_timestamp',
+          'latest_msg',
+          // 'min_id',
+          // 'max_id',
+          // 'max_real_seq',
+          // 'min_real_seq',
+          'max_cursor',
+          'min_cursor',
+        ]
+        // 批量同步字段
+        for (const key of syncFields) {
+          target[key] = newContact[key]
         }
       }
     }
@@ -426,38 +423,38 @@ onUnmounted(destroy)
 <template>
   <div class="main-view">
     <div class="chat-container" v-if="wsInited">
-    <ContactList
-      :contacts="contacts"
-      :active-contact="activeContact"
-      :loading="loadingContacts"
-      @select="selectContact"
-      :self-info="selfInfo"
-      @change-self-long-nick="changeSelfLongNick"
-    />
-    <ChatArea
-      :active-contact="activeContact"
-      :get-messages="getMessages"
-      :select-contact="selectContact"
-      :self-info="selfInfo"
-      :essence-list="groupEssenceMsgList"
-      ref="chatArea"
-      @get-essence-msg-real-seq-list="getEssenceMsgRealSeqList"
-      @change-essence-msg="changeEssenceMsg"
-      @set-real-contact-name="setRealContactName"
-      @change-group-contact-remark="changeGroupContactRemark"
-    />
-    <ContactInfoTooltip/>
-    <!-- 下载进度弹窗 -->
-    <DownloadProgressPopup
-      v-if="showDownloadPopup && downloadInfo"
-      :download-info="downloadInfo"
-      @close="showDownloadPopup = false"
-      @confirm="showDownloadPopup = false"
-    />
-  </div>
-  <div class="text-center" v-else>
-    WebSocket 初始化...
-  </div>
+      <ContactList
+        :contacts="contacts"
+        :active-contact="activeContact"
+        :loading="loadingContacts"
+        @select="selectContact"
+        :self-info="selfInfo"
+        @change-self-long-nick="changeSelfLongNick"
+      />
+      <ChatArea
+        :active-contact="activeContact"
+        :get-messages="getMessages"
+        :select-contact="selectContact"
+        :self-info="selfInfo"
+        :essence-list="groupEssenceMsgList"
+        ref="chatArea"
+        @get-essence-msg-real-seq-list="getEssenceMsgRealSeqList"
+        @change-essence-msg="changeEssenceMsg"
+        @set-real-contact-name="setRealContactName"
+        @change-group-contact-remark="changeGroupContactRemark"
+      />
+      <ContactInfoTooltip/>
+      <!-- 下载进度弹窗 -->
+      <DownloadProgressPopup
+        v-if="showDownloadPopup && downloadInfo"
+        :download-info="downloadInfo"
+        @close="showDownloadPopup = false"
+        @confirm="showDownloadPopup = false"
+      />
+    </div>
+    <div class="text-center" v-else>
+      WebSocket 初始化...
+    </div>
   </div>
 </template>
 
@@ -468,6 +465,7 @@ onUnmounted(destroy)
   display: flex;
   flex-direction: column;
 }
+
 .chat-container {
   display: flex;
   height: 100%;

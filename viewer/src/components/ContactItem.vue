@@ -106,7 +106,6 @@ const getPreviewText = async () => {
     if (isMessage) {
       parsedMessage = await parseMessagePreview(event, true);
     } else if (isNotice) {
-      // console.log('notice', props.contact, event)
       parsedMessage = await parseNoticePreview(event, true)
     }
 

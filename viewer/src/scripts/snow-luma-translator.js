@@ -58,10 +58,14 @@ const convertMessageSL = event => {
   return event
 }
 
+const convertEventSL = event => {
+  return convertMessageSL(convertNoticeSL(event))
+}
+
 const convertWrappedMsgSL = message => {
   return {
     ...message,
-    event: stringifyJSON(convertMessageSL(convertNoticeSL(message.event)))
+    event: stringifyJSON(convertEventSL(message.event))
   }
 }
 
@@ -72,7 +76,7 @@ const convertContactsSL = contacts => {
       const contact = contacts[key]
       let latest_msg = contact.latest_msg
       if (latest_msg) {
-        latest_msg = stringifyJSON(convertMessageSL(latest_msg))
+        latest_msg = stringifyJSON(convertEventSL(latest_msg))
       }
       contacts[key] = {
         ...contact,

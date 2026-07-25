@@ -1,5 +1,3 @@
-import { convertWrappedMsgSL } from '../../snow-luma-translator.js';
-
 /**
  * 将 OneBot 原始事件转换为标准化的消息数据格式
  * 与 Python 端 convert_event_to_message_data 等效
@@ -10,7 +8,8 @@ export function convertEventToMessageData(event) {
   let realSeq = null;
   try {
     realSeq = parseInt(eventDict.real_seq ?? eventDict.message_seq, 10);
-  } catch { }
+  } catch {
+  }
 
   let userId = eventDict.user_id;
   if (userId === undefined && eventDict.sender?.user_id !== undefined) {
@@ -104,12 +103,12 @@ export async function processAndStoreEvent(event, db) {
 
   // 处理撤回事件（委托给 db.processRecallEvent）
   if (event.post_type === 'notice' &&
-      ['group_recall', 'friend_recall'].includes(event.notice_type)) {
+    ['group_recall', 'friend_recall'].includes(event.notice_type)) {
     await db.processRecallEvent(event);
   }
 
   // 准备前端消息格式（与后端广播的格式一致）
-  const frontendMessage = {
+  return {
     id: msgId,
     message_id: messageData.message_id,
     real_seq: messageData.real_seq,
@@ -127,8 +126,6 @@ export async function processAndStoreEvent(event, db) {
     event: messageData.event,
     created_at: messageData.created_at,
   };
-
-  return frontendMessage;
 }
 
 // ===================== OneBotHandler 方法 =====================
@@ -235,41 +232,56 @@ export async function getRecentContacts(onebotWS) {
 export async function getContactsCore(db, onebotWS) {
   const dbContacts = await db.getContacts();
   const apiContacts = await getRecentContacts(onebotWS);
-
-  // 合并
   const contactMap = new Map();
-  for (const contact of dbContacts) {
-    const key = `${contact.contact_id}:${contact.type}`;
-    contactMap.set(key, { ...contact });
+
+  // 统一取时间戳兜底
+  const getTs = item => item.last_timestamp ?? new Date(item.last_time).getTime();
+  // 配置合并字段 + 专属判断条件
+  const mergeRules = [
+    { key: "latest_msg", cond: api => api.latest_msg && api.has_message },
+    { key: "temp" },
+    { key: "last_timestamp", cond: api => !!api.last_timestamp },
+    { key: "name" },
+    { key: "real_name" },
+    { key: "remark" },
+  ];
+
+  // 载入数据库联系人
+  for (const c of dbContacts) {
+    contactMap.set(`${c.contact_id}:${c.type}`, { ...c });
   }
-  for (const contact of apiContacts) {
-    const key = `${contact.contact_id}:${contact.type}`;
-    if (contactMap.has(key)) {
-      const existing = contactMap.get(key);
-      if (contact.latest_msg && contact.has_message) {
-        existing.latest_msg = contact.latest_msg;
-      }
-      existing.temp = contact.temp;
-      if (contact.last_timestamp) {
-        existing.last_timestamp = contact.last_timestamp;
-      }
-      existing.name = contact.name;
-      existing.real_name = contact.real_name;
-      existing.remark = contact.remark;
-    } else {
-      contactMap.set(key, contact);
+
+  // 合并API联系人，时间靠后者优先
+  for (const apiItem of apiContacts) {
+    const mapKey = `${apiItem.contact_id}:${apiItem.type}`;
+    if (!contactMap.has(mapKey)) {
+      contactMap.set(mapKey, { ...apiItem });
+      continue;
     }
+
+    const dbItem = contactMap.get(mapKey);
+    const apiTs = getTs(apiItem);
+    const dbTs = getTs(dbItem);
+    const merged = { ...dbItem };
+
+    if (apiTs > dbTs) {
+      // API更新，直接覆盖符合条件字段
+      mergeRules.forEach(({ key, cond }) => {
+        if (!cond || cond(apiItem)) merged[key] = apiItem[key];
+      });
+    } else {
+      // DB更新，仅填充空值
+      mergeRules.forEach(({ key, cond }) => {
+        const valid = !cond || cond(apiItem);
+        if (valid && merged[key] == null) merged[key] = apiItem[key];
+      });
+    }
+
+    contactMap.set(mapKey, merged);
   }
 
-  // 排序
-  const contacts = Array.from(contactMap.values());
-  contacts.sort((a, b) => {
-    const aTime = a.last_timestamp ?? new Date(a.last_time).getTime();
-    const bTime = b.last_timestamp ?? new Date(b.last_time).getTime();
-    return bTime - aTime;
-  });
-
-  return contacts;
+  // 按时间倒序排序
+  return Array.from(contactMap.values()).sort((a, b) => getTs(b) - getTs(a));
 }
 
 /**
@@ -517,7 +529,8 @@ export async function getMessagesCore(params, db, onebotWS) {
                 msg.event = JSON.stringify(event);
               }
             }
-          } catch { }
+          } catch {
+          }
         }
         merged.set(key, msg);
       } else {

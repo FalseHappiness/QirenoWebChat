@@ -356,63 +356,97 @@ class Database:
             c = conn.cursor()
             # 获取所有联系人（群组和私聊）以及最大最小消息ID
             c.execute('''
-                      WITH all_contacts AS (
-                          -- 私聊联系人（基于target_id或user_id）
+                      WITH all_raw AS (
+                          -- 私聊原始消息
                           SELECT CASE
                                      WHEN post_type = 'notice' THEN user_id
                                      ELSE target_id
                                      END                                  AS contact_id,
                                  'private'                                AS type,
                                  json_extract(event, '$.sender.nickname') AS name,
-                                 MAX(created_at)                          AS last_time,
-                                 MAX(time)                                AS last_timestamp,
-                                 event                                    AS latest_msg
-                          FROM messages
-                          WHERE (
-                                    -- 第一种私聊消息条件
-                                    (target_id IS NOT NULL AND target_id != 0 AND sub_type = 'friend' AND
-                                     post_type IN ('message', 'message_sent'))
-                                        OR
-                                        -- 第二种私聊消息条件
-                                    (user_id IS NOT NULL AND user_id != 0 AND group_id IS NULL AND sub_type = 'poke' AND
-                                     notice_type = 'notify' AND post_type = 'notice')
-                                    )
-                          GROUP BY contact_id, type
+                                 created_at,
+                          time
+                         , event
+                         , ROW_NUMBER() OVER (
+                          PARTITION BY
+                          CASE WHEN post_type = 'notice' THEN user_id ELSE target_id END
+                         , 'private'
+                          ORDER BY time DESC
+                          ) AS rn
+                      FROM messages
+                      WHERE (
+                      -- 普通私聊消息
+                          (target_id IS NOT NULL
+                        AND target_id != 0
+                        AND sub_type = 'friend'
+                        AND
+                          post_type IN ('message'
+                          , 'message_sent'))
+                         OR
+                      -- 私聊戳一戳通知
+                          (user_id IS NOT NULL
+                        AND user_id != 0
+                        AND group_id IS NULL
+                        AND sub_type = 'poke'
+                        AND
+                          notice_type = 'notify'
+                        AND post_type = 'notice')
+                          )
 
-                          UNION ALL
+                      UNION ALL
 
-                          -- 群聊联系人（基于group_id）
-                          SELECT group_id                            AS contact_id,
-                                 'group'                             AS type,
-                                 json_extract(event, '$.group_name') AS name,
-                                 MAX(created_at)                     AS last_time,
-                                 MAX(time)                           AS last_timestamp,
-                                 event                               AS latest_msg
-                          FROM messages
-                          WHERE (
-                                    -- 第一种群聊消息条件
-                                    (group_id IS NOT NULL AND group_id != 0 AND sub_type = 'normal' AND
-                                     post_type IN ('message', 'message_sent'))
-                                        OR
-                                        -- 第二种群聊消息条件
-                                    (group_id IS NOT NULL AND group_id != 0 AND
-                                     sub_type IN ('poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove') AND
-                                     notice_type IN ('notify', 'essence', 'group_ban', 'group_increase', 'group_decrease', 'group_msg_emoji_like') AND
-                                     post_type = 'notice')
-                                    )
-                          GROUP BY contact_id, type)
-
-                      -- 最终结果，按最后时间降序排列
+                      -- 群聊原始消息
+                      SELECT group_id                            AS contact_id,
+                             'group'                             AS type,
+                             json_extract(event, '$.group_name') AS name,
+                             created_at, time, event, ROW_NUMBER() OVER (
+                          PARTITION BY group_id, 'group'
+                          ORDER BY time DESC
+                          ) AS rn
+                      FROM messages
+                      WHERE (
+                      -- 普通群消息
+                          (group_id IS NOT NULL
+                        AND group_id != 0
+                        AND sub_type = 'normal'
+                        AND
+                          post_type IN ('message'
+                          , 'message_sent'))
+                         OR
+                      -- 群通知
+                          (group_id IS NOT NULL
+                        AND group_id != 0
+                        AND
+                          sub_type IN ('poke'
+                          , 'add'
+                          , 'ban'
+                          , 'lift_ban'
+                          , 'approve'
+                          , 'invite'
+                          , 'kick_me'
+                          , 'remove')
+                        AND
+                          notice_type IN ('notify'
+                          , 'essence'
+                          , 'group_ban'
+                          , 'group_increase'
+                          , 'group_decrease'
+                          , 'group_msg_emoji_like')
+                        AND
+                          post_type = 'notice')
+                          )
+                          )
                       SELECT contact_id,
                              type,
                              name,
-                             last_time,
-                             last_timestamp,
-                             latest_msg
-                      FROM all_contacts
-                      WHERE contact_id IS NOT NULL
+                             created_at AS last_time, time AS last_timestamp, event AS latest_msg
+                      FROM all_raw
+                      WHERE
+                          rn = 1
+                        AND contact_id IS NOT NULL
                         AND contact_id != 0
-                      ORDER BY last_time DESC;
+                    -- 和前端/后端排序逻辑统一：优先数字时间戳
+                      ORDER BY last_timestamp DESC, last_time DESC;
                       ''')
             rows = c.fetchall()  # 获取所有行数据
 

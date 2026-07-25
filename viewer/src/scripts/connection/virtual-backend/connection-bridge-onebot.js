@@ -1,8 +1,7 @@
-import { ref } from 'vue';
 import { nanoid } from 'nanoid';
 import { useGlobalStore } from '../../../store/global.js';
 import { convertWrappedMsgSL } from '../../snow-luma-translator.js';
-import { isSupportedNoticeMessage } from '../../parse-message.js';
+import { AbstractConnectionBridge } from '../abstract-connection-bridge.js';
 import { OneBotWSConnection } from './onebot-ws.js';
 import {
   processAndStoreEvent,
@@ -22,12 +21,12 @@ import VirtualProtocol, {
 /**
  * ConnectionBridgeOnebot
  *
- * 与 ConnectionBridge 完全相同的接口，但直接连接 NapCat 的 OneBot WS 服务器。
- * - sendAction: 直接发送标准 OneBot v11 action 到 NapCat
- * - reqBackend: 委托 handler.js 的函数处理
+ * 继承 AbstractConnectionBridge，直接连接 NapCat 的 OneBot WS 服务器。
+ * - sendAction: 直接发送标准 OneBot v11 action 到 NapCat（通过 OneBotWSConnection）
+ * - reqBackend: 委托 handler.js 的函数本地处理
  * - 接收来自 NapCat 的实时事件并存入本地数据库
  */
-export class ConnectionBridgeOnebot {
+export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
   /**
    * @param {string|{url: string, token: string}} urlOpt - NapCat OneBot WS 地址 (如 ws://127.0.0.1:3001)，或 WS 地址与 Token 对象
    * @param {object} callbacks
@@ -36,29 +35,12 @@ export class ConnectionBridgeOnebot {
    * @param {Function} callbacks.onNotice
    */
   constructor(urlOpt, { onMessage, onNewContact, onNotice }) {
-    this.url = urlOpt;
+    super(urlOpt, { onMessage, onNewContact, onNotice });
+
     this.token = null
     if (typeof urlOpt === 'object') {
       ({ url: this.url, token: this.token } = urlOpt)
     }
-
-    // 实例状态
-    this.socket = ref(null);
-    this.lastMessageId = ref(0);
-    this.reconnectAttempts = ref(0);
-    this.maxReconnectAttempts = Infinity;
-    this.reconnectInterval = 3000;
-    this.isConnected = ref(false);
-    this.shouldSync = ref(false);
-    this.reconnectTimer = null;
-    this.isClosed = false;
-
-    // pending 回调
-    this.pendingActions = new Map();
-    this.pendingBackendRequests = new Map();
-
-    // 回调
-    this.callbacks = { onMessage, onNewContact, onNotice };
 
     // 创建 OneBot WS 连接器
     this.onebotWS = new OneBotWSConnection(this.url, this.token);
@@ -136,7 +118,7 @@ export class ConnectionBridgeOnebot {
     this.handleNewNotice(converted);
   }
 
-  // ========== 公开接口 ==========
+  // ========== 抽象方法实现 ==========
 
   _commonWebSocketRequest(options, signal, timeout, pendingMap) {
     return new Promise((resolve, reject) => {
@@ -207,10 +189,6 @@ export class ConnectionBridgeOnebot {
     });
   }
 
-  sendAction(action, params = {}, signal = undefined, timeout = 60 * 1000) {
-    return this._commonWebSocketRequest({ type: 'send_action', action, params }, signal, timeout, this.pendingActions);
-  }
-
   reqBackend(endpoint, params = {}, signal = undefined, timeout = 10 * 60 * 1000) {
     return this._commonWebSocketRequest({
       type: 'req_backend',
@@ -247,39 +225,7 @@ export class ConnectionBridgeOnebot {
     }
   }
 
-  // ========== 消息处理（与 connection-bridge.js 一致） ==========
-
-  onReceiveMessage(message, echoMsg = false) {
-    try {
-      if (message.type === 'send_action_response') {
-        const { echo } = message;
-        if (echo && this.pendingActions.has(echo)) {
-          const { resolve, cleanup } = this.pendingActions.get(echo);
-          this.pendingActions.delete(echo);
-          cleanup?.();
-          resolve(message);
-        }
-        return;
-      }
-      if (message.type === 'req_backend_response') {
-        const { echo } = message;
-        if (echo && this.pendingBackendRequests.has(echo)) {
-          const { resolve, cleanup } = this.pendingBackendRequests.get(echo);
-          this.pendingBackendRequests.delete(echo);
-          cleanup?.();
-          resolve(message);
-        }
-        return;
-      }
-      if (message.id > this.lastMessageId.value) this.lastMessageId.value = message.id;
-      message = convertWrappedMsgSL(message);
-      if (echoMsg) console.log(message.post_type === 'notice' ? '收到新通知:' : '收到新消息:', message);
-      this.handleNewMessage(message);
-      this.handleNewNotice(message);
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error)
-    }
-  }
+  // ========== 消息同步 ==========
 
   syncMessages() {
     this._syncMessages();
@@ -298,86 +244,7 @@ export class ConnectionBridgeOnebot {
     }
   }
 
-  // 处理新消息（与 connection-bridge.js 的 handleNewMessage 完全一致）
-  handleNewMessage(message) {
-    if (!["message", "message_sent"].includes(message.post_type)) {
-      return
-    }
-
-    this.callbacks.onMessage(message)
-
-    // 检查是否是新的联系人
-    const contactId = message.message_type === 'group' ? message.group_id : (message.target_id || message.user_id)
-    const contactType = message.message_type
-    const event = typeof message.event === 'string' ? JSON.parse(message.event) : message.event;
-    const contactName = event?.group_name || event?.sender?.nickname
-
-    this.callbacks.onNewContact({
-      contact_id: contactId,
-      type: contactType,
-      name: contactName,
-      last_time: message.created_at,
-      latest_msg: JSON.stringify(event),
-      max_cursor: {
-        type: "real_seq",
-        value: message.real_seq
-      }
-    })
-  }
-
-  // 处理新通知（与 connection-bridge.js 的 handleNewNotice 完全一致）
-  handleNewNotice(notice) {
-    if (notice.post_type !== 'notice') {
-      return
-    }
-
-    this.callbacks.onNotice(notice)
-
-    if (isSupportedNoticeMessage(notice)) {
-      const type = notice.group_id ? "group" : "private"
-      const contact_id = notice.group_id || notice.user_id
-
-      this.callbacks.onNewContact({
-        contact_id: contact_id,
-        type: type,
-        name: null,
-        last_time: notice.created_at,
-        latest_msg: notice.event,
-        max_cursor: {
-          type: "id",
-          value: notice.id
-        }
-      })
-    }
-  }
-
   // ========== 连接管理 ==========
-
-  clearAllPending() {
-    for (const [echo, { reject, cleanup }] of this.pendingActions) {
-      cleanup?.();
-      reject(new Error('WebSocket disconnected'));
-    }
-    this.pendingActions.clear();
-    for (const [echo, { reject, cleanup }] of this.pendingBackendRequests) {
-      cleanup?.();
-      reject(new Error('WebSocket disconnected'));
-    }
-    this.pendingBackendRequests.clear();
-  }
-
-  disconnect() {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    this.isClosed = true;
-    this.reconnectAttempts.value = this.maxReconnectAttempts;
-    this.clearAllPending();
-    this.onebotWS.disconnect();
-    this.isConnected.value = false;
-    this.shouldSync.value = false;
-  }
 
   connect() {
     if (this.reconnectTimer) {
@@ -385,6 +252,13 @@ export class ConnectionBridgeOnebot {
       this.reconnectTimer = null;
     }
     this.onebotWS.connect();
+  }
+
+  /**
+   * 覆盖基类 _onDisconnect：使用 OneBotWSConnection 的断开逻辑
+   */
+  _onDisconnect() {
+    this.onebotWS.disconnect();
   }
 
   destroy() {

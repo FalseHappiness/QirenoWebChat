@@ -366,47 +366,61 @@ async def sync_messages_core(params: dict):
 
 
 async def get_contacts_core():
-    """获取联系人列表（核心实现）"""
+    """获取联系人列表（核心实现，时间较晚数据合并优先）"""
     db_contacts = db.get_contacts()
     api_contacts = await onebot_handler.get_recent_contacts()
-
-    # 创建一个字典用于快速查找
     contact_dict = {}
 
-    # 首先添加 db_contacts 到字典
-    for contact in db_contacts:
-        key = (contact['contact_id'], contact['type'])
-        contact_dict[key] = contact.copy()  # 创建副本避免修改原始数据
+    # 安全获取时间戳
+    get_ts = lambda item: item.get("last_timestamp", 0)
+    # 需要合并的字段配置：(字段名, 是否需前置判断)
+    merge_fields = [
+        ("latest_msg", lambda a, b: a.get("latest_msg") and a.get("has_message")),
+        ("temp", None),
+        ("last_timestamp", lambda a, b: a.get("last_timestamp")),
+        ("name", None),
+        ("real_name", None),
+        ("remark", None),
+    ]
 
-    # 然后合并 api_contacts，合并冲突字段
-    for contact in api_contacts:
-        key = (contact['contact_id'], contact['type'])
-        if key in contact_dict:
-            # 合并两个联系人字典，api_contacts的数据优先
-            db_contact = contact_dict[key]
-            if contact.get('latest_msg') and contact.get('has_message'):
-                db_contact['latest_msg'] = contact['latest_msg']
-            db_contact['temp'] = contact.get('temp')
-            if contact.get('last_timestamp'):
-                db_contact['last_timestamp'] = contact.get('last_timestamp')
-            db_contact['name'] = contact.get('name')
-            db_contact['real_name'] = contact.get('real_name')
-            db_contact['remark'] = contact.get('remark')
+    # 载入数据库数据
+    for c in db_contacts:
+        contact_dict[(c["contact_id"], c["type"])] = c.copy()
+
+    # 合并API联系人
+    for c in api_contacts:
+        key = (c["contact_id"], c["type"])
+        if key not in contact_dict:
+            contact_dict[key] = c.copy()
+            continue
+
+        db_c = contact_dict[key]
+        api_ts, db_ts = get_ts(c), get_ts(db_c)
+        merged = db_c.copy()
+
+        if api_ts > db_ts:
+            # API更新，直接覆盖字段
+            for field, cond in merge_fields:
+                if cond is None or cond(c, db_c):
+                    merged[field] = c[field]
         else:
-            contact_dict[key] = contact.copy()
+            # DB更新，仅填充空字段
+            for field, cond in merge_fields:
+                if cond is not None and not cond(c, db_c):
+                    continue
+                if merged.get(field) is None and field in c:
+                    merged[field] = c[field]
 
-    # 将字典值转换为列表
-    contacts = list(contact_dict.values())
+        contact_dict[key] = merged
 
     # 排序
     contacts = sorted(
-        contacts,
+        contact_dict.values(),
         key=lambda x: (
-            -x.get('last_timestamp', 0),
-            -datetime.fromisoformat(x['last_time']).timestamp() if 'last_time' in x else 0
+            -x.get("last_timestamp", 0),
+            -datetime.fromisoformat(x["last_time"]).timestamp() if "last_time" in x else 0
         )
     )
-
     return contacts
 
 

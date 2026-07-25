@@ -181,10 +181,7 @@ class VirtualDB extends Dexie {
      */
     this.getContacts = async () => {
       const messages = await this.messages.toArray();
-
-      // 私聊联系人
       const privateMap = new Map();
-      // 群聊联系人
       const groupMap = new Map();
 
       for (const msg of messages) {
@@ -194,6 +191,7 @@ class VirtualDB extends Dexie {
         const targetId = msg.target_id;
         const userId = msg.user_id;
         const noticeType = msg.notice_type;
+        const ts = msg.time || 0;
 
         let event = null;
         try {
@@ -201,81 +199,80 @@ class VirtualDB extends Dexie {
         } catch {
         }
 
-        // 私聊消息
+        // 1. 私聊普通消息
         if (targetId && targetId !== 0 && subType === 'friend' &&
           (postType === 'message' || postType === 'message_sent')) {
           const key = `private_${targetId}`;
-          if (!privateMap.has(key) || privateMap.get(key).id < msg.id) {
+          const currName = event?.sender?.nickname ?? null;
+          // 按时间戳判断，时间更大才覆盖
+          if (!privateMap.has(key) || privateMap.get(key).last_timestamp < ts) {
             privateMap.set(key, {
               contact_id: targetId,
               type: 'private',
-              name: event?.sender?.nickname || null,
+              name: currName,
               last_time: msg.created_at,
-              last_timestamp: msg.time,
+              last_timestamp: ts,
               latest_msg: msg.event,
             });
           }
         }
 
-        // 私聊戳一戳通知
+        // 2. 私聊戳一戳通知
         if (userId && userId !== 0 && !groupId && subType === 'poke' &&
           noticeType === 'notify' && postType === 'notice') {
           const key = `private_${userId}`;
-          if (!privateMap.has(key) || privateMap.get(key).id < msg.id) {
+          const currName = event?.sender?.nickname ?? null;
+          if (!privateMap.has(key) || privateMap.get(key).last_timestamp < ts) {
             privateMap.set(key, {
               contact_id: userId,
               type: 'private',
-              name: null,
+              name: currName, // 不再固定null，和SQL对齐
               last_time: msg.created_at,
-              last_timestamp: msg.time,
+              last_timestamp: ts,
               latest_msg: msg.event,
             });
           }
         }
 
-        // 群聊消息
+        // 3. 群聊普通消息
         if (groupId && groupId !== 0 && subType === 'normal' &&
           (postType === 'message' || postType === 'message_sent')) {
           const key = `group_${groupId}`;
-          if (!groupMap.has(key) || groupMap.get(key).id < msg.id) {
+          const currName = event?.group_name ?? null;
+          if (!groupMap.has(key) || groupMap.get(key).last_timestamp < ts) {
             groupMap.set(key, {
               contact_id: groupId,
               type: 'group',
-              name: event?.group_name || null,
+              name: currName,
               last_time: msg.created_at,
-              last_timestamp: msg.time,
+              last_timestamp: ts,
               latest_msg: msg.event,
             });
           }
         }
 
-        // 群聊通知
+        // 4. 群聊通知
         if (groupId && groupId !== 0 && postType === 'notice' &&
           ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove'].includes(subType) &&
           ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease', 'group_msg_emoji_like'].includes(noticeType)) {
           const key = `group_${groupId}`;
-          if (!groupMap.has(key) || groupMap.get(key).id < msg.id) {
+          const currName = event?.group_name ?? null;
+          if (!groupMap.has(key) || groupMap.get(key).last_timestamp < ts) {
             groupMap.set(key, {
               contact_id: groupId,
               type: 'group',
-              name: null,
+              name: currName, // 和SQL对齐，读取群名
               last_time: msg.created_at,
-              last_timestamp: msg.time,
+              last_timestamp: ts,
               latest_msg: msg.event,
             });
           }
         }
       }
 
-      const contacts = [
-        ...Array.from(privateMap.values()),
-        ...Array.from(groupMap.values()),
-      ];
-
-      // 过滤无效联系人
+      const contacts = [...privateMap.values(), ...groupMap.values()];
       const validContacts = contacts.filter(c => c.contact_id && c.contact_id !== 0);
 
-      // 排序
       validContacts.sort((a, b) => {
         const aTime = a.last_timestamp ?? new Date(a.last_time).getTime();
         const bTime = b.last_timestamp ?? new Date(b.last_time).getTime();
@@ -292,7 +289,7 @@ class VirtualDB extends Dexie {
      * @returns {Promise<Array>}
      */
     this.getNewMessages = async (lastId = 0) => {
-      return await this.messages
+      return this.messages
         .where('id')
         .above(lastId)
         .sortBy('id');
