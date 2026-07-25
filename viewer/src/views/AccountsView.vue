@@ -1,9 +1,9 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from "vue";
-import { fetchBackendHealth, fetchBackendBots, getUserLogo } from "../utils/backend-api.js";
+import { fetchBackendHealth, fetchBackendBots, getUserLogo } from "../scripts/backend-api.js";
 import { renderPolar } from "../QQ/app/scripts/polar.ai-anti-obf.js";
-import CustomScrollBar from "../components/utils/CustomScrollBar.vue";
-import { strToBool } from "../utils/others.js";
+import CustomScrollBar from "../components/Utils/CustomScrollBar.vue";
+import { strToBool } from "../scripts/util.js";
 
 const emit = defineEmits(["account-selected"]);
 

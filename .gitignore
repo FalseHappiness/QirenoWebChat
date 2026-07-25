@@ -33,5 +33,5 @@ venv
 *Test*
 # 全大写
 *TEST*
-viewer/src/components/MessageTypes/MessageJSON/json
+viewer/src/components/MessageItem/MessageTypes/MessageJSON/json
 .githooks

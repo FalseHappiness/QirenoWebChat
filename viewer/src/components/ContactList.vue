@@ -2,9 +2,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import ContactItem from './ContactItem.vue'
 import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
-import VirtualScroller from "./utils/VirtualScroller.vue";
-import { fetchSetLongNick, getUserLogo } from "../utils/backend-api.js";
-import { Emitter } from "../composables/event-bus.js";
+import VirtualScroller from "./Utils/VirtualScroller.vue";
+import { fetchSetLongNick, getUserLogo } from "../scripts/backend-api.js";
+import { Emitter } from "../composables/useEventBus.js";
 
 const props = defineProps({
   contacts: Array,

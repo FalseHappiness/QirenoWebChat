@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
 
   function useBase() {
-    return env.VITE_BASE
+    return env.VITE_BASE ?? '/'
   }
 
   const base = useBase()

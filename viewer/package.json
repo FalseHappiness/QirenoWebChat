@@ -9,8 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "update-packages": "ncu -u && npm install",
-    "create-emoji-list": "node utils/create-emoji-list.cjs",
-    "copy-sys-emoji-res": "node utils/copy-sys-emoji-res.cjs",
+    "create-emoji-list": "node viewer/tools/create-emoji-list.cjs",
+    "copy-sys-emoji-res": "node viewer/tools/copy-sys-emoji-res.cjs",
     "init-emoji": "npm run copy-sys-emoji-res && npm run create-emoji-list"
   },
   "dependencies": {

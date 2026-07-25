@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount } from 'vue'
-import { ConnectionBridge } from '../composables/connection-bridge.js'
-import { ConnectionBridgeOnebot } from "../composables/VirtualBackend/connection-bridge-onebot.js";
+import { ConnectionBridge } from '../scripts/connection/connection-bridge.js'
+import { ConnectionBridgeOnebot } from "../scripts/connection/virtual-backend/connection-bridge-onebot.js";
 import ContactList from '../components/ContactList.vue'
 import ChatArea from '../components/ChatArea.vue'
 import {
@@ -10,13 +10,13 @@ import {
   fetchMessages, fetchSetGroupRemark, fetchSetLongNick, fetchStrangerInfo,
   getFriendsDisplayName,
   getGroupUsersDisplayName, getOnebotWsToken, getOnebotWsUri, setGroupNameCache, wsUri, apiBaseUrl
-} from "../utils/backend-api.js";
-import { showErrorToast, showToast } from "../utils/toast.js";
-import { destroyContextMenu, initContextMenu } from "../utils/context-menu.js";
-import { CalledEmitter } from "../composables/event-bus.js";
-import ContactInfoTooltip from "../components/utils/ContactInfoTooltip.vue";
-import { isSupportedNoticeMessage } from "../utils/parse-message.js";
-import DownloadProgressPopup from "../components/utils/DownloadProgressPopup.vue";
+} from "../scripts/backend-api.js";
+import { showErrorToast, showToast } from "../scripts/toast.js";
+import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
+import { CalledEmitter } from "../composables/useEventBus.js";
+import ContactInfoTooltip from "../components/Popups/ContactInfoTooltip.vue";
+import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
+import DownloadProgressPopup from "../components/Popups/DownloadProgressPopup.vue";
 
 const props = defineProps({
   account: {

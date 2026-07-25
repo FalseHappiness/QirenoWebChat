@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import './App.scss';
 import AccountsView from "./views/AccountsView.vue";
 import MainView from "./views/MainView.vue";
-import { useBase } from './composables/base-url.js'
+import { useBase } from './composables/useBase.js'
 
 const baseUrl = useBase()
 

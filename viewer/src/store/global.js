@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { reactive } from 'vue';
-import { otherFacesDescribes, secretEmojiids } from "../utils/faces-config.js";
+import { otherFacesDescribes, secretEmojiids } from "../scripts/faces-config.js";
 
 function getAllEmojiids(list) {
   // 创建一个 Set 来避免重复的 xxx1

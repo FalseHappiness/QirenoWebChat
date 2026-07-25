@@ -1,28 +1,28 @@
 <script setup>
 import { ref, computed, nextTick, watch, onMounted, toRaw, provide, onUnmounted } from 'vue'
-import MessageItem from './MessageItem.vue'
+import MessageItem from './MessageItem/MessageItem.vue'
 import {
   fetchDisplayName,
   fetchGroupMemberInfo,
   fetchGroupNotice,
   fetchMsg, fetchSetGroupMemberRemark, getGroupUsers, setGroupUserNameCache
-} from "../utils/backend-api.js";
-import PageScroller from "./utils/PageScroller.vue";
+} from "../scripts/backend-api.js";
+import PageScroller from "./Utils/PageScroller.vue";
 import SimpleBarCore from "simplebar";
 import 'simplebar/dist/simplebar.min.css';
-import MessageInputBox from "./MessageInputBox.vue";
+import MessageInputBox from "./MessageInput/MessageInputBox.vue";
 import { useGlobalStore } from "../store/global.js";
-import { sortGroupUsers } from "../utils/others.js";
-import Tooltip from "./utils/Tooltip.vue";
-import { Emitter } from "../composables/event-bus.js";
-import GroupNoticesShower from "./GroupNoticesShower.vue";
-import EnterArrow from "./utils/EnterArrow.vue";
-import GroupEssenceMsgViewer from "./GroupEssenceMsgViewer.vue";
-import GroupFilesViewer from "./GroupFilesViewer.vue";
-import ColorSvg from "./utils/ColorSvg.vue";
-import GroupAlbumViewer from "./GroupAlbumViewer.vue";
-import { qqAppImg, qqIconSvg } from "../composables/base-url.js";
-import CustomScrollBar from "./utils/CustomScrollBar.vue";
+import { sortGroupUsers } from "../scripts/util.js";
+import Tooltip from "./Utils/Tooltip.vue";
+import { Emitter } from "../composables/useEventBus.js";
+import GroupAnnounceViewer from "./GroupViews/GroupAnnounceViewer.vue";
+import EnterArrow from "./Common/EnterArrow.vue";
+import GroupEssenceMsgViewer from "./GroupViews/GroupEssenceMsgViewer.vue";
+import GroupFilesViewer from "./GroupViews/GroupFilesViewer.vue";
+import ColorSvg from "./Utils/ColorSvg.vue";
+import GroupAlbumViewer from "./GroupViews/GroupAlbumViewer.vue";
+import { qqAppImg, qqIconSvg } from "../composables/useBase.js";
+import CustomScrollBar from "./Utils/CustomScrollBar.vue";
 
 const props = defineProps({
   activeContact: Object,
@@ -460,29 +460,23 @@ const handleClickShowContactInfo = (e, user_id) => {
   })
 }
 
-const showGroupNoticesViewer = ref(false);
-
-const changeShowGroupNotice = (isShow = true) => {
-  showGroupNoticesViewer.value = isShow;
+const createChangeView = refVar => {
+  return (isShow = true) => {
+    refVar.value = isShow;
+  }
 }
+
+const showGroupAnnounceViewer = ref(false);
+const changeShowGroupAnnounce = createChangeView(showGroupAnnounceViewer)
 
 const showGroupEssenceListViewer = ref(false);
-
-const changeShowGroupEssenceList = (isShow = true) => {
-  showGroupEssenceListViewer.value = isShow;
-}
+const changeShowGroupEssenceList = createChangeView(showGroupEssenceListViewer)
 
 const showGroupFilesViewer = ref(false)
-
-const changeShowGroupFiles = (isShow = true) => {
-  showGroupFilesViewer.value = isShow
-}
+const changeShowGroupFiles = createChangeView(showGroupFilesViewer)
 
 const showGroupAlbumViewer = ref(false)
-
-const changeShowGroupAlbum = (isShow = true) => {
-  showGroupAlbumViewer.value = isShow
-}
+const changeShowGroupAlbum = createChangeView(showGroupAlbumViewer)
 
 const initContactInfo = () => {
   // 组件挂载时获取名称
@@ -491,7 +485,7 @@ const initContactInfo = () => {
     groupRemarkModel.value = props.activeContact?.remark;
     getGroupNotice()
     getGroupSelfInfo()
-    Emitter.on("show-group-notices", changeShowGroupNotice)
+    Emitter.on("show-group-notices", changeShowGroupAnnounce)
     emit("get-essence-msg-real-seq-list")
   }
 }
@@ -500,7 +494,7 @@ const initContactInfo = () => {
 watch(() => props.activeContact, (newVal, oldVal) => {
   if (newVal?.contact_id !== oldVal?.contact_id || newVal?.type !== oldVal?.type) {
     groupUsers.value = null
-    showGroupNoticesViewer.value = false
+    showGroupAnnounceViewer.value = false
     showContactMore.value = false
     initContactInfo();
   }
@@ -514,11 +508,11 @@ onUnmounted(() => {
 
 <template>
   <div class="chat-area" :class="{ 'active-contact': activeContact }" @click="handleChatAreaClick">
-    <GroupNoticesShower
-      v-if="showGroupNoticesViewer"
+    <GroupAnnounceViewer
+      v-if="showGroupAnnounceViewer"
       :group_id="activeContact?.contact_id"
       :notices="groupNotifications || []"
-      :onClose="() => changeShowGroupNotice(false)"
+      :onClose="() => changeShowGroupAnnounce(false)"
     />
     <GroupEssenceMsgViewer
       v-if="showGroupEssenceListViewer"
@@ -612,7 +606,7 @@ onUnmounted(() => {
       </div>
 
       <div class="chat-area-contact-more-area with-title display-flex" data-title="群公告"
-           @click="changeShowGroupNotice()">
+           @click="changeShowGroupAnnounce()">
         <span v-if="groupNotifications == null" style="color: #999;">内容获取中</span>
         <span v-else-if="!groupNotifications?.length" style="color: #999;">未设置</span>
         <span v-else class="overflow-ellipsis">
@@ -681,7 +675,7 @@ onUnmounted(() => {
           @change-essence-msg="(real_seq, set) => {emit('change-essence-msg', real_seq, set)}"
           @quote-message="(msg, user) => {quoteMessage(msg, user)}"
           @click-show-contacts-info="handleClickShowContactInfo"
-          @change-show-group-notice="changeShowGroupNotice"
+          @change-show-group-notice="changeShowGroupAnnounce"
           @change-show-essence-list="changeShowGroupEssenceList"
         />
       </template>
