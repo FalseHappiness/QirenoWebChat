@@ -370,6 +370,17 @@ function strToBool(val) {
   return ['true', '1', 'yes', 'on'].includes(s);
 }
 
+/**
+ * 删除字符串末尾单个斜杠
+ * @param {string} url
+ * @returns {string}
+ */
+function trimTrailingSlash(url) {
+  if (typeof url !== 'string') return url
+  // 正则：匹配结尾的 / 并替换为空
+  return url.replace(/\/$/, '')
+}
+
 export {
   hasMouseSupport,
   formatRelativeTime,
@@ -379,4 +390,5 @@ export {
   formatTimeOptions,
   triggerDownloadFile,
   strToBool,
+  trimTrailingSlash,
 }

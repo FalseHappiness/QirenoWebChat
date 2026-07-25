@@ -13,9 +13,34 @@ import {
   convertGroupFilesSL,
   convertWrappedMsgSL
 } from "./snow-luma-translator.js";
+import { trimTrailingSlash } from "./util.js";
 
-let apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-let wsUri = import.meta.env.VITE_WS_URI;
+/**
+ * 替换URL中的 sitehost 为当前页面真实主机
+ * @param {string} urlStr 原始带sitehost的链接
+ * @returns {string} 替换完成的真实地址
+ */
+function replaceSiteHost(urlStr) {
+  if (!urlStr || typeof urlStr !== 'string') return urlStr;
+
+  // 当前页面信息
+  const currentProtocol = location.protocol; // http: / https:
+  const currentHost = location.host;         // localhost:5173 / xxx.com
+  const currentWsProtocol = currentProtocol === 'https:' ? 'wss:' : 'ws:';
+
+  // 正则匹配：http://sitehost / https://sitehost / ws://sitehost / wss://sitehost
+  return urlStr.replace(/(http|https|ws|wss):\/\/sitehost/g, (match, proto) => {
+    // 协议自动映射
+    if (proto === 'ws' || proto === 'wss') {
+      return `${currentWsProtocol}//${currentHost}`;
+    }
+    // http/https 使用页面当前协议
+    return `${currentProtocol}//${currentHost}`;
+  });
+}
+
+let apiBaseUrl = trimTrailingSlash(replaceSiteHost(import.meta.env.VITE_API_BASE_URL ?? "http://sitehost"));
+let wsUri = trimTrailingSlash(replaceSiteHost(import.meta.env.VITE_WS_URI ?? "ws://sitehost/ws/frontend"));
 
 // 从 localStorage 读取 OneBot 配置
 const getSelectedAccount = () => {
@@ -42,19 +67,6 @@ const getOnebotWsToken = () => {
 const getIsDirectOnebot = () => {
   const account = getSelectedAccount()
   return account?.mode === 'direct'
-}
-
-if (typeof wsUri === 'string') {
-  wsUri = wsUri.replace(/\/$/, '')
-}
-if (import.meta.env.PROD) {
-  console.log('当前是生产环境');
-  const { protocol, host } = window.location;
-  // http/https 接口地址
-  apiBaseUrl = `${protocol}//${host}`;
-  // ws/wss 地址：http → ws，https → wss
-  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-  wsUri = `${wsProtocol}//${host}/ws/frontend`;
 }
 
 const fetchOptionsAction = async ({ endpoint, data, signal, timeout }) => {
