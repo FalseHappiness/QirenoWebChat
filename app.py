@@ -1,32 +1,29 @@
 import asyncio
 import base64
+import json
 import mimetypes
 import time
 import urllib
 from datetime import datetime
-from typing import Dict, Union, List, Any, Optional, AsyncIterator
+from typing import Dict, Union, List, Any, Optional
+from urllib.parse import urlparse, quote
 
 import aiohttp
 import requests
+import uvicorn
 from fastapi import FastAPI, WebSocket, Depends, Request, Response, WebSocketException, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.params import Header
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-import json
-import uvicorn
-from urllib.parse import urlparse, quote
-# import docker
 
-from frontend_manager import FrontendConnectionManager
-from onebot_manager import OneBotConnectionManager, ActionFailed
-from onebot_handler import OneBotHandler, convert_event_to_message_data
-from db import Database
 from config import Config
+from db import Database
+from frontend_manager import FrontendConnectionManager
+from onebot_handler import OneBotHandler, convert_event_to_message_data
+from onebot_manager import OneBotConnectionManager, ActionFailed
 
-import logging
-import sys
+# import docker
 
 # 配置 logging
 # logging.basicConfig(
@@ -427,7 +424,7 @@ async def _req_backend_sync(params: dict):
     return await sync_messages_core(params)
 
 
-async def _req_backend_contacts():
+async def _req_backend_contacts(_):
     return await get_contacts_core()
 
 
