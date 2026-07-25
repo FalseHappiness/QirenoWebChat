@@ -341,6 +341,7 @@ const clearAndReselect = () => {
           <template v-if="directConnections.length > 0">
             <p v-if="isSecureContext" class="direct-hint">
               ⚠️ 当前处于安全上下文（HTTPS），请务必使用 <strong>WSS</strong> 加密连接
+              或者 <strong>本地回环</strong> 地址
             </p>
             <div class="saved-connections-list">
               <div

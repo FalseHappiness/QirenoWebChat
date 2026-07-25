@@ -4,7 +4,7 @@ import {
   getCacheName,
   getFileDataUrl, getGroupFileProxyUrl,
   getMultimediaProxyUrl, getPrivateFileProxyUrl,
-  getStreamFileDataUrl
+  getStreamFileDataUrl, isSnowLuma
 } from "./backend-api.js";
 import { useGlobalStore } from "../store/global.js";
 import TroopShareCard from "../components/MessageTypes/MessageJSON/TroopShareCard.vue";
@@ -367,12 +367,12 @@ const parseMessage = (wrappedMsg) => {
             const name = data.name || data.file
             children.push(
               h(FileMessage, {
-                url: (isGroup ? getGroupFileProxyUrl : getPrivateFileProxyUrl)(
+                url: isSnowLuma() ? (isGroup ? getGroupFileProxyUrl : getPrivateFileProxyUrl)(
                   isGroup ? event.group_id : event.target_id,
                   data.file_id || data.id,
                   name,
                   data.url
-                ),
+                ) : getStreamFileDataUrl(item),
                 name,
                 size: data.file_size,
               })
