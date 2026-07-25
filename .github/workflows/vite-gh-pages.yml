@@ -35,7 +35,7 @@ jobs:
         working-directory: ./viewer
         env:
           VITE_BACKEND_DETECTOR: false
-          VITE_BASE: /
+          VITE_BASE: /QirenoWebChat/
         run: |
           npm install
           npm run build
