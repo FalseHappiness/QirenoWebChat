@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 import json
 import uvicorn
 from urllib.parse import urlparse, quote
-import docker
+# import docker
 
 from frontend_manager import FrontendConnectionManager
 from onebot_manager import OneBotConnectionManager, ActionFailed
@@ -427,7 +427,7 @@ async def _req_backend_sync(params: dict):
     return await sync_messages_core(params)
 
 
-async def _req_backend_contacts(params: dict):
+async def _req_backend_contacts():
     return await get_contacts_core()
 
 
@@ -694,31 +694,31 @@ async def proxy(params: dict = Depends(get_request_params)):
         return JSONResponse(status_code=502, content=f"Proxy error: {str(e)}")
 
 
-def get_host_path(container_path):
-    docker_napcat_qq_data_volume = config.DOCKER_NAPCAT_QQ_DATA_VOLUME
-    if docker_napcat_qq_data_volume is not None:
-        return container_path.replace(
-            "/app/.config/QQ",
-            docker_napcat_qq_data_volume,
-            1
-        )
-
-    docker_napcat_name = config.DOCKER_NAPCAT_NAME
-    if docker_napcat_name is None:
-        return container_path
-
-    client = docker.from_env()
-    container = client.containers.get(docker_napcat_name)
-
-    for mount in container.attrs['Mounts']:
-        if container_path.startswith(mount['Destination']):
-            # 替换容器路径为宿主机路径
-            return container_path.replace(
-                mount['Destination'],
-                mount['Source'],
-                1
-            )
-    return container_path  # 如果没有挂载，返回原路径
+# def get_host_path(container_path):
+#     docker_napcat_qq_data_volume = config.DOCKER_NAPCAT_QQ_DATA_VOLUME
+#     if docker_napcat_qq_data_volume is not None:
+#         return container_path.replace(
+#             "/app/.config/QQ",
+#             docker_napcat_qq_data_volume,
+#             1
+#         )
+#
+#     docker_napcat_name = config.DOCKER_NAPCAT_NAME
+#     if docker_napcat_name is None:
+#         return container_path
+#
+#     client = docker.from_env()
+#     container = client.containers.get(docker_napcat_name)
+#
+#     for mount in container.attrs['Mounts']:
+#         if container_path.startswith(mount['Destination']):
+#             # 替换容器路径为宿主机路径
+#             return container_path.replace(
+#                 mount['Destination'],
+#                 mount['Source'],
+#                 1
+#             )
+#     return container_path  # 如果没有挂载，返回原路径
 
 
 @app.api_route("/api/get_file_data", methods=["GET", "POST"])
@@ -772,10 +772,11 @@ async def get_file(params: dict = Depends(get_request_params)):
                 }
             )
         else:
-            if file_path == '':
-                return process_error("file not found")
-            real_path = get_host_path(file_path)
-            return FileResponse(real_path, media_type='application/octet-stream')
+            # if file_path == '':
+            #     return process_error("file not found")
+            # real_path = get_host_path(file_path)
+            # return FileResponse(real_path, media_type='application/octet-stream')
+            return process_error("file not found")
 
     def process_error(e, context=None):
         if context is None:
