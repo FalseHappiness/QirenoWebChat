@@ -63,10 +63,10 @@ frontend_manager = FrontendConnectionManager(onebot_manager)
 async def dynamic_websocket(websocket: WebSocket, path: str):
     parts = path.split('/')
     name = parts[0]
-    # sub_name = parts[1] if len(parts) > 1 else None
+    sub_name = parts[1] if len(parts) > 1 else None
 
     if name == 'frontend':
-        await frontend_manager.connect(websocket)
+        await frontend_manager.connect(websocket, self_id=sub_name)
     elif name == 'napcat':
         await onebot_manager.connect(websocket)
     else:
@@ -439,6 +439,34 @@ frontend_manager.req_backend_handlers = {
 }
 
 
+# ===================== 健康检查 & BOT列表接口 =====================
+
+@app.api_route("/api/health", methods=["GET"])
+async def health_check():
+    """后端健康检查接口"""
+    return {"status": "ok", "code": 200, "data": {"alive": True}}
+
+
+@app.api_route("/api/bots", methods=["GET"])
+async def get_bots():
+    """获取所有已连接的BOT列表（名称、头像、QQ号）"""
+    bots = []
+    for self_id in list(onebot_manager.active_connections.keys()):
+        try:
+            info = await onebot_manager.call_action("get_login_info", {}, self_id=self_id)
+            bots.append({
+                "self_id": self_id,
+                "user_id": info.get("user_id"),
+                "nickname": info.get("nickname"),
+            })
+        except Exception as e:
+            bots.append({
+                "self_id": self_id,
+                "error": str(e)
+            })
+    return {"status": "success", "code": 200, "data": bots}
+
+
 # -------- 原 FastAPI 路由（保持接口不变，调用公共核心方法） --------
 
 @app.api_route("/api/messages", methods=["GET", "POST"])
@@ -582,21 +610,41 @@ def is_allowed_proxy_domain(target_url):
     try:
         parsed_url = urlparse(target_url)
         netloc = parsed_url.netloc
-
+        path = parsed_url.path
         # 移除端口部分（如 :443）
         domain = netloc.split(':')[0]  # 得到纯净域名
 
+        # 白名单数组统一管理
         # 完整匹配的域名列表
-        allowed_full_domains = ["multimedia.nt.qq.com.cn", "gxh.vip.qq.com", 'gzc-download.ftn.qq.com']
-
+        allowed_full_domains = [
+            "multimedia.nt.qq.com.cn",
+            "gxh.vip.qq.com",
+            "gzc-download.ftn.qq.com",
+            "grouptalk.c2c.qq.com"
+        ]
         # 允许的域名后缀列表
-        allowed_suffixes = ['.gtimg.cn', '.qpic.cn', '.ugcimg.cn', '.ftn.qq.com']
+        allowed_suffixes = [
+            ".gtimg.cn",
+            ".qpic.cn",
+            ".ugcimg.cn",
+            ".ftn.qq.com"
+        ]
+        allowed_exact_paths = [
+            "/asn.com/qqdownloadftnv5"  # https://grouptalk.c2c.qq.com/asn.com/qqdownloadftnv5?
+        ]
 
-        # 检查条件：完整匹配 或 符合允许的后缀
-        return (
-                domain in allowed_full_domains or
-                any(domain.endswith(suffix) for suffix in allowed_suffixes)
-        )
+        # 严格路径匹配：完全相等 / 路径后紧跟?参数
+        match_path = False
+        for p in allowed_exact_paths:
+            if path == p or path.startswith(f"{p}?"):
+                match_path = True
+                break
+
+        match_full = domain in allowed_full_domains
+        match_suffix = any(domain.endswith(suf) for suf in allowed_suffixes)
+
+        return match_path or match_full or match_suffix
+
     except Exception as e:
         # 如果解析失败（如非法URL），直接拒绝
         print(f"URL解析失败: {e}")
@@ -934,6 +982,7 @@ class TTLCache:
 
 
 group_files_url_cache = TTLCache(ttl=600)  # 缓存 10 分钟，按需调整
+private_files_url_cache = TTLCache(ttl=600)  # 缓存 10 分钟，按需调整
 
 
 def get_content_disposition(filename: str, inline: bool = True) -> str:
@@ -989,22 +1038,45 @@ async def proxy_target_file(target_url: str, range_header: Optional[str] = None)
     return resp.status, proxy_headers, chunk_generator()
 
 
+# ===================== 公共代理文件流式响应构建（提取自 proxy_group_file） =====================
+async def _build_proxy_file_response(target_url: str, target_name: Optional[str], range_header: Optional[str]):
+    media_type = "application/octet-stream"
+    if target_name:
+        mime_type, _ = mimetypes.guess_type(target_name)
+        if mime_type:
+            media_type = mime_type
+    if not target_name:
+        parsed = urllib.parse.urlparse(target_url)
+        filename = parsed.path.split("/")[-1] or "file"
+        target_name = urllib.parse.unquote(filename)
+    status_code, proxy_headers, body_iterator = await proxy_target_file(target_url, range_header)
+    response_headers = {
+        "Content-Disposition": get_content_disposition(target_name, inline=True),
+        "Accept-Ranges": "bytes",
+    }
+    response_headers.update(proxy_headers)
+    return StreamingResponse(
+        content=body_iterator,
+        status_code=status_code,
+        media_type=media_type,
+        headers=response_headers,
+    )
+
+
 # ===================== 接口实现 =====================
 @app.api_route("/api/proxy_group_file", methods=["GET", "POST"])
 async def proxy_group_file(
         request_params: dict = Depends(get_request_params),
-        range_header: Optional[str] = Header(None, alias="Range")  # 正确捕获请求头 Range
+        range_header: Optional[str] = Header(None, alias="Range")
 ):
-    params = request_params  # 你的 get_request_params 应能解析 GET/POST 参数
+    params = request_params
     target_url = params.get("url")
     target_name = params.get("name")
     file_id = params.get("file_id")
     group_id = params.get("group_id")
 
-    # 分支1：直接传入代理URL
     if target_url and is_allowed_proxy_domain(target_url):
         pass
-    # 分支2：通过群ID+文件ID拉取真实文件链接（带缓存）
     elif file_id and group_id:
         cache_key = f"{group_id}:{file_id}"
         cached_url = await group_files_url_cache.get(cache_key)
@@ -1019,44 +1091,49 @@ async def proxy_group_file(
             if result.get("status") == 'ok':
                 target_url = result.get('data', {}).get("url")
                 if target_url:
-                    # 缓存原始链接
                     await group_files_url_cache.set(cache_key, target_url)
             else:
                 return result
-    # 无有效文件链接
     if not target_url:
         return {"status": "error", "message": "没有有效文件", "code": 400}
 
-    # ========== 精准识别音视频MIME ==========
-    media_type = "application/octet-stream"
-    if target_name:
-        mime_type, _ = mimetypes.guess_type(target_name)
-        if mime_type:
-            media_type = mime_type
+    return await _build_proxy_file_response(target_url, target_name, range_header)
 
-    # 2. 文件名处理
-    if not target_name:
-        parsed = urllib.parse.urlparse(target_url)
-        filename = parsed.path.split("/")[-1] or "file"
-        target_name = urllib.parse.unquote(filename)
 
-    # 3. 流式代理（含 Range 支持）
-    status_code, proxy_headers, body_iterator = await proxy_target_file(target_url, range_header)
+@app.api_route("/api/proxy_private_file", methods=["GET", "POST"])
+async def proxy_private_file(
+        request_params: dict = Depends(get_request_params),
+        range_header: Optional[str] = Header(None, alias="Range")
+):
+    params = request_params
+    target_url = params.get("url")
+    target_name = params.get("name")
+    file_id = params.get("file_id")
+    user_id = params.get("user_id")
 
-    # 4. 拼接响应头
-    response_headers = {
-        "Content-Disposition": get_content_disposition(target_name, inline=True),
-        "Accept-Ranges": "bytes",
-    }
-    # 合并远程返回的 Range 相关头部（不含Content-Type，避免覆盖）
-    response_headers.update(proxy_headers)
+    if target_url and is_allowed_proxy_domain(target_url):
+        pass
+    elif file_id and user_id:
+        cache_key = f"{user_id}:{file_id}"
+        cached_url = await private_files_url_cache.get(cache_key)
+        if cached_url:
+            target_url = cached_url
+        else:
+            result = await make_api_request(
+                endpoint='get_private_file_url',
+                request_params=['user_id', 'file_id'],
+                original_params=params,
+            )
+            if result.get("status") == 'ok':
+                target_url = result.get('data', {}).get("url")
+                if target_url:
+                    await private_files_url_cache.set(cache_key, target_url)
+            else:
+                return result
+    if not target_url:
+        return {"status": "error", "message": "没有有效文件", "code": 400}
 
-    return StreamingResponse(
-        content=body_iterator,
-        status_code=status_code,
-        media_type=media_type,
-        headers=response_headers,
-    )
+    return await _build_proxy_file_response(target_url, target_name, range_header)
 
 
 # 托管dist静态文件

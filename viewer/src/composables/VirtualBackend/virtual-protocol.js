@@ -30,7 +30,7 @@ class VirtualProtocol {
   }
 
   /**
-   * 设置下载回调（由 App.vue 接入下载进度弹窗）
+   * 设置下载回调（由 MainView.vue 接入下载进度弹窗）
    * @param {(info: { href: string, fileName: string, resolvedUrl: string }) => void} handler
    */
   setDownloadHandler(handler) {
@@ -581,9 +581,144 @@ function createProxyGroupFileHandler({ callAction }) {
   };
 }
 
+/**
+ * 创建 /api/proxy_private_file 的处理器
+ *
+ * 模拟 Python 后端 app.py 的 proxy_private_file 接口：
+ *   1. 支持直接传入 url 参数进行代理（需要域名白名单校验）
+ *   2. 支持传入 user_id + file_id，通过 get_private_file_url action 获取真实下载链接
+ *   3. 流式代理远程文件，透传 Range 请求头（用于音视频拖动播放）
+ *
+ * @param {object} options
+ * @param {Function} options.callAction - (action, params) => Promise<any>，OneBot action 调用器
+ * @returns {(path: string, fullUrl: string) => Promise<Response>}
+ */
+function createProxyPrivateFileHandler({ callAction }) {
+  return async function (path, fullUrl, init) {
+    const queryIndex = fullUrl.indexOf('?');
+    const params = new URLSearchParams(queryIndex >= 0 ? fullUrl.slice(queryIndex) : '');
+
+    const targetUrl = params.get('url');
+    const targetName = params.get('name');
+    const fileId = params.get('file_id');
+    const userId = params.get('user_id');
+
+    let resolvedUrl = null;
+    let fileName = targetName || 'file';
+
+    try {
+      // 分支1：直接传入 URL 且在白名单内
+      if (targetUrl && isAllowedProxyDomain(targetUrl)) {
+        resolvedUrl = targetUrl;
+      }
+      // 分支2：通过 user_id + file_id 获取真实文件链接
+      else if (fileId && userId) {
+        const result = await callAction('get_private_file_url', {
+          user_id: userId,
+          file_id: fileId,
+        });
+        const data = result?.data || result;
+        resolvedUrl = data?.url;
+
+        if (!resolvedUrl) {
+          console.error('[VirtualProtocol] proxy_private_file: get_private_file_url returned no URL', data);
+          return new Response(
+            JSON.stringify({ status: 'error', message: '没有有效文件', code: 400 }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      } else {
+        return new Response(
+          JSON.stringify({ status: 'error', message: '缺少参数: 需要 url 或 (user_id + file_id)', code: 400 }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // 确定文件名
+      if (!fileName || fileName === 'file') {
+        const urlPath = resolvedUrl.split('?')[0];
+        const pathSegments = urlPath.split('/');
+        const lastSegment = pathSegments[pathSegments.length - 1];
+        if (lastSegment && lastSegment !== '/') {
+          fileName = decodeURIComponent(lastSegment);
+        }
+      }
+
+      // 判断 MIME 类型
+      let mediaType = 'application/octet-stream';
+      if (fileName) {
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        const mimeMap = {
+          'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png',
+          'gif': 'image/gif', 'webp': 'image/webp', 'bmp': 'image/bmp',
+          'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime',
+          'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg',
+          'pdf': 'application/pdf', 'zip': 'application/zip',
+          'rar': 'application/vnd.rar', '7z': 'application/x-7z-compressed',
+          'doc': 'application/msword', 'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'xls': 'application/vnd.ms-excel', 'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'txt': 'text/plain', 'json': 'application/json',
+        };
+        if (mimeMap[ext]) {
+          mediaType = mimeMap[ext];
+        }
+      }
+
+      // 发起代理请求
+      const proxyHeaders = {};
+      const rangeHeader = params.get('Range') || params.get('range');
+      if (rangeHeader) {
+        proxyHeaders['Range'] = rangeHeader;
+      }
+
+      const proxyResponse = await this.rawFetch(resolvedUrl, {
+        headers: Object.keys(proxyHeaders).length > 0 ? proxyHeaders : undefined,
+        signal: init?.signal,
+      });
+
+      const asciiName = encodeURIComponent(fileName);
+      const encodedFilename = encodeURIComponent(fileName);
+      const responseHeaders = {
+        'Content-Disposition': `inline; filename="${asciiName}"; filename*=UTF-8''${encodedFilename}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Type': mediaType,
+        'X-Proxy-Url': resolvedUrl,
+        'X-File-Name': encodeURIComponent(fileName),
+      };
+
+      const passThroughKeys = ['content-range', 'content-length', 'accept-ranges', 'etag'];
+      for (const key of passThroughKeys) {
+        const val = proxyResponse.headers.get(key);
+        if (val) {
+          responseHeaders[key] = val;
+        }
+      }
+
+      return new Response(proxyResponse.body, {
+        status: proxyResponse.status,
+        headers: responseHeaders,
+      });
+    } catch (e) {
+      const errorDetail = e.message || String(e);
+      const errorBody = JSON.stringify({
+        error: true,
+        message: errorDetail,
+        action: 'get_private_file_url',
+        params: { user_id: userId, file_id: fileId },
+      });
+      console.error(`[VirtualProtocol] proxy_private_file error:`, e);
+      return new Response(errorBody, {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  };
+}
+
 export {
   VirtualProtocol as default,
   createGetFileDataHandler,
   createGetStreamFileDataHandler,
   createProxyGroupFileHandler,
+  createProxyPrivateFileHandler,
 };

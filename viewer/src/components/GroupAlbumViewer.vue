@@ -4,6 +4,7 @@ import { fetchGroupAlbumList, fetchGroupAlbumMediaList } from "../utils/backend-
 import { formatTimeOptions } from "../utils/others.js"
 import CustomScrollBar from "./utils/CustomScrollBar.vue"
 import SimplePopUp from "./utils/SimplePopUp.vue"
+import { qqIconSvg } from "../composables/base-url.js";
 
 export default defineComponent({
   name: "GroupAlbumViewer",
@@ -65,6 +66,7 @@ export default defineComponent({
     }
   },
   methods: {
+    qqIconSvg,
     /* ========== 格式化工具 ========== */
 
     formatDateOnly(timestamp) {
@@ -463,7 +465,7 @@ export default defineComponent({
         <template v-if="view === 'albums'">
           <div class="gav-title">
             群相册
-            <img alt="" src="/QQ/icons/close_fill_24.svg" class="gav-close-btn cannot-drag"
+            <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
                  @click="close">
           </div>
           <CustomScrollBar ref="albumScroller" class="gav-scroll">
@@ -500,10 +502,10 @@ export default defineComponent({
         <!-- ===== 媒体列表视图 ===== -->
         <template v-if="view === 'media'">
           <div class="gav-title">
-            <img alt="" src="/QQ/icons/arrow_left_24.svg" class="gav-back-btn cannot-drag"
+            <img alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
                  @click="goBackToAlbums">
             {{ (currentAlbum && currentAlbum.name) || '相册' }}
-            <img alt="" src="/QQ/icons/close_fill_24.svg" class="gav-close-btn cannot-drag"
+            <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
                  @click="close">
           </div>
           <CustomScrollBar ref="mediaScroller" class="gav-scroll">
@@ -521,7 +523,7 @@ export default defineComponent({
                            @error="handleImgError">
                       <div v-else class="gav-no-cover">加载失败</div>
                       <div v-if="media.type === 1" class="gav-video-badge">
-                        <img src="/QQ/icons/play_fill_24.svg" alt="" class="gav-play-icon">
+                        <img :src="qqIconSvg('play_fill_24')" alt="" class="gav-play-icon">
                       </div>
                     </div>
                   </div>
@@ -536,10 +538,10 @@ export default defineComponent({
         <div v-if="view === 'detail' && currentMedia" class="gav-detail-overlay"
              @click.self="goBackToMedia">
           <div class="gav-detail-header">
-            <img alt="" src="/QQ/icons/arrow_left_24.svg" class="gav-back-btn cannot-drag"
+            <img alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
                  @click="goBackToMedia">
             <span class="gav-detail-counter">{{ currentMediaIndex + 1 }} / {{ mediaList.length }}</span>
-            <img alt="" src="/QQ/icons/close_fill_24.svg" class="gav-close-btn cannot-drag"
+            <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
                  @click="close">
           </div>
 
@@ -560,11 +562,11 @@ export default defineComponent({
 
           <button v-if="currentMediaIndex > 0" class="gav-nav-btn gav-nav-prev"
                   @click="prevMedia">
-            <img src="/QQ/icons/arrow_left_24.svg" alt="">
+            <img :src="qqIconSvg('arrow_left_24')" alt="">
           </button>
           <button v-if="currentMediaIndex < mediaList.length - 1" class="gav-nav-btn gav-nav-next"
                   @click="nextMedia">
-            <img src="/QQ/icons/arrow_right_24.svg" alt="">
+            <img :src="qqIconSvg('arrow_right_24')" alt="">
           </button>
         </div>
       </template>

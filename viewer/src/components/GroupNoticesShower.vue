@@ -5,6 +5,7 @@ import { convertMessageTextHTMLSyntax } from "../utils/parse-message.js";
 import SimplePopUp from "./utils/SimplePopUp.vue";
 import CustomScrollBar from "./utils/CustomScrollBar.vue";
 import { formatTimeOptions } from "../utils/others.js";
+import { qqIconSvg } from "../composables/base-url.js";
 
 export default defineComponent({
   name: "GroupNoticesShower",
@@ -44,6 +45,7 @@ export default defineComponent({
     }
   },
   methods: {
+    qqIconSvg,
     formatTime(timestamp) {
       return formatTimeOptions({
         timestamp,
@@ -78,7 +80,7 @@ export default defineComponent({
       <template #default>
         <div class="group-notices-shower-title">
           群公告
-          <img alt="" src="/QQ/icons/close_fill_24.svg" class="group-notices-shower-close-btn cannot-drag"
+          <img alt="" :src="qqIconSvg('close_fill_24')" class="group-notices-shower-close-btn cannot-drag"
                @click="$refs.popUp.confirm(false)">
         </div>
         <CustomScrollBar class="group-notices-shower-list">

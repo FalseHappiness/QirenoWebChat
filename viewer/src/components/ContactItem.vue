@@ -6,6 +6,7 @@ import { fetchDisplayName, getCacheName, getGroupLogo, getUserLogo } from "../ut
 import { basicContextItem, vCustomMenu } from "../utils/context-menu.js";
 import { copy } from "../utils/clipboard.js";
 import { formatRelativeTime } from "../utils/others.js";
+import { qqIconSvg } from "../composables/base-url.js";
 
 const props = defineProps({
   contact: {
@@ -163,7 +164,7 @@ const customContextMenu = () => {
       () => {
         copy(props.contact.contact_id)
       },
-      "/QQ/icons/copy_24.svg"
+      qqIconSvg('copy_24')
     )
   ]
 }

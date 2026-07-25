@@ -2,8 +2,8 @@ import { h } from "vue";
 import {
   fetchDisplayName, fetchMsg,
   getCacheName,
-  getFileDataUrl,
-  getMultimediaProxyUrl,
+  getFileDataUrl, getGroupFileProxyUrl,
+  getMultimediaProxyUrl, getPrivateFileProxyUrl,
   getStreamFileDataUrl
 } from "./backend-api.js";
 import { useGlobalStore } from "../store/global.js";
@@ -28,6 +28,7 @@ import UnparsedJSON from "../components/MessageTypes/MessageJSON/UnparsedJSON.vu
 import ActivityMD from "../components/MessageTypes/MessageJSON/ActivityMD.vue";
 import UnparsedMessage from "../components/MessageTypes/UnparsedMessage.vue";
 import { getPokeDescription } from "./faces-config.js";
+import { qqFileIcon, qqSystemEmoji } from "../composables/base-url.js";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -72,7 +73,7 @@ const getEmojiPublicPath = (emoji_id, type, emoji_id_suffix = '', suffix = undef
   if (!suffix) {
     suffix = ({ 'png': '.png', 'apng': '.png', 'lottie': '.json' })[type]
   }
-  return `/QQ/EmojiSystermResource/${encodeURIComponent(emoji_id)}/${type}/${encodeURIComponent(emoji_id)}${emoji_id_suffix}${suffix}`
+  return qqSystemEmoji(encodeURIComponent(emoji_id), type, `${encodeURIComponent(emoji_id)}${emoji_id_suffix}${suffix}/`)
 }
 
 const getEmojiPngPath = emoji_id => getEmojiPublicPath(emoji_id, 'png')
@@ -261,7 +262,7 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
               h(
                 "img",
                 {
-                  src: `/QQ/fileIcon/${getFileIcon(item.data.file)}`,
+                  src: qqFileIcon(getFileIcon(item.data.file)),
                   class: "message-reply-file-icon",
                   alt: ""
                 }
@@ -305,6 +306,8 @@ const parseMessage = (wrappedMsg) => {
     const event = parseJSON(wrappedMsg.event);
     const message = event.message
     if (Array.isArray(message)) {
+      const isGroup = event.message_type === 'group'
+      const isSelfSent = event.self_id === event.user_id
       const children = [];
 
       // 单独存在与混排有较大效果差异的消息
@@ -356,15 +359,22 @@ const parseMessage = (wrappedMsg) => {
                 width: '200px',
                 maxWidth: '100%,',
                 src: getFileDataUrl(item),
-                cursorColor: event.user_id === event.self_id ? 'rgba(255, 255, 255, 0.8)' : 'rgba(204, 235, 255, 0.8)'
+                cursorColor: isSelfSent ? 'rgba(255, 255, 255, 0.8)' : 'rgba(204, 235, 255, 0.8)'
               })
             );
           } else if (item.type === 'file') {
+            const data = item.data
+            const name = data.name || data.file
             children.push(
               h(FileMessage, {
-                url: item.data.url || getStreamFileDataUrl(item),
-                name: item.data.file,
-                size: item.data.file_size,
+                url: (isGroup ? getGroupFileProxyUrl : getPrivateFileProxyUrl)(
+                  isGroup ? event.group_id : event.target_id,
+                  data.file_id || data.id,
+                  name,
+                  data.url
+                ),
+                name,
+                size: data.file_size,
               })
             );
           } else if (item.type === 'poke') {
@@ -372,7 +382,7 @@ const parseMessage = (wrappedMsg) => {
               h(ShakePokeMessage, {
                 id: item.data.id,
                 type: item.data.type,
-                out: event.self_id === event.user_id
+                out: isSelfSent
               })
             )
           } else if (item.type === 'forward') {
@@ -431,7 +441,7 @@ const parseMessage = (wrappedMsg) => {
             h('div', [
               h(ReplyMessage, {
                 id: item.data.id,
-                out: event.self_id === event.user_id
+                out: isSelfSent
               })
             ])
           )
@@ -467,7 +477,6 @@ const parseMessage = (wrappedMsg) => {
         } else if (item.type === 'at') {
           const id = item.data.qq;
 
-          const isGroup = event.message_type === 'group'
           const type = isGroup ? "group_user" : "nickname"
           const id_list = [event.group_id, id];
 

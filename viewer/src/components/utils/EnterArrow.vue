@@ -1,9 +1,11 @@
 <script>
 import { defineComponent } from 'vue'
 import ColorSvg from "./ColorSvg.vue";
+import { qqIconSvg } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "EnterArrow",
+  methods: { qqIconSvg },
   components: { ColorSvg },
   props: {
     size: {
@@ -15,7 +17,7 @@ export default defineComponent({
 
 <template>
   <div class="enter-arrow" :style="{ width: size + 'px', height: size + 'px' }">
-    <ColorSvg src="/QQ/icons/arrow_right_small_16.svg" style="background-color: #7F7F7F;"></ColorSvg>
+    <ColorSvg :src="qqIconSvg('arrow_right_small_16')" style="background-color: #7F7F7F;"></ColorSvg>
   </div>
 </template>
 

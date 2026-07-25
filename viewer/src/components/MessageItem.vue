@@ -17,6 +17,7 @@ import { vDoubleClick } from '../directives/double-click-directive.js';
 import { formatRelativeTime, parseJSON } from "../utils/others.js";
 import { showToast } from "../utils/toast.js";
 import { Emitter } from "../composables/event-bus.js";
+import { qqAppImg, qqIconSvg } from "../composables/base-url.js";
 
 const props = defineProps({
   message: {
@@ -251,18 +252,18 @@ const customContextMenu = () => {
       if (copyAll) {
         window.getSelection().removeAllRanges();
       }
-    }, '/QQ/icons/copy_24.svg'),
+    }, qqIconSvg("copy_24")),
     basicContextItem('转发', () => {
       const message = props.message
       const event = typeof message.event === 'string' ? JSON.parse(message.event) : message.event;
       Emitter.emit('forward-single-msg', event.message_id, event.message)
-    }, '/QQ/icons/one_by_one_forward_24.svg'),
+    }, qqIconSvg("one_by_one_forward_24")),
     basicContextItem('引用', () => {
       emit('quote-message', toRaw(props.message), props.message.message_type === 'group' ? {
         name: displayName.value,
         qq: props.message.user_id
       } : null)
-    }, '/QQ/icons/quote_24.svg'),
+    }, qqIconSvg("quote_24")),
     basicContextItem(
       isEssence.value ? '移除精华' : '设为精华',
       async () => {
@@ -289,7 +290,7 @@ const customContextMenu = () => {
         }
         settingEssence.value = false
       },
-      '/QQ/icons/essence_message_24.svg',
+      qqIconSvg("essence_message_24"),
       ['owner', 'admin'].includes(self_info.role) &&
       (!isRecalled.value || !isEssence.value)
     ),
@@ -298,7 +299,7 @@ const customContextMenu = () => {
       '撤回', () => {
         fetchRecallMessage(props.message.message_id)
       },
-      '/QQ/icons/recall_24.svg',
+      qqIconSvg("recall_24"),
       !isRecalled.value &&
       (
         (self_info.role === 'owner') ||
@@ -474,11 +475,11 @@ onUnmounted(() => {
       </div>
       <div class="message-tips no-user-select">
         <div class="message-red-tip message-tip" v-if="isRecalled">
-          <img alt="" src="/QQ/icons/recall_24.svg">
+          <img alt="" :src="qqIconSvg('recall_24')">
           已撤回
         </div>
         <div class="message-tip" v-if="isEssence" @click="emit('change-show-essence-list')">
-          <img alt="" src="/QQ/app/img/essence.bbb878de5480c01292f5.svg">
+          <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')">
           精华
         </div>
         <div class="message-tip" v-if="isSecretEmoji">

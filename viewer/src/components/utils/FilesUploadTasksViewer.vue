@@ -6,6 +6,7 @@ import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import SimplePopUp from "./SimplePopUp.vue";
 import CustomScrollBar from "./CustomScrollBar.vue";
+import { qqFileIcon, qqIconSvg } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "FilesUploadTasksViewer",
@@ -22,6 +23,8 @@ export default defineComponent({
     }
   },
   methods: {
+    qqFileIcon,
+    qqIconSvg,
     getFileIcon: getFileIcon,
     formatFileSize: formatFileSize,
     close() {
@@ -133,14 +136,14 @@ export default defineComponent({
       <template #default>
         <div class="files-upload-tasks-title">
           文件上传任务
-          <img alt="" src="/QQ/icons/close_fill_24.svg" class="files-upload-tasks-close-btn cannot-drag"
+          <img alt="" :src="qqIconSvg('close_fill_24')" class="files-upload-tasks-close-btn cannot-drag"
                @click="close()">
         </div>
 
         <!-- 任务列表 -->
         <CustomScrollBar class="files-upload-tasks-list">
           <div class="files-upload-tasks-item" v-for="(task, index) in tasks" :key="`${index}-${task?.chunk_index}`">
-            <img alt="" :src="'/QQ/fileIcon/' + getFileIcon(task.file.name)" class="files-upload-tasks-item-icon">
+            <img alt="" :src="qqFileIcon(getFileIcon(task.file.name))" class="files-upload-tasks-item-icon">
             <div class="files-upload-tasks-item-info">
               <TruncatedText one-line :content="task.file.name"/>
               <div class="files-upload-tasks-item-status">

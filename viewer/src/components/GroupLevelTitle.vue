@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from "vue";
 import { getCacheGroupLevelTitle } from "../utils/backend-api.js";
+import { qqIconSvg } from "../composables/base-url.js";
 
 const props = defineProps({
   group_id: {
@@ -53,7 +54,7 @@ const colorClass = computed(() => {
     &nbsp;<span v-if="!info.is_robot" class="message-group-level-title" :class="colorClass">LV{{
       info.level || 0
     }}{{ title }}</span>
-    <img v-else-if="info.is_robot" src="/QQ/icons/robot_label_16.svg" class="robot-icon" alt="">
+    <img v-else-if="info.is_robot" :src="qqIconSvg('robot_label_16')" class="robot-icon" alt="">
   </div>
 </template>
 

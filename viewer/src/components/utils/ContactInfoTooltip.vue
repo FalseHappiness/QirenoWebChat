@@ -173,12 +173,17 @@ export default defineComponent({
   </Tooltip>
 </template>
 
+<style scoped lang="scss">
+.tooltip-style.contact-info-tooltip {
+  /* 顶部背景图：仅顶部显示、不重复、铺满宽度 */
+  background-image: url("#{$base-url}QQ/app/img/minicard.bg.c44eefb168ed8bd4d8e2.png");
+}
+</style>
+
 <style scoped>
 .tooltip-style.contact-info-tooltip {
   /* 底色：整体白色背景 */
   background-color: #ffffff;
-  /* 顶部背景图：仅顶部显示、不重复、铺满宽度 */
-  background-image: url("/QQ/app/img/minicard.bg.c44eefb168ed8bd4d8e2.png");
   background-repeat: no-repeat; /* 禁止重复平铺 */
   background-position: top center; /* 对齐顶部 */
   background-size: 100% auto; /* 宽度铺满，高度自适应原图比例 */

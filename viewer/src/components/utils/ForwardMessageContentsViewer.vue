@@ -5,6 +5,7 @@ import { parseMessage } from "../../utils/parse-message.js";
 import { formatTimeOptions } from "../../utils/others.js";
 import SimplePopUp from "./SimplePopUp.vue";
 import CustomScrollBar from "./CustomScrollBar.vue";
+import { qqIconSvg } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "ForwardMessageContentsViewer",
@@ -69,6 +70,7 @@ export default defineComponent({
     }
   },
   methods: {
+    qqIconSvg,
     getUserLogo,
     formatTime(timestamp) {
       if (!timestamp) return ''
@@ -143,7 +145,7 @@ export default defineComponent({
             <span v-else>未知</span>
             <span>的聊天记录</span>
           </span>
-          <img alt="" src="/QQ/icons/close_fill_24.svg" class="fv-close-btn" @click="close">
+          <img alt="" :src="qqIconSvg('close_fill_24')" class="fv-close-btn" @click="close">
         </div>
 
         <!-- 主体区域 -->

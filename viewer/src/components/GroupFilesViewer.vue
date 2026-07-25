@@ -4,13 +4,14 @@ import {
   fetchGroupRootFiles,
   fetchGroupFolderFiles,
   fetchGroupFileSysInfo,
-  getFileDataUrl, getGroupFileProxyUrl, isDirectOnebot, fetchGroupFileUrl
+  getFileDataUrl, getGroupFileProxyUrl, fetchGroupFileUrl
 } from "../utils/backend-api.js";
 import { formatTimeOptions } from "../utils/others.js";
 import { getFileIcon, formatFileSize } from "./MessageTypes/FileMessage.vue";
 import CustomScrollBar from "./utils/CustomScrollBar.vue";
 import SimplePopUp from "./utils/SimplePopUp.vue";
 import TruncatedText from "./utils/TruncatedText.vue";
+import { qqFileIcon, qqIconSvg } from "../composables/base-url.js";
 
 export default defineComponent({
   name: "GroupFilesViewer",
@@ -128,6 +129,8 @@ export default defineComponent({
     }
   },
   methods: {
+    qqFileIcon,
+    qqIconSvg,
     formatFileSize,
     getFileIcon,
     formatTime(timestamp) {
@@ -206,7 +209,7 @@ export default defineComponent({
       <template #default>
         <div class="gv-title">
           群文件
-          <img alt="" src="/QQ/icons/close_fill_24.svg" class="gv-close-btn cannot-drag"
+          <img alt="" :src="qqIconSvg('close_fill_24')" class="gv-close-btn cannot-drag"
                @click="close">
         </div>
 
@@ -281,13 +284,13 @@ export default defineComponent({
             <!-- 图标 -->
             <img
               v-if="item.type === 'folder'"
-              src="/QQ/fileIcon/folder.png"
+              :src="qqFileIcon('folder.png')"
               alt=""
               class="gv-item-icon"
             >
             <img
               v-else
-              :src="`/QQ/fileIcon/${ getFileIcon(item.name) }`"
+              :src="qqFileIcon(getFileIcon(item.name))"
               alt=""
               class="gv-item-icon"
             >

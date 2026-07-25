@@ -183,7 +183,7 @@ export default defineComponent({
     <SimplePopUp ref="popUp"
                  :on-confirm="onClosed"
                  :on-cancel="onClosed"
-                 :container-styles="'download-progress-container'">
+                 :container-styles="$style['download-progress-container']">
       <template #default>
         <div class="download-content">
           <!-- 标题 -->
@@ -202,7 +202,7 @@ export default defineComponent({
           </div>
 
           <!-- 真实源地址（仅代理类处理器有） -->
-          <div class="download-url" v-if="resolvedUrl && status !== 'completed'">
+          <div class="download-url" v-if="resolvedUrl">
             <span class="url-label">源地址:</span>
             <span class="url-value" :title="resolvedUrl">{{ resolvedUrl }}</span>
           </div>
@@ -400,5 +400,11 @@ export default defineComponent({
 
 .retry-btn:hover {
   background: #e09d3e;
+}
+</style>
+
+<style module>
+.download-progress-container {
+  height: unset;
 }
 </style>

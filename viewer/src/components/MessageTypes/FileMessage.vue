@@ -4,7 +4,7 @@
       <div class="outer-container">
         <TruncatedText :content="name"></TruncatedText>
       </div>
-      <img alt="" :src="`/QQ/fileIcon/${ getFileIcon(name) }`">
+      <img alt="" :src="qqFileIcon(getFileIcon(name))">
     </div>
     <span class="text-muted">{{ formatFileSize(size) }}</span>
   </a>
@@ -13,6 +13,7 @@
 <script>
 import TruncatedText from "../utils/TruncatedText.vue";
 import { defineComponent } from "vue";
+import { qqFileIcon } from "../../composables/base-url.js";
 
 
 const getFileIcon = (name) => {
@@ -118,6 +119,7 @@ export default defineComponent({
     }
   },
   methods: {
+    qqFileIcon,
     formatFileSize: formatFileSize,
     getFileIcon: getFileIcon
   }

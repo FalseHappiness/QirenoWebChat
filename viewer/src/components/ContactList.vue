@@ -101,6 +101,14 @@ onMounted(() => {
   </vue-resizable>
 </template>
 
+<style scoped lang="scss">
+.contacts-top-side {
+  height: 60px;
+  background-image: url("#{$base-url}QQ/app/img/minicard.bg.c44eefb168ed8bd4d8e2.png"),
+  linear-gradient(to top, #F5F5F5, #F0F0F0);
+}
+</style>
+
 <style scoped>
 .contacts-list {
   /*height: calc(100% - 52px);*/
@@ -121,8 +129,6 @@ onMounted(() => {
 
 .contacts-top-side {
   height: 60px;
-  background-image: url(/QQ/app/img/minicard.bg.c44eefb168ed8bd4d8e2.png),
-  linear-gradient(to top, #F5F5F5, #F0F0F0);
   background-repeat: no-repeat, no-repeat;
   background-size: 100%, 100%;
   background-clip: padding-box, border-box;

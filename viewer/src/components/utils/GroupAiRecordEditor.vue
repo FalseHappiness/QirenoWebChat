@@ -4,6 +4,7 @@ import SimplePopUp from "./SimplePopUp.vue";
 import CustomScrollBar from "./CustomScrollBar.vue";
 import { fetchAiRecordCharacters, fetchSendGroupAiRecord } from "../../utils/backend-api.js";
 import { showToast } from "../../utils/toast.js";
+import { qqIconSvg } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "GroupAiRecordEditor",
@@ -34,6 +35,7 @@ export default defineComponent({
     this.loadCharacters()
   },
   methods: {
+    qqIconSvg,
     async loadCharacters() {
       if (!this.group_id) return
       this.loading = true
@@ -141,7 +143,7 @@ export default defineComponent({
       <template #default>
         <div class="group-ai-record-editor-title">
           AI 语音
-          <img alt="" src="/QQ/icons/close_fill_24.svg" class="group-ai-record-editor-close-btn cannot-drag"
+          <img alt="" :src="qqIconSvg('close_fill_24')" class="group-ai-record-editor-close-btn cannot-drag"
                @click="close">
         </div>
 
@@ -176,11 +178,11 @@ export default defineComponent({
                            @click.stop="previewAudio(character)"
                            :title="isPlaying(character.character_id) ? '停止播放' : '预览声音'">
                         <img v-if="isPlaying(character.character_id)"
-                             src="/QQ/icons/pause_24.svg"
+                             :src="qqIconSvg('pause_24')"
                              alt="暂停"
                              class="group-ai-record-editor-preview-icon"/>
                         <img v-else
-                             src="/QQ/icons/play_fill_24.svg"
+                             :src="qqIconSvg('play_fill_24')"
                              alt="播放"
                              class="group-ai-record-editor-preview-icon"
                              style="margin-left: 2px;"/>

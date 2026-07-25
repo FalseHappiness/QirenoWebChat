@@ -5,6 +5,7 @@ import { formatTimeOptions } from "../utils/others.js";
 import { parseMessage } from "../utils/parse-message.js";
 import CustomScrollBar from "./utils/CustomScrollBar.vue";
 import SimplePopUp from "./utils/SimplePopUp.vue";
+import { qqIconSvg } from "../composables/base-url.js";
 
 /**
  * 使用 parseMessage 渲染消息段的内联组件
@@ -62,6 +63,7 @@ export default defineComponent({
     }
   },
   methods: {
+    qqIconSvg,
     getAvatarUrl(user_id) {
       return getUserLogo(user_id)
     },
@@ -107,7 +109,7 @@ export default defineComponent({
       <template #default>
         <div class="essence-msg-viewer-title">
           精华消息
-          <img alt="" src="/QQ/icons/close_fill_24.svg" class="essence-msg-viewer-close-btn cannot-drag"
+          <img alt="" :src="qqIconSvg('close_fill_24')" class="essence-msg-viewer-close-btn cannot-drag"
                @click="close">
         </div>
         <CustomScrollBar class="essence-msg-viewer-list">
@@ -148,7 +150,7 @@ export default defineComponent({
             </div>
             <div class="essence-msg-viewer-item-footer">
               <span class="essence-msg-viewer-operator">
-                <img src="/QQ/icons/essence_message_24.svg" alt="" class="essence-msg-viewer-essence-icon">
+                <img :src="qqIconSvg('essence_message_24')" alt="" class="essence-msg-viewer-essence-icon">
                 <span class="essence-msg-viewer-operator-text">{{ msg.operator_nick || msg.operator_id }} 加精</span>
                 <span class="essence-msg-viewer-operator-time">{{ formatTime(msg.operator_time) }}</span>
               </span>

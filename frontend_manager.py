@@ -14,12 +14,16 @@ class FrontendConnectionManager:
         self.pending_action_tasks: Dict[str, Tuple[WebSocket, asyncio.Task]] = {}
         # req_backend 处理器映射: endpoint -> handler_function(params) -> dict
         self.req_backend_handlers = req_backend_handlers or {}
+        # 存储每个连接的 self_id（前端选择的bot）
+        self.connection_self_id: Dict[WebSocket, Optional[str]] = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket, self_id: Optional[str] = None):
         """处理新的WebSocket连接"""
         await websocket.accept()
         self.active_connections.add(websocket)
-        print(f"新前端连接，当前连接数: {len(self.active_connections)}")
+        if self_id:
+            self.connection_self_id[websocket] = self_id
+        print(f"新前端连接，当前连接数: {len(self.active_connections)}, self_id: {self_id}")
 
         try:
             while True:
@@ -40,7 +44,8 @@ class FrontendConnectionManager:
 
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
-            print(f"前端断开连接，剩余连接数: {len(self.active_connections)}")
+        self.connection_self_id.pop(websocket, None)
+        print(f"前端断开连接，剩余连接数: {len(self.active_connections)}")
 
     async def process_message(self, websocket: WebSocket, message: dict):
         """处理来自前端的消息"""
@@ -96,10 +101,13 @@ class FrontendConnectionManager:
             params = message.get("params", {})
             timeout = params.get("timeout", 60)
 
-            # print(f"前端请求 action: {action}, params: {params}")
+            # 获取该连接对应的 self_id，优先使用连接时指定的 self_id
+            self_id = self.connection_self_id.get(websocket)
+
+            # print(f"前端请求 action: {action}, params: {params}, self_id: {self_id}")
 
             try:
-                result = await self.onebot_manager.call_action(action, params, None, timeout)
+                result = await self.onebot_manager.call_action(action, params, self_id, timeout)
                 # print(f"action 响应: {action} -> {result}")
 
                 response = {

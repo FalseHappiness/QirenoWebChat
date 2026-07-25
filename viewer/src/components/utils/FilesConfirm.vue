@@ -5,6 +5,7 @@ import TruncatedText from "./TruncatedText.vue";
 import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import SimplePopUp from "./SimplePopUp.vue";
+import { qqFileIcon, qqIconSvg } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "FilesConfirm",
@@ -32,6 +33,8 @@ export default defineComponent({
     }
   },
   methods: {
+    qqFileIcon,
+    qqIconSvg,
     getFileIcon: getFileIcon,
     formatFileSize: formatFileSize,
     confirm(confirm = true) {
@@ -47,13 +50,13 @@ export default defineComponent({
       <template #default>
         <div class="files-confirm-title">
           发送<span v-if="typeName">{{ ` ${typeName} ` }}</span>给 {{ contactName }}
-          <img alt="" src="/QQ/icons/close_fill_24.svg" class="files-confirm-close-btn cannot-drag"
+          <img alt="" :src="qqIconSvg('close_fill_24')" class="files-confirm-close-btn cannot-drag"
                @click="confirm(false)">
         </div>
         <div class="files-confirm-files">
           <SimpleBar class="files-confirm-files-scroller" data-simplebar data-simplebar-auto-hide="false">
             <div class="files-confirm-file" v-for="(value) in files">
-              <img alt="" :src="'/QQ/fileIcon/' + getFileIcon(value.name)" class="files-confirm-file-icon">
+              <img alt="" :src="qqFileIcon(getFileIcon(value.name))" class="files-confirm-file-icon">
               <div class="files-confirm-file-info">
                 <TruncatedText one-line :content="value.name"/>
                 <span class="files-confirm-file-size">{{ formatFileSize(value.size) }}</span>

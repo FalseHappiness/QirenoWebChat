@@ -3,6 +3,7 @@ import { computed, h, ref } from "vue";
 import { getGroupNoticePicUrl, getMultimediaProxyUrl } from "../../../utils/backend-api.js";
 import { Base64 } from 'js-base64'
 import { convertMessageTextHTMLSyntax } from "../../../utils/parse-message.js";
+import { qqAppImg } from "../../../composables/base-url.js";
 
 const props = defineProps({
   json: Object
@@ -47,7 +48,7 @@ const images = computed(() => {
 <template>
   <div class="message-box-less message-mannounce">
     <div class="header">
-      <img alt="" src="/QQ/app/img/mannounce.png">
+      <img alt="" :src="qqAppImg('mannounce.png')">
       <span class="text-muted">{{ Base64.decode(mannounce.title) }}</span>
     </div>
     <div class="content">

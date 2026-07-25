@@ -16,6 +16,7 @@ import VirtualProtocol, {
   createGetFileDataHandler,
   createGetStreamFileDataHandler,
   createProxyGroupFileHandler,
+  createProxyPrivateFileHandler,
 } from './virtual-protocol.js';
 
 /**
@@ -103,6 +104,12 @@ export class ConnectionBridgeOnebot {
     this.virtualProtocol.registerRoute(
       '/api/proxy_group_file',
       createProxyGroupFileHandler({
+        callAction: (action, params) => this.onebotWS.callAction(action, params, null, 20 * 60 * 1000)
+      })
+    );
+    this.virtualProtocol.registerRoute(
+      '/api/proxy_private_file',
+      createProxyPrivateFileHandler({
         callAction: (action, params) => this.onebotWS.callAction(action, params, null, 20 * 60 * 1000)
       })
     );

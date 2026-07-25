@@ -16,9 +16,33 @@ import {
 
 let apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 let wsUri = import.meta.env.VITE_WS_URI;
-const onebotWsUri = import.meta.env.VITE_ONEBOT_WS_URI;
-const onebotWsToken = import.meta.env.VITE_ONEBOT_WS_TOKEN;
-const isDirectOnebot = !!onebotWsUri;
+
+// 从 localStorage 读取 OneBot 配置
+const getSelectedAccount = () => {
+  try {
+    const saved = localStorage.getItem('selectedAccount')
+    return saved ? JSON.parse(saved) : null
+  } catch (e) {
+    return null
+  }
+}
+
+const getOnebotWsUri = () => {
+  const account = getSelectedAccount()
+  if (account?.mode === 'direct' && account?.wsUri) return account.wsUri
+  return ''
+}
+
+const getOnebotWsToken = () => {
+  const account = getSelectedAccount()
+  if (account?.mode === 'direct' && account?.wsToken) return account.wsToken
+  return ''
+}
+
+const getIsDirectOnebot = () => {
+  const account = getSelectedAccount()
+  return account?.mode === 'direct'
+}
 
 if (typeof wsUri === 'string') {
   wsUri = wsUri.replace(/\/$/, '')
@@ -860,7 +884,7 @@ const fetchContacts = async () => {
 }
 
 const getApiBaseUrl = () => {
-  if (isDirectOnebot) {
+  if (getIsDirectOnebot()) {
     return "virtual:"
   } else {
     return apiBaseUrl
@@ -913,9 +937,60 @@ const isSnowLuma = () => {
   return useGlobalStore().apiVersionInfo?.app_name?.includes("SnowLuma")
 }
 
-const getGroupFileProxyUrl = (group_id, file_id, name) => {
-  return `${getApiBaseUrl()}/api/proxy_group_file?group_id=${group_id}&file_id=${encodeURIComponent(file_id)}&name=${encodeURIComponent(name)}`
+const getGroupFileProxyUrl = (group_id, file_id, name, url) => {
+  return `${getApiBaseUrl()}/api/proxy_group_file?group_id=${group_id}&file_id=${encodeURIComponent(file_id)}&name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`
 }
+
+const getPrivateFileProxyUrl = (user_id, file_id, name, url) => {
+  // 校验是否匹配 /asn.com/qqdownloadftnv5 严格路径，跨域直接返回
+  try {
+    const urlObj = new URL(url);
+    const targetPath = "/asn.com/qqdownloadftnv5";
+    const path = urlObj.pathname;
+    // 严格匹配：路径完全等于 或 路径后紧跟 ? 参数
+    const matchPath = path === targetPath || path.startsWith(`${targetPath}?`);
+
+    // 满足条件：路径匹配 + 直连模式开启，直接返回原url
+    if (matchPath && getIsDirectOnebot()) {
+      return url;
+    }
+  } catch (err) {
+    // url非法，走代理逻辑
+  }
+
+  // 不满足则返回代理地址
+  return `${getApiBaseUrl()}/api/proxy_private_file?user_id=${user_id}&file_id=${encodeURIComponent(file_id)}&name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`;
+};
+
+// ===================== 账户管理 API =====================
+
+/**
+ * 检测后端是否存活
+ */
+const fetchBackendHealth = async () => {
+  try {
+    const response = await axios.get(`${apiBaseUrl}/api/health`, { timeout: 5000 });
+    return response.data?.data?.alive === true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * 获取后端所有已连接的BOT列表
+ * @returns {Promise<Array<{self_id: string, user_id: number, nickname: string}>>}
+ */
+const fetchBackendBots = async () => {
+  try {
+    const response = await axios.get(`${apiBaseUrl}/api/bots`, { timeout: 10000 });
+    if (response.data?.code === 200) {
+      return response.data.data || [];
+    }
+    return [];
+  } catch {
+    return [];
+  }
+};
 
 export {
   fetchDisplayName,
@@ -949,8 +1024,9 @@ export {
   fetchSendFileStream,
   apiBaseUrl,
   wsUri,
-  onebotWsUri,
-  onebotWsToken,
+  getOnebotWsUri,
+  getOnebotWsToken,
+  getIsDirectOnebot,
   getGroupLogo,
   getUserLogo,
   fetchStrangerInfo,
@@ -964,9 +1040,11 @@ export {
   fetchGroupFileSysInfo,
   fetchGroupFileUrl,
   getGroupFileProxyUrl,
+  getPrivateFileProxyUrl,
   fetchAiRecordCharacters,
   fetchSendGroupAiRecord,
   fetchGroupAlbumList,
   fetchGroupAlbumMediaList,
-  isDirectOnebot,
+  fetchBackendHealth,
+  fetchBackendBots,
 }

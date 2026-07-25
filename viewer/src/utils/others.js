@@ -359,6 +359,17 @@ function triggerDownloadFile(url, name) {
   document.body.removeChild(a)
 }
 
+/**
+ * 字符串/任意值转为标准布尔
+ * "true"/"1"/"yes"/"on" → true
+ * "false"/"0"/"no"/"off"/空字符串/null/undefined → false
+ */
+function strToBool(val) {
+  if (val == null) return false;
+  const s = String(val).trim().toLowerCase();
+  return ['true', '1', 'yes', 'on'].includes(s);
+}
+
 export {
   hasMouseSupport,
   formatRelativeTime,
@@ -367,4 +378,5 @@ export {
   stringifyJSON,
   formatTimeOptions,
   triggerDownloadFile,
+  strToBool,
 }

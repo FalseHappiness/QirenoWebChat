@@ -21,6 +21,7 @@ import GroupEssenceMsgViewer from "./GroupEssenceMsgViewer.vue";
 import GroupFilesViewer from "./GroupFilesViewer.vue";
 import ColorSvg from "./utils/ColorSvg.vue";
 import GroupAlbumViewer from "./GroupAlbumViewer.vue";
+import { qqAppImg, qqIconSvg } from "../composables/base-url.js";
 
 const props = defineProps({
   activeContact: Object,
@@ -537,7 +538,7 @@ onUnmounted(() => {
 
     <div v-if="activeContact" class="border-bottom chat-area-head">
       <span class="chat-area-head-name" :class="{'text-error': isError}">
-        <img class="chat-area-go-back-btn" alt="" src="/QQ/icons/arrow_left_24.svg"
+        <img class="chat-area-go-back-btn" alt="" :src="qqIconSvg('arrow_left_24')"
              @click="() => { showContactMore ? showContactMore = false : selectContact(null) }">
         <span class="chat-area-head-display-name" @click="handleClickShowContactInfo">{{ displayName }}</span>
         <span v-if="tempSession">&nbsp;</span>
@@ -553,7 +554,7 @@ onUnmounted(() => {
         >
           <template #target>
             <img
-              alt="" src="/QQ/icons/more_24.svg"
+              alt="" :src="qqIconSvg('more_24')"
               class="chat-area-head-control-btn"
               @click="showContactMore = !showContactMore">
           </template>
@@ -583,15 +584,15 @@ onUnmounted(() => {
         群应用
         <div class="group-applications-list">
           <div @click="changeShowGroupFiles()" class="group-app-list-app-container">
-            <img alt="" src="/QQ/icons/filelook_folder_16.svg" class="group-app-icon"/>
+            <img alt="" :src="qqIconSvg('filelook_folder_16')" class="group-app-icon"/>
             群文件
           </div>
           <div @click="changeShowGroupAlbum()" class="group-app-list-app-container">
-            <ColorSvg alt="" src="/QQ/icons/image_24.svg" class="group-app-icon" style="background-color: #0099ff;"/>
+            <ColorSvg alt="" :src="qqIconSvg('image_24')" class="group-app-icon" style="background-color: #0099ff;"/>
             群相册
           </div>
           <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">
-            <img alt="" src="/QQ/app/img/essence.bbb878de5480c01292f5.svg" class="group-app-icon"/>
+            <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')" class="group-app-icon"/>
             群精华
           </div>
         </div>

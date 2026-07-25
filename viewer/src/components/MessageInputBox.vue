@@ -26,6 +26,7 @@ import { showErrorToast, showWarningToast } from "../utils/toast.js";
 import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./utils/GroupAiRecordEditor.vue";
 import { getPokeDescription } from "../utils/faces-config.js";
+import { qqAppPoke, qqIconSvg, qqSystemEmoji } from "../composables/base-url.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -122,6 +123,7 @@ export default defineComponent({
     this.handleUnmounted()
   },
   methods: {
+    qqIconSvg,
     handleUnmounted() {
       this.$refs.editor?.removeEventListener('compositionstart', this.handleCompositionStart)
       this.$refs.editor?.removeEventListener('compositionend', this.handleCompositionEnd)
@@ -666,7 +668,7 @@ export default defineComponent({
     getPokeEmojiPath(emoji_id, dynamic = false) {
       const pokeId = this.getPokeEmojiNum(emoji_id);
       if (pokeId) {
-        return `/QQ/app/poke/${pokeId}/${pokeId}${dynamic ? "_loop.webp" : ".png"}`;
+        return qqAppPoke(pokeId, pokeId + (dynamic ? "_loop.webp" : ".png"))
       }
       return null
     },
@@ -684,7 +686,7 @@ export default defineComponent({
       if (forceStatic && this.isDynamicDefaultPngEmoji(emoji_id)) {
         add = `_0`
       }
-      return `/QQ/EmojiSystermResource/${emoji_id}/png/${emoji_id}${add}.png`
+      return qqSystemEmoji(emoji_id, 'png', `${emoji_id}${add}.png`)
     },
 
     isDynamicDefaultPngEmoji(emoji_id) {
@@ -696,7 +698,7 @@ export default defineComponent({
       if (this.isPokeEmoji(emoji_id)) {
         return this.getPokeEmojiPath(emoji_id, true);
       }
-      const url = `/QQ/EmojiSystermResource/${emoji_id}/apng/${emoji_id}.png`
+      const url = qqSystemEmoji(emoji_id, 'apng', `${emoji_id}.png`)
       return this.emojiFiles.includes(url) ? url : null
     },
 
@@ -2284,9 +2286,11 @@ export default defineComponent({
       return this.isRecordLocked ? 'tabler:lock' : 'tabler:lock-open'
     },
     playSwitchIcon() {
-      return (this.isRecording && !this.isRecordPaused)
-        ? '/QQ/icons/pause_24.svg'
-        : '/QQ/icons/play_fill_24.svg'
+      return qqIconSvg(
+        (this.isRecording && !this.isRecordPaused)
+          ? 'pause_24'
+          : 'play_fill_24'
+      )
     },
     emojiGroupList() {
       const category = {
@@ -2458,7 +2462,7 @@ export default defineComponent({
                 <div class="at-group-user" v-if="item.qq === 'all'">
                   <div class="at-group-user-name">
                     <div class="at-group-all-members-icon-background">
-                      <ColorSvg class="at-group-all-members-icon" src="/QQ/icons/at_24.svg" :size="65"></ColorSvg>
+                      <ColorSvg class="at-group-all-members-icon" :src="qqIconSvg('at_24')" :size="65"></ColorSvg>
                     </div>
                     <span class="text-truncate">全体成员</span>
                   </div>
@@ -2494,7 +2498,7 @@ export default defineComponent({
         <div class="message-input-controls">
           <div class="message-input-controls-left">
             <color-svg
-              src="/QQ/icons/expression_24.svg"
+              :src="qqIconSvg('expression_24')"
               class="message-input-ctrl-icon"
               ref="expressionControl"
             ></color-svg>
@@ -2562,7 +2566,7 @@ export default defineComponent({
             </Tooltip>
 
             <color-svg
-              src="/QQ/icons/folder_24.svg"
+              :src="qqIconSvg('folder_24')"
               class="message-input-ctrl-icon"
               ref="folderControl"
               @click="handleMessageInputSelectFiles"
@@ -2574,7 +2578,7 @@ export default defineComponent({
             />
 
             <color-svg
-              src="/QQ/icons/image_24.svg"
+              :src="qqIconSvg('image_24')"
               class="message-input-ctrl-icon"
               ref="imageControl"
               @click="handleMessageInputSelectImages"
@@ -2593,7 +2597,7 @@ export default defineComponent({
             >
               <template #target>
                 <color-svg
-                  src="/QQ/icons/shake_24.svg"
+                  :src="qqIconSvg('shake_24')"
                   class="message-input-ctrl-icon"
                   ref="shakeControl"
                   @click="handleMessageInputShake()"
@@ -2602,7 +2606,7 @@ export default defineComponent({
             </Tooltip>
 
             <color-svg
-              src="/QQ/icons/microphone_on_24.svg"
+              :src="qqIconSvg('microphone_on_24')"
               class="message-input-ctrl-icon message-input-ctrl-icon-microphone"
               ref="recordPanelControl"
               @click="handleOpenRecordPanel"
@@ -2623,7 +2627,7 @@ export default defineComponent({
             >
               <template #target>
                 <color-svg
-                  src="/QQ/icons/files_24.svg"
+                  :src="qqIconSvg('files_24')"
                   class="message-input-ctrl-icon"
                   @click="handleFilesUploadTasksViewer"
                 ></color-svg>
@@ -2666,7 +2670,7 @@ export default defineComponent({
             >
               <template #target>
                 <color-svg
-                  src="/QQ/icons/folder_24.svg"
+                  :src="qqIconSvg('folder_24')"
                   class="message-input-ctrl-icon"
                   @click="handleMessageInputSelectAudios"
                 ></color-svg>
@@ -2675,10 +2679,11 @@ export default defineComponent({
             <Tooltip
               content="AI 语音"
               use-target-slot
+              v-if="isGroup"
             >
               <template #target>
                 <color-svg
-                  src="/QQ/icons/ai_label_16.svg"
+                  :src="qqIconSvg('ai_label_16')"
                   class="message-input-ctrl-icon"
                   @click="handleOpenGroupAiRecordEditor"
                 ></color-svg>
@@ -2693,7 +2698,7 @@ export default defineComponent({
             >
               <template #target>
                 <color-svg
-                  src="/QQ/icons/files_24.svg"
+                  :src="qqIconSvg('files_24')"
                   class="message-input-ctrl-icon"
                   @click="handleFilesUploadTasksViewer"
                 ></color-svg>
@@ -2715,7 +2720,7 @@ export default defineComponent({
               <Icon icon="prime:send" class="message-input-record-icon" @click.stop="handleSendRecord"/>
             </template>
             <template v-else>
-              <ColorSvg src="/QQ/icons/microphone_on_24.svg" class="message-input-record-icon"></ColorSvg>
+              <ColorSvg :src="qqIconSvg('microphone_on_24')" class="message-input-record-icon"></ColorSvg>
             </template>
           </div>
           <div class="message-input-record-play-switch message-input-record-icon-container"

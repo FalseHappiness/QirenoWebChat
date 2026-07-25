@@ -1,5 +1,6 @@
 <script>
 import { defineComponent } from 'vue'
+import { qqAppImg, qqIconSvg } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "LoadingImage",
@@ -75,6 +76,8 @@ export default defineComponent({
     this.loadImage(this.src)
   },
   methods: {
+    qqIconSvg,
+    qqAppImg,
     loadImage(src) {
       const This = this
       const imageContainer = this.$refs.imageContainer
@@ -234,11 +237,11 @@ export default defineComponent({
        :data-fallback-src="fallbackSrc || ''">
     <div v-if="loading" class="loading-image-placeholder"
          :style="{ width: placeholderWidth, height: placeholderHeight, maxHeight }">
-      <img src="/QQ/app/img/loading.png" alt="">
+      <img :src="qqAppImg('loading.png')" alt="">
     </div>
     <div v-if="failed" class="failed-image-placeholder"
          :style="{ width: placeholderWidth, height: placeholderHeight, maxHeight }">
-      <img :src="videoMode ? '/QQ/icons/video_off_24.svg' : '/QQ/app/img/qui_image_broken.png'" alt="">
+      <img :src="videoMode ? qqIconSvg('video_off_24') : qqAppImg('qui_image_broken.png')" alt="">
       <p><b>原链接: </b>{{ src }}</p>
       <p v-if="fallbackSrc"><b>后备链接: </b>{{ fallbackSrc }}</p>
     </div>

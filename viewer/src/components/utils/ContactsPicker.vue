@@ -7,6 +7,7 @@ import 'ant-design-vue/dist/reset.css';
 import CustomScrollBar from "./CustomScrollBar.vue";
 import ColorSvg from "./ColorSvg.vue";
 import { pinyin } from "pinyin-pro";
+import { qqIconSvg } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "ContactsPicker",
@@ -157,6 +158,7 @@ export default defineComponent({
     }
   },
   methods: {
+    qqIconSvg,
     getLogo(id, type) {
       return type === 'group'
         ? `https://p.qlogo.cn/gh/${id}/${id}/40`
@@ -194,7 +196,7 @@ export default defineComponent({
       <template #default>
         <div class="contacts-picker-contacts-area">
           <div class="contacts-picker-contacts-area-search">
-            <ColorSvg src="/QQ/icons/search_24.svg" class="contacts-picker-contacts-area-search-icon"/>
+            <ColorSvg :src="qqIconSvg('search_24')" class="contacts-picker-contacts-area-search-icon"/>
             <input @input="filterContactsValue = $event.target.value" placeholder="搜索"
                    class="contacts-picker-contacts-area-search-input">
           </div>
@@ -210,7 +212,7 @@ export default defineComponent({
                               style="width: 100%">
                     <template #expandIcon="{ isActive }">
                       <img
-                        src="/QQ/icons/arrow_right_small_16.svg"
+                        :src="qqIconSvg('arrow_right_small_16')"
                         alt=""
                         class="contacts-picker-expand-icon"
                         :class="{ active: isActive }"
@@ -270,7 +272,7 @@ export default defineComponent({
                   {{ contact.name }}
                 </div>
                 <div class="contacts-picker-contacts-area-contact-close-btn-background">
-                  <ColorSvg src="/QQ/icons/close_16.svg" class="contacts-picker-contacts-area-contact-close-btn"/>
+                  <ColorSvg :src="qqIconSvg('close_16')" class="contacts-picker-contacts-area-contact-close-btn"/>
                 </div>
               </div>
             </CustomScrollBar>

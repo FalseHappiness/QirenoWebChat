@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { getMultimediaProxyUrl } from "../../../utils/backend-api.js";
+import { qqAppImg } from "../../../composables/base-url.js";
 
 const props = defineProps({
   json: Object
@@ -26,7 +27,7 @@ const isLoaded = ref(false)
          class="preview-image"/>
     <hr>
     <div class="footer">
-      <img alt="" src="/QQ/app/img/qq_mini_app.ico">
+      <img alt="" :src="qqAppImg('qq_mini_app.ico')">
       <span class="text-muted">QQ小程序</span>
     </div>
   </a>

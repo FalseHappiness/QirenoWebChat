@@ -1,5 +1,6 @@
 <script>
 import { defineComponent } from 'vue'
+import { qqAppPoke } from "../../composables/base-url.js";
 
 export default defineComponent({
   name: "ShakePokeMessage",
@@ -52,6 +53,7 @@ export default defineComponent({
     }
   },
   methods: {
+    qqAppPoke,
     handleClick() {
       if (!this.isAnimating) {
         this.isAnimating = true
@@ -73,7 +75,7 @@ export default defineComponent({
          @click="handleClick"
          :style="size"
          :class="{ 'no-flipping': parseId === 5 }"
-         :src="`/QQ/app/poke/${parseId}/${parseId}.${isAnimating ? 'webp' : 'png'}`"
+         :src="qqAppPoke(parseId, `${parseId}.${isAnimating ? 'webp' : 'png'}`)"
     >
   </div>
   <div v-else>

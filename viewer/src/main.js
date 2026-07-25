@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
-// import './style.css'
 import './styles/main.css'
+import './styles/vite-env.scss'
 // import App from './Test.vue'
 import App from './App.vue'
 import { createPinia } from 'pinia';

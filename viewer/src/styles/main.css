@@ -53,3 +53,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
