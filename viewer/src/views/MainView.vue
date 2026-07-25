@@ -40,7 +40,7 @@ const lastMessageId = ref(0)
 
 // 选择联系人
 const selectContact = (contact) => {
-  if (chatArea.value?.$refs?.scroller?.initializing) return
+  // if (chatArea.value?.$refs?.scroller?.initializing) return
   // 如果已经是当前联系人
   if (activeContact.value?.contact_id === contact?.contact_id &&
     activeContact.value?.type === contact?.type) {

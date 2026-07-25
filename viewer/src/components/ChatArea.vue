@@ -22,6 +22,7 @@ import GroupFilesViewer from "./GroupFilesViewer.vue";
 import ColorSvg from "./utils/ColorSvg.vue";
 import GroupAlbumViewer from "./GroupAlbumViewer.vue";
 import { qqAppImg, qqIconSvg } from "../composables/base-url.js";
+import CustomScrollBar from "./utils/CustomScrollBar.vue";
 
 const props = defineProps({
   activeContact: Object,
@@ -46,6 +47,16 @@ const isLoading = ref(false) // 加载状态
 const isError = ref(false) // 错误状态
 // const isTempSession = ref(false)
 const showContactMore = ref(false)
+const chatAreaContactMore = ref(null)
+
+const handleChatAreaClick = e => {
+  const target = e?.target
+  if (target) {
+    if (!chatAreaContactMore.value?.$el?.contains(target)) {
+      showContactMore.value = false;
+    }
+  }
+}
 
 const getName = async () => {
   if (props.activeContact) {
@@ -490,6 +501,7 @@ watch(() => props.activeContact, (newVal, oldVal) => {
   if (newVal?.contact_id !== oldVal?.contact_id || newVal?.type !== oldVal?.type) {
     groupUsers.value = null
     showGroupNoticesViewer.value = false
+    showContactMore.value = false
     initContactInfo();
   }
 }, { deep: true })
@@ -501,7 +513,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="chat-area" :class="{ 'active-contact': activeContact }">
+  <div class="chat-area" :class="{ 'active-contact': activeContact }" @click="handleChatAreaClick">
     <GroupNoticesShower
       v-if="showGroupNoticesViewer"
       :group_id="activeContact?.contact_id"
@@ -556,14 +568,15 @@ onUnmounted(() => {
             <img
               alt="" :src="qqIconSvg('more_24')"
               class="chat-area-head-control-btn"
-              @click="showContactMore = !showContactMore">
+              @click="showContactMore = !showContactMore"
+              @click.stop>
           </template>
         </Tooltip>
       </span>
     </div>
 
-    <div v-if="isGroup" class="chat-area-contact-more"
-         :style="{ right: showContactMore ? '0' : '-100%' }">
+    <CustomScrollBar v-if="isGroup" class="chat-area-contact-more" ref="chatAreaContactMore"
+                     :style="{ right: showContactMore ? '0' : '-100%' }">
       <div class="chat-area-contact-more-area chat-area-contact-info">
         <img
           :src="`https://p.qlogo.cn/gh/${activeContact.contact_id}/${activeContact.contact_id}/100`"
@@ -630,7 +643,7 @@ onUnmounted(() => {
                type="text"
                placeholder="填写备注">
       </label>
-    </div>
+    </CustomScrollBar>
 
     <div v-if="!activeContact" class="display-flex justify-content-center align-items-center height-100">
       <div class="text-center text-muted">
@@ -804,7 +817,10 @@ onUnmounted(() => {
   z-index: 5;
   box-shadow: 0 3px 6px 0 #b6b6b68f;
   transition: right ease-in-out 0.2s;
-  padding: 18px;
+  padding: 0 18px;
+}
+
+.chat-area-contact-more:deep(.simplebar-content) {
   font-size: 15px;
   gap: 18px;
   display: flex;
