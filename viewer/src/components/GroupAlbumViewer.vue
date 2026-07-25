@@ -5,13 +5,18 @@ import { formatTimeOptions } from "../utils/others.js"
 import CustomScrollBar from "./utils/CustomScrollBar.vue"
 import SimplePopUp from "./utils/SimplePopUp.vue"
 import { qqIconSvg } from "../composables/base-url.js";
+import ColorSvg from "./utils/ColorSvg.vue";
+import { showInfoToast } from "../utils/toast.js";
 
 export default defineComponent({
   name: "GroupAlbumViewer",
-  components: { CustomScrollBar, SimplePopUp },
+  components: { ColorSvg, CustomScrollBar, SimplePopUp },
   props: {
     group_id: { type: [Number, String], required: true },
-    onClose: { type: Function, default: () => {} }
+    onClose: {
+      type: Function, default: () => {
+      }
+    }
   },
   data() {
     return {
@@ -229,7 +234,6 @@ export default defineComponent({
     },
 
     /* ========== 数据加载 ========== */
-
     async loadAlbums(loadMore = false) {
       if (loadMore) {
         if (this.loadingMoreAlbums || !this.albumsHasMore) return
@@ -286,7 +290,6 @@ export default defineComponent({
     },
 
     /* ========== 视图切换 ========== */
-
     enterAlbum(album) {
       this.saveAlbumScrollPosition()
       this.currentAlbum = album
@@ -331,6 +334,13 @@ export default defineComponent({
     nextMedia() {
       if (this.currentMediaIndex < this.mediaList.length - 1) {
         this.currentMediaIndex++
+        if (this.mediaHasMore && !this.loadingMoreMedia) {
+          if (this.currentMediaIndex + 5 >= this.mediaList.length) {
+            this.loadMedia(this.currentAlbum, true)
+          }
+        }
+      } else if (this.loadingMoreMedia) {
+        showInfoToast('加载中')
       }
     },
 
@@ -374,9 +384,8 @@ export default defineComponent({
     },
 
     /* ========== 无限滚动 ========== */
-
-    onAlbumScroll() {
-      const el = this.getScrollElement(this.$refs.albumScroller)
+    onAlbumScroll(e) {
+      const el = e?.target;
       if (!el) return
       const { scrollTop, scrollHeight, clientHeight } = el
       if (scrollHeight - scrollTop - clientHeight < 200 && this.albumsHasMore && !this.loadingMoreAlbums) {
@@ -384,8 +393,8 @@ export default defineComponent({
       }
     },
 
-    onMediaScroll() {
-      const el = this.getScrollElement(this.$refs.mediaScroller)
+    onMediaScroll(e) {
+      const el = e?.target;
       if (!el) return
       const { scrollTop, scrollHeight, clientHeight } = el
       if (scrollHeight - scrollTop - clientHeight < 200 && this.mediaHasMore && !this.loadingMoreMedia) {
@@ -393,25 +402,7 @@ export default defineComponent({
       }
     },
 
-    /** 设置滚动监听 */
-    setupAlbumScrollListener() {
-      const el = this.getScrollElement(this.$refs.albumScroller)
-      if (el && !this.albumScrollEl) {
-        this.albumScrollEl = el
-        el.addEventListener('scroll', this.onAlbumScroll, { passive: true })
-      }
-    },
-
-    setupMediaScrollListener() {
-      const el = this.getScrollElement(this.$refs.mediaScroller)
-      if (el && !this.mediaScrollEl) {
-        this.mediaScrollEl = el
-        el.addEventListener('scroll', this.onMediaScroll, { passive: true })
-      }
-    },
-
     /* ========== 其他 ========== */
-
     close() {
       this.$refs.popUp.confirm(false)
     },
@@ -435,21 +426,8 @@ export default defineComponent({
     this.loadAlbums()
     document.addEventListener('keydown', this.onKeydown)
   },
-  updated() {
-    // 每次视图更新后重新挂载滚动监听
-    this.$nextTick(() => {
-      this.setupAlbumScrollListener()
-      this.setupMediaScrollListener()
-    })
-  },
   unmounted() {
     document.removeEventListener('keydown', this.onKeydown)
-    if (this.albumScrollEl) {
-      this.albumScrollEl.removeEventListener('scroll', this.onAlbumScroll)
-    }
-    if (this.mediaScrollEl) {
-      this.mediaScrollEl.removeEventListener('scroll', this.onMediaScroll)
-    }
   }
 })
 </script>
@@ -468,7 +446,7 @@ export default defineComponent({
             <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
                  @click="close">
           </div>
-          <CustomScrollBar ref="albumScroller" class="gav-scroll">
+          <CustomScrollBar ref="albumScroller" class="gav-scroll" @scroll="onAlbumScroll">
             <div v-if="loadingAlbums && !albums.length" class="gav-loading">加载中...</div>
             <div v-else-if="!albums.length" class="gav-empty">暂无相册</div>
             <div v-else class="gav-grid">
@@ -508,7 +486,7 @@ export default defineComponent({
             <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
                  @click="close">
           </div>
-          <CustomScrollBar ref="mediaScroller" class="gav-scroll">
+          <CustomScrollBar ref="mediaScroller" class="gav-scroll" @scroll="onMediaScroll">
             <div v-if="loadingMedia && !mediaList.length" class="gav-loading">加载中...</div>
             <div v-else-if="!mediaList.length" class="gav-empty">暂无内容</div>
             <template v-else>
@@ -538,11 +516,13 @@ export default defineComponent({
         <div v-if="view === 'detail' && currentMedia" class="gav-detail-overlay"
              @click.self="goBackToMedia">
           <div class="gav-detail-header">
-            <img alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
-                 @click="goBackToMedia">
-            <span class="gav-detail-counter">{{ currentMediaIndex + 1 }} / {{ mediaList.length }}</span>
-            <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
-                 @click="close">
+            <ColorSvg alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
+                      @click="goBackToMedia"/>
+            <span class="gav-detail-counter">{{
+                currentMediaIndex + 1
+              }} / {{ currentAlbum.upload_number || mediaList.length }}</span>
+            <ColorSvg alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
+                      @click="close"/>
           </div>
 
           <div class="gav-detail-body" @click.self="goBackToMedia">
@@ -564,7 +544,7 @@ export default defineComponent({
                   @click="prevMedia">
             <img :src="qqIconSvg('arrow_left_24')" alt="">
           </button>
-          <button v-if="currentMediaIndex < mediaList.length - 1" class="gav-nav-btn gav-nav-next"
+          <button v-if="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1" class="gav-nav-btn gav-nav-next"
                   @click="nextMedia">
             <img :src="qqIconSvg('arrow_right_24')" alt="">
           </button>
@@ -597,6 +577,7 @@ export default defineComponent({
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
+  background-color: white;
 }
 
 .gav-back-btn {
@@ -607,6 +588,7 @@ export default defineComponent({
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
+  background-color: white;
 }
 
 .gav-scroll {

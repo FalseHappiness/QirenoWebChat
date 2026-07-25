@@ -8,6 +8,7 @@ export default defineComponent({
   components: {
     SimpleBar
   }
+  // 可以直接在 CustomScrollBar 事件透传 @scroll
 })
 </script>
 

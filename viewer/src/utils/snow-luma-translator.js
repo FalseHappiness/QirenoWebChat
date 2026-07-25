@@ -263,7 +263,18 @@ const convertGroupAlbumMediaListSL = data => {
   })
 
   if (!data.hasOwnProperty("next_has_more")) {
-    data.next_has_more = !!data.next_attach_info
+    data.next_has_more = false
+    if (data.next_attach_info) {
+      try {
+        const attach_info = JSON.parse(data.next_attach_info)
+        const loc = attach_info?.Loc
+        if (loc?.album_total > loc?.return_num) {
+          data.next_has_more = true;
+        }
+      } catch (e) {
+        console.log("Parse group album media attach info error:", e)
+      }
+    }
   }
 
   const media_list = [...data.media_list]
