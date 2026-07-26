@@ -13,6 +13,9 @@
 
 ---
 
+**在线 Demo：** [https://falsehappiness.github.io/QirenoWebChat/](https://falsehappiness.github.io/QirenoWebChat/) —
+可直接体验前端直连模式。
+
 ## 使用说明
 
 ### 1. 克隆项目
@@ -33,11 +36,11 @@ cd viewer
 # 安装依赖
 npm install
 
-# 构建前端（生成 dist 目录）
-npm run build
-
 # （可选）初始化 QQ 表情资源
 npm run init-emoji
+
+# 构建前端（生成 dist 目录）
+npm run build
 
 # 返回项目根目录
 cd ..
@@ -51,6 +54,16 @@ cd ..
 > npm run dev
 > ```
 > 开发服务器默认运行在 `http://localhost:51730`。
+
+可通过环境变量配置前端行为（参见 [`viewer/.env.development`](viewer/.env.development) / [
+`viewer/.env.production`](viewer/.env.production)）：
+
+| 环境变量                    | 说明                  | 开发环境默认值                            | 生产环境默认值                      |
+|-------------------------|---------------------|------------------------------------|------------------------------|
+| `VITE_API_BASE_URL`     | 后端 API 地址           | `http://127.0.0.1:58471`           | `http://sitehost`（自动替换为当前主机） |
+| `VITE_WS_URI`           | 前端 WebSocket 连接地址   | `ws://127.0.0.1:58471/ws/frontend` | `ws://sitehost/ws/frontend`  |
+| `VITE_BACKEND_DETECTOR` | 是否检测后端连接状态          | `true`                             | `true`                       |
+| `VITE_BASE`             | 前端部署基础路径（需以 `/` 结尾） | `/`                                | `/`                          |
 
 ### 3. 安装 Python 依赖并启动后端
 
@@ -68,16 +81,20 @@ python app.py
 
 可通过环境变量配置（参见 [`config.py`](config.py:5)）：
 
-| 环境变量                           | 说明                        | 默认值           |
-|--------------------------------|---------------------------|---------------|
-| `WEB_HOST`                     | 监听地址                      | `0.0.0.0`     |
-| `WEB_PORT`                     | 监听端口                      | `58471`       |
-| `ONEBOT_WS_TOKEN`              | NapCat / SnowLuma WebSocket 认证 Token | 无（不鉴权）        |
-| `DATABASE_FILE`                | SQLite 数据库文件路径            | `messages.db` |
-| `DOCKER_NAPCAT_NAME`           | NapCatQQ Docker 容器名       | 无             |
-| `DOCKER_NAPCAT_QQ_DATA_VOLUME` | NapCatQQ 容器数据卷路径          | 无             |
+| 环境变量              | 说明                                   | 默认值           |
+|-------------------|--------------------------------------|---------------|
+| `WEB_HOST`        | 监听地址                                 | `0.0.0.0`     |
+| `WEB_PORT`        | 监听端口                                 | `58471`       |
+| `ONEBOT_WS_TOKEN` | NapCat / SnowLuma WebSocket 认证 Token | 无（不鉴权）        |
+| `DATABASE_FILE`   | SQLite 数据库文件路径                       | `messages.db` |
 
 ### 4. 配置消息源：NapCatQQ 或 SnowLuma
+
+项目提供 **两种连接模式**，可根据需要选择：
+
+---
+
+### 模式一：后端模式（通过 Python 后端中转）
 
 使用浏览器打开后端地址，例如 `http://127.0.0.1:58471`，即可访问聊天面板。
 
@@ -113,6 +130,33 @@ OneBot connected: 1234567890
 
 ---
 
+### 模式二：前端直连模式（无需 Python 后端）
+
+如果不想启动 Python 后端，或者希望前端直接与 NapCatQQ / SnowLuma 通信，可以使用 **前端直连模式**。
+
+前端直连模式下，前端浏览器直接通过 WebSocket 连接到 NapCatQQ 或 SnowLuma 的 **OneBot WS 服务器**，消息处理和存储完全在浏览器本地完成（基于
+IndexedDB）。
+
+> **在线 Demo：** [https://falsehappiness.github.io/QirenoWebChat/](https://falsehappiness.github.io/QirenoWebChat/) —
+> 可直接体验前端直连模式。
+>
+> **适用场景：** 仅需查看消息、不依赖后端持久化存储的场景。部分需要后端中转的功能（如文件代理下载）将不可用。
+
+#### 配置步骤
+
+1. 在 NapCatQQ WebUI 或 SnowLuma WebUI 中**开启 WS 服务器**（而非反向 WS 客户端），消息格式为 数组/array，开启上报自身消息，SnowLuma
+   角色选择 Universal，记下监听地址和端口（默认 NapCatQQ 为 `ws://0.0.0.0:3001`）。
+2. 打开前端页面（例如 `http://127.0.0.1:51730` 开发服务器或直接访问构建后的 Demo）。
+3. 在账号选择页面中，点击 **"前端直连 OneBot"** 区域的 **+** 按钮。
+4. 填写 NapCatQQ / SnowLuma 的 WS 服务器地址，例如 `ws://127.0.0.1:3001`（如需 Token 则填写访问令牌）。
+5. 点击 **"连接"** 即可开始使用。
+
+> **注意：**
+> - 如果前端运行在 HTTPS 安全上下文中，则必须使用 **WSS** 加密连接或本地回环地址。
+> - 直连模式下，连接信息会保存在浏览器 `localStorage` 中，关闭页面后重开可自动重连。
+
+---
+
 ## 项目结构
 
 ```
@@ -137,10 +181,10 @@ OneBot connected: 1234567890
 
 - **后端**: Python FastAPI + Uvicorn
 - **前端**: Vue 3 + Vite + Pinia
-- **数据库**: SQLite
+- **数据库**: 后端模式 SQLite (前端直连模式: IndexedDB)
 - **消息协议**: OneBot 11 (WebSocket)
-- **主要消息源**: NapCatQQ（推荐）
-- **附加消息源**: SnowLuma（轻量替代）
+- **主要消息源**: NapCatQQ (推荐)
+- **附加消息源**: SnowLuma (轻量替代)
 
 ---
 
@@ -160,7 +204,8 @@ OneBot connected: 1234567890
 ## 关于项目性质与使用范围
 
 - 本项目是一个 **基于 OneBot 11 协议** 的网页聊天面板，**并非腾讯 QQ 的官方网页版**，也与腾讯公司无任何关联。
-- 本项目通过 NapCatQQ 或 SnowLuma 等 OneBot 兼容框架提供的 WebSocket 接口接收和展示消息，这些框架本身是第三方非官方的 QQ 机器人实现。
+- 本项目通过 NapCatQQ 或 SnowLuma 等 OneBot 兼容框架提供的 WebSocket 接口接收和展示消息，这些框架本身是第三方非官方的 QQ
+  机器人实现。
 - 使用本项目意味着您理解并接受：**您正在使用第三方工具与 QQ 服务进行交互，而非腾讯官方提供的客户端或接口。**
 - **本项目仅限个人学习与开发测试使用**，**严禁用于任何商业目的**，**请勿在公开平台或群组中大量分享、传播本项目或其衍生版本
   **。
@@ -168,10 +213,12 @@ OneBot connected: 1234567890
 
 ## 关于界面与图标资源
 
-- 项目前端界面目前参考了 QQ 的视觉风格，并临时使用了部分 QQ 的图标/表情资源。
-- 这些资源的所有权归属于腾讯公司或其相关权利人，**本项目仅作个人学习与开发测试之用**，不主张任何权利，也不用于商业目的。
+- 项目前端界面目前参考了 QQ 的视觉风格，并使用了部分 QQ 的图标/表情/字体/动画资源。
+- 项目中所有命名为 `[QQ]` 的目录（包括 `viewer/public/QQ/` 和 `viewer/src/QQ/` 下的所有内容）均为 **QQ 所有资源**
+  ，其所有权归属于腾讯公司或其相关权利人，**本项目仅作个人学习与开发测试之用**，不主张任何权利，也不用于商业目的。
+- 标记为 `[.modify]` 的文件（如 `nav_setting_normal_16.modify_fill.svg`）是在原版 QQ 资源基础上**经过修改**后使用的。
 - 若您认为资源使用不当，请联系我们，我们会尽快替换或移除。
-- 在未来，将会重写 UI 并替换第三方图标。
+- 在未来，将会重写 UI 并替换第三方资源。
 
 ## 关于数据存储与安全
 
@@ -184,7 +231,8 @@ OneBot connected: 1234567890
 
 ## 关于 NapCatQQ / SnowLuma 与腾讯风控
 
-- 本项目通过 NapCatQQ 或 SnowLuma 等第三方接口与 QQ 服务交互，这些接口为第三方非官方实现，**存在被腾讯封禁、限制或终止服务的风险**。
+- 本项目通过 NapCatQQ 或 SnowLuma 等第三方接口与 QQ 服务交互，这些接口为第三方非官方实现，**存在被腾讯封禁、限制或终止服务的风险
+  **。
 - 使用本项目的 QQ 账号、设备可能面临**风控处罚（如限制登录、功能禁用、甚至永久封号等）**，请自行评估风险并承担后果。
 - 开发者**不对任何账号封禁、功能限制或其他腾讯处罚措施负责**，亦不提供任何绕过风控的保证。
 - 建议使用**小号或测试账号**进行体验，切勿使用主账号或包含重要信息的账号。
