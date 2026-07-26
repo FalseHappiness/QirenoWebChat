@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import RecentContactItem from './RecentContactItem.vue'
+import ContactsViewCategories from './ContactsViewCategories.vue'
 import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
 import VirtualScroller from "./Utils/VirtualScroller.vue";
 import { fetchSetLongNick, getUserLogo } from "../scripts/backend-api.js";
@@ -125,8 +126,15 @@ onMounted(() => {
         暂无最近会话
       </div>
     </template>
-    <template v-else-if="isContactNavView"></template>
-    <template v-else-if="isSettingsNavView"></template>
+    <template v-else-if="isContactNavView">
+      <div class="contacts-view-top-side" v-if="false">
+        联系人
+      </div>
+      <ContactsViewCategories @select="selectContact" class="contacts-view-categories"/>
+    </template>
+    <template v-else-if="isSettingsNavView">
+      <div class="settings-view"></div>
+    </template>
     <div class="navigation-bar">
       <div class="nav-function-button nav-function-message flex-center-children"
            @click="changeNavView(navKey.MESSAGE)"
@@ -263,6 +271,11 @@ onMounted(() => {
 
 .nav-function-button.active:deep(.icon-new) {
   color: #0099ff !important;
+}
+
+.contacts-view-categories {
+  flex: 1;
+  overflow: hidden;
 }
 </style>
 
