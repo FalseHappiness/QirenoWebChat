@@ -361,9 +361,14 @@ class Database:
                           SELECT CASE
                                      WHEN post_type = 'notice' THEN user_id
                                      ELSE target_id
-                                     END                                  AS contact_id,
-                                 'private'                                AS type,
-                                 json_extract(event, '$.sender.nickname') AS name,
+                                     END   AS contact_id,
+                                 'private' AS type,
+                                 -- 新增条件判断
+                                 CASE
+                                     WHEN json_extract(event, '$.sender.user_id') = contact_id
+                                         THEN json_extract(event, '$.sender.nickname')
+                                     ELSE NULL
+                                     END   AS name,
                                  created_at,
                           time
                          , event
@@ -379,8 +384,7 @@ class Database:
                           (target_id IS NOT NULL
                         AND target_id != 0
                         AND sub_type = 'friend'
-                        AND
-                          post_type IN ('message'
+                        AND post_type IN ('message'
                           , 'message_sent'))
                          OR
                       -- 私聊戳一戳通知
@@ -388,8 +392,7 @@ class Database:
                         AND user_id != 0
                         AND group_id IS NULL
                         AND sub_type = 'poke'
-                        AND
-                          notice_type = 'notify'
+                        AND notice_type = 'notify'
                         AND post_type = 'notice')
                           )
 
@@ -445,7 +448,7 @@ class Database:
                           rn = 1
                         AND contact_id IS NOT NULL
                         AND contact_id != 0
-                    -- 和前端/后端排序逻辑统一：优先数字时间戳
+                      -- 和前端/后端排序逻辑统一：优先数字时间戳
                       ORDER BY last_timestamp DESC, last_time DESC;
                       ''')
             rows = c.fetchall()  # 获取所有行数据

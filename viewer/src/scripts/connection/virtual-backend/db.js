@@ -23,7 +23,7 @@ class VirtualDB extends Dexie {
      * @returns {Promise<number>} 消息自增ID
      */
     this.saveMessage = async (messageData) => {
-      const id = await this.messages.add({
+      return await this.messages.add({
         message_id: messageData.message_id ?? null,
         real_seq: messageData.real_seq ?? null,
         time: messageData.time ?? Math.floor(Date.now() / 1000),
@@ -40,7 +40,6 @@ class VirtualDB extends Dexie {
         event: messageData.event ?? null,
         created_at: messageData.created_at ?? new Date().toISOString(),
       });
-      return id;
     };
 
     /**
@@ -203,7 +202,7 @@ class VirtualDB extends Dexie {
         if (targetId && targetId !== 0 && subType === 'friend' &&
           (postType === 'message' || postType === 'message_sent')) {
           const key = `private_${targetId}`;
-          const currName = event?.sender?.nickname ?? null;
+          const currName = (event?.sender?.user_id === targetId ? event?.sender?.nickname : null) ?? null;
           // 按时间戳判断，时间更大才覆盖
           if (!privateMap.has(key) || privateMap.get(key).last_timestamp < ts) {
             privateMap.set(key, {
@@ -221,12 +220,11 @@ class VirtualDB extends Dexie {
         if (userId && userId !== 0 && !groupId && subType === 'poke' &&
           noticeType === 'notify' && postType === 'notice') {
           const key = `private_${userId}`;
-          const currName = event?.sender?.nickname ?? null;
           if (!privateMap.has(key) || privateMap.get(key).last_timestamp < ts) {
             privateMap.set(key, {
               contact_id: userId,
               type: 'private',
-              name: currName, // 不再固定null，和SQL对齐
+              name: null,
               last_time: msg.created_at,
               last_timestamp: ts,
               latest_msg: msg.event,
