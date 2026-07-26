@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, nextTick, watch, onMounted, toRaw, provide, onUnmounted } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, provide, onUnmounted } from 'vue'
 import MessageItem from './MessageItem/MessageItem.vue'
 import {
   fetchDisplayName,

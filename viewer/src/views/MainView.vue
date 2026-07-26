@@ -1,15 +1,23 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount, provide } from 'vue'
 import { ConnectionBridge } from '../scripts/connection/connection-bridge.js'
 import { ConnectionBridgeOnebot } from "../scripts/connection/virtual-backend/connection-bridge-onebot.js";
 import LeftView from '../components/LeftView.vue'
 import ChatArea from '../components/ChatArea.vue'
 import {
-  fetchContacts,
-  fetchEssenceMessages, fetchLoginInfo,
-  fetchMessages, fetchSetGroupRemark, fetchSetLongNick, fetchStrangerInfo,
+  fetchEssenceMessages,
+  fetchLoginInfo,
+  fetchMessages,
+  fetchSetGroupRemark,
+  fetchSetLongNick,
+  fetchStrangerInfo,
   getFriendsDisplayName,
-  getGroupUsersDisplayName, getOnebotWsToken, getOnebotWsUri, setGroupNameCache, wsUri, apiBaseUrl
+  getGroupUsersDisplayName,
+  getOnebotWsToken,
+  getOnebotWsUri,
+  setGroupNameCache,
+  wsUri,
+  fetchCategorizedContacts
 } from "../scripts/backend-api.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
@@ -28,11 +36,17 @@ const props = defineProps({
 
 const emit = defineEmits(['disconnect'])
 
-const contacts = ref([])
+const categorizedContacts = ref([])
 const loadingContacts = ref(false)
 const activeContact = ref(null)
 const chatArea = ref(null)
 const wsInited = ref(false);
+
+const recentContacts = () => {
+  return categorizedContacts.value.find?.(c => c.id === -100)?.contacts || []
+}
+
+provide("categorizedContacts", categorizedContacts)
 
 // bridge实例，onMounted内部初始化
 let bridge = null
@@ -65,7 +79,7 @@ const changeGroupContactRemark = async (contact_id, remark) => {
     remark
   );
   if (result.status === 'ok') {
-    for (const contact of contacts.value) {
+    for (const contact of recentContacts()) {
       if (contact.contact_id === contact_id) {
         contact.remark = remark;
         contact.name = remark || contact.real_name
@@ -110,11 +124,10 @@ watch(wsInited, newVal => {
 const getContacts = async () => {
   loadingContacts.value = true
   try {
-    contacts.value = await fetchContacts()
-
-    // console.log(contacts)
+    categorizedContacts.value = await fetchCategorizedContacts()
+    // console.log(categorizedContacts)
   } catch (error) {
-    console.error('Failed to fetch contacts:', error)
+    console.error('Failed to fetch categorizedContacts:', error)
   } finally {
     loadingContacts.value = false
   }
@@ -364,13 +377,13 @@ onMounted(() => {
     onNewContact: (newContact) => {
       // 检查是否已存在该联系人
       const findTarget = () => {
-        return contacts.value.find((c) => c.contact_id === newContact.contact_id && c.type === newContact.type)
+        return recentContacts().find((c) => c.contact_id === newContact.contact_id && c.type === newContact.type)
       }
       let target = findTarget()
 
       if (!target) {
         // 构造新联系人对象
-        contacts.value.unshift({
+        recentContacts().unshift({
           contact_id: newContact.contact_id,
           type: newContact.type,
         })
@@ -430,7 +443,7 @@ onUnmounted(destroy)
   <div class="main-view">
     <div class="chat-container" v-if="wsInited">
       <LeftView
-        :contacts="contacts"
+        :categorizedContacts="categorizedContacts"
         :active-contact="activeContact"
         :loading="loadingContacts"
         @select="selectContact"

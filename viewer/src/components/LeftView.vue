@@ -10,7 +10,7 @@ import { Emitter } from "../composables/useEventBus.js";
 import QMaskIcon from "./Utils/QMaskIcon.vue";
 
 const props = defineProps({
-  contacts: Array,
+  categorizedContacts: Array,
   activeContact: Object,
   loading: Boolean,
   selfInfo: Object
@@ -18,9 +18,13 @@ const props = defineProps({
 
 const emit = defineEmits(['select', 'change-self-long-nick', 'disconnect'])
 
+const recentContacts = computed(() => {
+  return props.categorizedContacts?.find?.(category => category.id === -100).contacts || []
+})
+
 // 按最后联系时间排序
-const sortedContacts = computed(() => {
-  return props.contacts.sort((a, b) => {
+const sortedRecentContacts = computed(() => {
+  return recentContacts.value.sort((a, b) => {
     // 兜底，无时间戳给0
     const tsA = a.last_timestamp ?? 0
     const tsB = b.last_timestamp ?? 0
@@ -111,8 +115,8 @@ onMounted(() => {
       </div>
       <div v-if="loading" class="text-center flex-1">加载中...</div>
       <VirtualScroller :item-height="60"
-                       :items="sortedContacts"
-                       v-else-if="sortedContacts?.length"
+                       :items="sortedRecentContacts"
+                       v-else-if="sortedRecentContacts?.length"
                        class="recent-contacts-list">
         <template #default="{ item: contact }">
           <RecentContactItem
@@ -131,7 +135,11 @@ onMounted(() => {
       <div class="contacts-view-top-side" v-if="false">
         联系人
       </div>
-      <ContactsViewCategories @select="selectContact" class="contacts-view-categories"/>
+      <ContactsViewCategories
+        @select="selectContact"
+        :loading="loading"
+        :categorizedContacts="categorizedContacts"
+        class="contacts-view-categories"/>
     </template>
     <template v-else-if="isSettingsNavView">
       <SettingsView

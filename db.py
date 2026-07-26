@@ -354,56 +354,59 @@ class Database:
         with self._get_connection() as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
-            # 获取所有联系人（群组和私聊）以及最大最小消息ID
+            # 获取所有联系人（群组和私聊）
             c.execute('''
                       WITH all_raw AS (
                           -- 私聊原始消息
-                          SELECT CASE
-                                     WHEN post_type = 'notice' THEN user_id
-                                     ELSE target_id
-                                     END   AS contact_id,
+                          SELECT sub.contact_id,
                                  'private' AS type,
-                                 -- 新增条件判断
                                  CASE
-                                     WHEN json_extract(event, '$.sender.user_id') = contact_id
-                                         THEN json_extract(event, '$.sender.nickname')
+                                     WHEN json_extract(sub.event, '$.sender.user_id') = sub.contact_id
+                                         THEN json_extract(sub.event, '$.sender.nickname')
                                      ELSE NULL
                                      END   AS name,
+                                 sub.created_at,
+                                 sub.time,
+                                 sub.event,
+                                 ROW_NUMBER() OVER (
+            PARTITION BY sub.contact_id, 'private'
+            ORDER BY sub.time DESC
+        ) AS rn
+                          FROM (SELECT CASE
+                                           WHEN post_type = 'notice' THEN user_id
+                                           ELSE target_id
+                                           END AS contact_id,
+                                       created_at, time, event
+                                FROM messages
+                                WHERE (
+                                -- 普通私聊消息
+                                    (target_id IS NOT NULL
+                                  AND target_id != 0
+                                  AND sub_type = 'friend'
+                                  AND post_type IN ('message'
+                                    , 'message_sent'))
+                                   OR
+                                -- 私聊戳一戳通知
+                                    (user_id IS NOT NULL
+                                  AND user_id != 0
+                                  AND group_id IS NULL
+                                  AND sub_type = 'poke'
+                                  AND notice_type = 'notify'
+                                  AND post_type = 'notice')
+                                    )) AS sub
+
+                          UNION ALL
+
+                          -- 群聊原始消息（无修改，保持原样）
+                          SELECT group_id                            AS contact_id,
+                                 'group'                             AS type,
+                                 json_extract(event, '$.group_name') AS name,
                                  created_at,
                           time
                          , event
                          , ROW_NUMBER() OVER (
-                          PARTITION BY
-                          CASE WHEN post_type = 'notice' THEN user_id ELSE target_id END
-                         , 'private'
-                          ORDER BY time DESC
-                          ) AS rn
-                      FROM messages
-                      WHERE (
-                      -- 普通私聊消息
-                          (target_id IS NOT NULL
-                        AND target_id != 0
-                        AND sub_type = 'friend'
-                        AND post_type IN ('message'
-                          , 'message_sent'))
-                         OR
-                      -- 私聊戳一戳通知
-                          (user_id IS NOT NULL
-                        AND user_id != 0
-                        AND group_id IS NULL
-                        AND sub_type = 'poke'
-                        AND notice_type = 'notify'
-                        AND post_type = 'notice')
-                          )
-
-                      UNION ALL
-
-                      -- 群聊原始消息
-                      SELECT group_id                            AS contact_id,
-                             'group'                             AS type,
-                             json_extract(event, '$.group_name') AS name,
-                             created_at, time, event, ROW_NUMBER() OVER (
-                          PARTITION BY group_id, 'group'
+                          PARTITION BY group_id
+                         , 'group'
                           ORDER BY time DESC
                           ) AS rn
                       FROM messages
@@ -412,15 +415,13 @@ class Database:
                           (group_id IS NOT NULL
                         AND group_id != 0
                         AND sub_type = 'normal'
-                        AND
-                          post_type IN ('message'
+                        AND post_type IN ('message'
                           , 'message_sent'))
                          OR
                       -- 群通知
                           (group_id IS NOT NULL
                         AND group_id != 0
-                        AND
-                          sub_type IN ('poke'
+                        AND sub_type IN ('poke'
                           , 'add'
                           , 'ban'
                           , 'lift_ban'
@@ -428,15 +429,13 @@ class Database:
                           , 'invite'
                           , 'kick_me'
                           , 'remove')
-                        AND
-                          notice_type IN ('notify'
+                        AND notice_type IN ('notify'
                           , 'essence'
                           , 'group_ban'
                           , 'group_increase'
                           , 'group_decrease'
                           , 'group_msg_emoji_like')
-                        AND
-                          post_type = 'notice')
+                        AND post_type = 'notice')
                           )
                           )
                       SELECT contact_id,
@@ -448,7 +447,6 @@ class Database:
                           rn = 1
                         AND contact_id IS NOT NULL
                         AND contact_id != 0
-                      -- 和前端/后端排序逻辑统一：优先数字时间戳
                       ORDER BY last_timestamp DESC, last_time DESC;
                       ''')
             rows = c.fetchall()  # 获取所有行数据

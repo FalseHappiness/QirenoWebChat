@@ -1,13 +1,12 @@
 <script>
 import { defineComponent } from 'vue'
 import SimplePopUp from "../Utils/SimplePopUp.vue";
-import { fetchCategoricalFriends, fetchContacts, fetchGroupList } from "../../scripts/backend-api.js";
 import { Collapse, CollapsePanel, Checkbox, CheckboxGroup } from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css';
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
 import ColorSvg from "../Utils/ColorSvg.vue";
-import { pinyin } from "pinyin-pro";
 import { qqIconSvg } from "../../composables/useBase.js";
+import { filterSearchContacts, flattenCategorizedContacts } from "../../scripts/contacts-util.js";
 
 export default defineComponent({
   name: "ContactsPicker",
@@ -20,11 +19,9 @@ export default defineComponent({
     ACheckbox: Checkbox,
     ACheckboxGroup: CheckboxGroup,
   },
+  inject: ["categorizedContacts"],
   data() {
     return {
-      categoricalFriends: [],
-      groups: [],
-      recentContacts: [],
       collapseActiveKeys: [-100],
       selectedContactsKeys: [],
       filterContactsValue: ""
@@ -41,119 +38,14 @@ export default defineComponent({
     },
   },
   computed: {
-    categorizedContacts() {
-      const categories = []
-      if (this.recentContacts?.length) {
-        const contacts = []
-        for (const contact of this.recentContacts) {
-          contacts.push({
-            type: contact.type,
-            id: contact.contact_id,
-            name: contact.name,
-            real_name: contact.real_name || contact.name,
-            remark: contact.remark || ""
-          })
-        }
-        categories.push({
-          name: '最近聊天',
-          contacts,
-          id: -100
-        })
-      }
-      if (this.categoricalFriends?.length) {
-        for (const category of this.categoricalFriends) {
-          const contacts = []
-          for (const contact of category.buddyList) {
-            contacts.push({
-              id: contact.user_id,
-              name: contact.remark || contact.nickname,
-              type: 'private',
-              real_name: contact.nickname,
-              remark: contact.remark
-            })
-          }
-          categories.push({
-            name: category.categoryName,
-            id: category.categoryId,
-            contacts
-          })
-        }
-      }
-      if (this.groups?.length) {
-        const contacts = []
-        for (const contact of this.groups) {
-          contacts.push({
-            name: contact.group_remark || contact.group_name,
-            id: contact.group_id,
-            type: 'group',
-            real_name: contact.group_name,
-            remark: contact.group_remark
-          })
-        }
-        categories.push({
-          name: '群聊',
-          id: -200,
-          contacts
-        })
-      }
-      return categories
-    },
     selectedContacts() {
       return this.selectedContactsKeys.map(key => this.getContact(key)).filter(contact => contact)
     },
     flattenContacts() {
-      // 使用 Map 来存储唯一联系人，键为 type + id 的组合
-      const uniqueContactsMap = new Map();
-
-      // 扁平化并去重
-      (this.categorizedContacts || []).forEach(category => {
-        (category.contacts || []).forEach(contact => {
-          if (contact && contact.type && contact.id) {
-            const key = `${contact.type}.${contact.id}`;
-            if (!uniqueContactsMap.has(key)) {
-              uniqueContactsMap.set(key, contact);
-            }
-          }
-        });
-      });
-
-      // 返回去重后的联系人数组
-      return Array.from(uniqueContactsMap.values());
+      return flattenCategorizedContacts(this.categorizedContacts)
     },
     filteredContacts() {
-      const searchText = this.filterContactsValue.toLowerCase();
-      if (!searchText) {
-        return undefined
-      }
-
-      // 分类匹配结果
-      const directMatches = [];
-      const pinyinMatches = [];
-      const idMatches = [];
-
-      this.flattenContacts.forEach(contact => {
-        // 直接匹配 name
-        if (contact.real_name.toLowerCase().includes(searchText) || contact.remark.toLowerCase().includes(searchText)) {
-          directMatches.push(contact);
-          return;
-        }
-
-        // 拼音匹配
-        const namePinyin = pinyin(contact.name, { toneType: "none", type: "array" }).join('').toLowerCase();
-        const remarkPinyin = pinyin(contact.name, { toneType: "none", type: "array" }).join('').toLowerCase();
-        if (namePinyin.includes(searchText) || remarkPinyin.includes(searchText)) {
-          pinyinMatches.push(contact);
-          return;
-        }
-
-        // QQ号匹配
-        if (String(contact.id).includes(searchText)) {
-          idMatches.push(contact);
-        }
-      });
-
-      // 合并结果，按优先级排序
-      return [...directMatches, ...pinyinMatches, ...idMatches];
+      return filterSearchContacts(this.filterContactsValue.toLowerCase(), this.flattenContacts)
     }
   },
   methods: {
@@ -167,20 +59,13 @@ export default defineComponent({
       if (!type) {
         [type, id] = id.split('.')
       }
-      return this.flattenContacts.find(contact => contact && String(contact.id) === id && contact.type === type)
+      return this.flattenContacts.find(contact => contact && String(contact.contact_id) === id && contact.type === type)
     },
     confirm(confirm) {
-      this.$refs.popUp.confirm(confirm, this.selectedContacts.map(contact => {
-        return { ...contact, contact_id: contact.id }
-      }))
+      this.$refs.popUp.confirm(confirm, this.selectedContacts)
     }
   },
-  async mounted() {
-    await Promise.all([
-      fetchCategoricalFriends().then(r => this.categoricalFriends = r),
-      fetchGroupList().then(r => this.groups = r),
-      fetchContacts().then(r => this.recentContacts = r)
-    ]);
+  mounted() {
     // console.log(this.categorizedContacts)
   },
 })
@@ -201,7 +86,7 @@ export default defineComponent({
           </div>
           <div class="contacts-picker-contacts-area-contacts">
             <CustomScrollBar>
-              <a-checkbox-group v-model:value="selectedContactsKeys" style="width: 100%;">
+              <a-checkbox-group v-model:value="selectedContactsKeys" class="width-100">
                 <a-collapse v-if="filteredContacts === undefined"
                             ghost
                             v-model:activeKey="collapseActiveKeys"
@@ -221,10 +106,10 @@ export default defineComponent({
                     :header="category.name">
                     <a-checkbox
                       v-for="contact in category.contacts"
-                      :value="`${contact.type}.${contact.id}`"
+                      :value="`${contact.type}.${contact.contact_id}`"
                       class="contacts-picker-contacts-area-contact">
                       <img class="contacts-picker-contacts-area-contact-logo" alt=""
-                           :src="getLogo(contact.id, contact.type)"
+                           :src="getLogo(contact.contact_id, contact.type)"
                            loading="lazy">
                       {{ contact.name }}
                     </a-checkbox>
@@ -234,10 +119,10 @@ export default defineComponent({
                   <a-checkbox
                     v-if="filteredContacts.length"
                     v-for="contact in filteredContacts"
-                    :value="`${contact.type}.${contact.id}`"
+                    :value="`${contact.type}.${contact.contact_id}`"
                     class="contacts-picker-contacts-area-contact">
                     <img class="contacts-picker-contacts-area-contact-logo" alt=""
-                         :src="getLogo(contact.id, contact.type)"
+                         :src="getLogo(contact.contact_id, contact.type)"
                          loading="lazy">
                     {{ contact.name }}
                   </a-checkbox>
@@ -259,10 +144,10 @@ export default defineComponent({
               <div
                 v-for="contact in selectedContacts"
                 class="contacts-picker-contacts-area-contact"
-                @click="selectedContactsKeys = selectedContactsKeys.filter(key => key !== `${contact.type}.${contact.id}`)">
+                @click="selectedContactsKeys = selectedContactsKeys.filter(key => key !== `${contact.type}.${contact.contact_id}`)">
                 <div class="contacts-picker-contacts-area-contact-left">
                   <img class="contacts-picker-contacts-area-contact-logo" alt=""
-                       :src="getLogo(contact.id, contact.type)"
+                       :src="getLogo(contact.contact_id, contact.type)"
                        loading="lazy">
                   {{ contact.name }}
                 </div>

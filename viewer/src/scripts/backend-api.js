@@ -617,6 +617,111 @@ const fetchSendGroupAiRecord = async (group_id, character, text) => {
   return await fetchAction("send_group_ai_record", { group_id, character, text })
 }
 
+/**
+ * 拉取并组装完整联系人分类数据（纯函数，返回普通数组，无响应式）
+ * @returns {Promise<Array>} categorizedContacts 分组的联系人列表
+ */
+async function fetchCategorizedContacts() {
+  // 1. 异步请求三组原始数据
+  const [categoricalFriendsRaw, groupsRaw, recentContactsRaw] = await Promise.all([
+    fetchCategoricalFriends(),
+    fetchGroupList(),
+    fetchContacts()
+  ])
+
+  const categories = []
+  const friendGroupMap = new Map()
+
+  // 填充好友映射
+  if (categoricalFriendsRaw?.length) {
+    for (const category of categoricalFriendsRaw) {
+      for (const contact of category.buddyList) {
+        const key = `private-${contact.user_id}`
+        friendGroupMap.set(key, {
+          name: contact.remark || contact.nickname,
+          real_name: contact.nickname,
+          remark: contact.remark
+        })
+      }
+    }
+  }
+
+  // 填充群聊映射
+  if (groupsRaw?.length) {
+    for (const contact of groupsRaw) {
+      const key = `group-${contact.group_id}`
+      friendGroupMap.set(key, {
+        name: contact.group_remark || contact.group_name,
+        real_name: contact.group_name,
+        remark: contact.group_remark
+      })
+    }
+  }
+
+  // 组装最近聊天（覆盖name/real_name逻辑不变）
+  if (recentContactsRaw?.length) {
+    const contacts = []
+    for (const contact of recentContactsRaw) {
+      const key = `${contact.type}-${contact.contact_id}`
+      const source = friendGroupMap.get(key)
+      contacts.push({
+        ...contact,
+        name: source ? source.name : contact.name,
+        real_name: source ? source.real_name : undefined,
+        remark: source ? source.remark : undefined,
+      })
+    }
+    categories.push({
+      name: '最近聊天',
+      contacts,
+      id: -100
+    })
+  }
+
+  // 组装好友分组
+  if (categoricalFriendsRaw?.length) {
+    for (const category of categoricalFriendsRaw) {
+      const contacts = []
+      for (const contact of category.buddyList) {
+        contacts.push({
+          contact_id: contact.user_id,
+          name: contact.remark || contact.nickname,
+          type: 'private',
+          real_name: contact.nickname,
+          remark: contact.remark
+        })
+      }
+      categories.push({
+        name: category.categoryName,
+        id: category.categoryId,
+        contacts
+      })
+    }
+  }
+
+  // 组装群聊
+  if (groupsRaw?.length) {
+    const contacts = []
+    for (const contact of groupsRaw) {
+      contacts.push({
+        name: contact.group_remark || contact.group_name,
+        contact_id: contact.group_id,
+        type: 'group',
+        real_name: contact.group_name,
+        remark: contact.group_remark
+      })
+    }
+    categories.push({
+      name: '群聊',
+      id: -200,
+      contacts
+    })
+  }
+
+  // 返回纯普通数组，无ref/computed响应式包装
+  return categories
+}
+
 const isObject = (variable) => {
   return typeof variable === 'object' && !Array.isArray(variable);
 };
@@ -892,27 +997,6 @@ const setGroupUserNameCache = (group_id, user_id, name) => {
 }
 
 const fetchContacts = async () => {
-  /*
-  const recentContacts = convertContactsSL(await fetchBackendData("contacts"))
-  if (!isSnowLuma()) {
-    return recentContacts
-  }
-  const friends = await fetchFriendList() || []
-  const groups = await fetchGroupList() || [];
-  for (const contact of [
-    ...friends.map(friend => ({
-      contact_id: friend.user_id, name: friend.nickname, real_name: friend.nickname, type: 'private'
-    })),
-    ...groups.map(group => ({
-      contact_id: group.group_id, name: group.group_name, real_name: group.group_name, type: 'group'
-    }))
-  ]) {
-    if (!recentContacts.find(c => c.contact_id === contact.contact_id && c.type === contact.type)) {
-      recentContacts.push(contact)
-    }
-  }
-  return recentContacts
-  */
   return convertContactsSL(await fetchBackendData("contacts"))
 }
 
@@ -1081,4 +1165,5 @@ export {
   fetchBackendHealth,
   fetchBackendBots,
   isSnowLuma,
+  fetchCategorizedContacts,
 }
