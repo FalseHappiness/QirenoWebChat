@@ -290,7 +290,7 @@ export default defineComponent({
   border: 1px solid #ebebeb;
 }
 
-.essence-msg-viewer-item-content:deep(.message-emoji-png, .msg-preview-emoji, .msg-preview-emoji) {
+.essence-msg-viewer-item-content:deep(.message-emoji-png), .essence-msg-viewer-item-content:deep(.msg-preview-emoji) {
   height: 17px;
   position: relative;
   top: -2px;

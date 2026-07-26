@@ -77,7 +77,19 @@ const getEmojiPublicPath = (emoji_id, type, emoji_id_suffix = '', suffix = undef
 }
 
 const getEmojiPngPath = emoji_id => getEmojiPublicPath(emoji_id, 'png')
-const getEmojiApngPath = emoji_id => getEmojiPublicPath(emoji_id, 'apng')
+const getEmojiApngPath = (emoji_id, checkExist = true) => {
+  const path = getEmojiPublicPath(emoji_id, 'apng')
+  if (checkExist) {
+    if (!checkEmojiPathExist(path)) {
+      return null
+    }
+  }
+  return path
+}
+const checkEmojiPathExist = path => useGlobalStore().emojiFiles.includes(path)
+const getAnimatedEmojiExistPath = emoji_id => {
+  return getEmojiApngPath(emoji_id) || getEmojiPngPath(emoji_id)
+}
 
 const getEmojiLottiePath = (emoji_id, suffix) => getEmojiPublicPath(emoji_id, 'lottie', suffix)
 
@@ -217,10 +229,12 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
             'rps': 359
           }[item.type]
 
+          const animatedEmoji = replyMode ? getEmojiApngPath(face_id) : null
+
           children.push(
             h('img', {
               alt: '',
-              src: getEmojiPngPath(face_id),
+              src: animatedEmoji || getEmojiPngPath(face_id),
               class: 'msg-preview-emoji',
               'data-emoji-id': face_id
             })
@@ -458,19 +472,10 @@ const parseMessage = (wrappedMsg) => {
             'rps': 359
           }[item.type]
 
-          const apngPath = getEmojiApngPath(face_id);
-          const pngPath = getEmojiPngPath(face_id);
-
-          const emojiFiles = useGlobalStore().emojiFiles;
-
-          let path = pngPath;
-          if (emojiFiles.includes(apngPath)) {
-            path = apngPath
-          }
           children.push(
             h('img', {
               alt: '',
-              src: path,
+              src: getAnimatedEmojiExistPath(face_id),
               class: 'message-emoji-png',
             })
           );
@@ -883,7 +888,7 @@ const parseNotice = notice => {
         ': ',
         h('img', {
           alt: '',
-          src: getEmojiPngPath(face_id),
+          src: getAnimatedEmojiExistPath(face_id),
           class: 'msg-preview-emoji',
           'data-emoji-id': face_id
         })

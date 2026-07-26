@@ -19,7 +19,7 @@ const props = defineProps({
 const emit = defineEmits(['select', 'change-self-long-nick', 'disconnect'])
 
 const recentContacts = computed(() => {
-  return props.categorizedContacts?.find?.(category => category.id === -100).contacts || []
+  return props.categorizedContacts?.find?.(category => category.id === -100)?.contacts || []
 })
 
 // 按最后联系时间排序

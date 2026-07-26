@@ -12,7 +12,12 @@ import {
 } from "../../scripts/backend-api.js";
 import { useGlobalStore } from "../../store/global.js";
 import GroupLevelTitle from "./GroupLevelTitle.vue";
-import { basicContextItem, contextDividedItem, formatBasicContextItems, vCustomMenu } from "../../directives/context-menu.js";
+import {
+  basicContextItem,
+  contextDividedItem,
+  formatBasicContextItems,
+  vCustomMenu
+} from "../../directives/context-menu.js";
 import { vDoubleClick } from '../../directives/double-click-directive.js';
 import { formatRelativeTime, parseJSON } from "../../scripts/util.js";
 import { showToast } from "../../scripts/toast.js";
@@ -674,7 +679,7 @@ onUnmounted(() => {
   max-width: 200px;
 }
 
-.message:deep(.message-emoji-png, .msg-preview-emoji), .notice:deep(.msg-preview-emoji), .message-name-title:deep(.msg-preview-emoji) {
+.message:deep(.message-emoji-png), .message:deep(.msg-preview-emoji), .notice:deep(.msg-preview-emoji), .message-name-title:deep(.msg-preview-emoji) {
   height: 17px;
   position: relative;
   top: -2px;
