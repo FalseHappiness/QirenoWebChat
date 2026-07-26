@@ -8,7 +8,7 @@ export default defineComponent({
   components: {
     SimpleBar
   }
-  // 可以直接在 CustomScrollBar 事件透传 @scroll
+  // vue3 可以直接在 CustomScrollBar 组件自动透传事件 @scroll，不用额外转发
 })
 </script>
 

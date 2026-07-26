@@ -2449,9 +2449,8 @@ export default defineComponent({
       <template #content>
         <div class="tooltip-style" style="padding: 2px 0" ref="atGroupUsersTooltip">
           <VirtualScroller :item-height="32" :items="filteredAtGroupUsers" :buffer="20"
-                           :thumb-right="1" :thumb-width="7"
                            class="at-group-users-container"
-                           ref="atUsersScroller" auto-height>
+                           ref="atUsersScroller">
             <template #default="{ item, index }">
               <div
                 class="at-group-user-container"

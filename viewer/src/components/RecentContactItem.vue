@@ -1,4 +1,4 @@
-<!-- ContactItem.vue -->
+<!-- RecentContactItem.vue -->
 <script setup>
 import { computed, ref, onMounted, h, watch } from "vue";
 import { parseMessagePreview, parseNoticePreview } from "../scripts/parse-message.js";
@@ -123,7 +123,7 @@ watch(() => props.contact.latest_msg, async () => {
   try {
     await getPreviewText();
   } catch (error) {
-    console.error('Error in ContactItem get preview text:', error);
+    console.error('Error in RecentContactItem get preview text:', error);
   }
 })
 
@@ -179,14 +179,14 @@ onMounted(async () => {
     await getPreviewText()
     await getName();
   } catch (error) {
-    console.error('Error in ContactItem mounted:', error);
+    console.error('Error in RecentContactItem mounted:', error);
   }
 });
 </script>
 
 <template>
   <div
-    class="contact-item"
+    class="recent-contact-item"
     :class="{ active }"
     v-custom-menu="customContextMenu"
     @click="handleClick"
@@ -213,7 +213,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.contact-item {
+.recent-contact-item {
   padding: 10px;
   cursor: pointer;
   /*border-bottom: 1px solid #eee;*/
@@ -224,19 +224,19 @@ onMounted(async () => {
   border-radius: 6px;
 }
 
-.contact-item:hover {
+.recent-contact-item:hover {
   background-color: #EBEBEB;
 }
 
-.contact-item:active {
+.recent-contact-item:active {
   background-color: #e0e0e0;
 }
 
-.contact-item.active {
+.recent-contact-item.active {
   background-color: #E2E2E2 !important;
 }
 
-.contact-item.active:active {
+.recent-contact-item.active:active {
   background-color: #D7D7D7 !important;
 }
 
@@ -269,11 +269,11 @@ onMounted(async () => {
   color: #dc3545 !important;
 }
 
-.contact-item.active .text-error {
+.recent-contact-item.active .text-error {
   color: #ff8894 !important;
 }
 
-.contact-item.active .contact-name.text-muted {
+.recent-contact-item.active .contact-name.text-muted {
   opacity: 0.5;
 }
 
@@ -281,7 +281,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.contact-item:deep(.msg-preview-emoji) {
+.recent-contact-item:deep(.msg-preview-emoji) {
   height: 15px;
   margin: -2px 1px 0 1px;
 }

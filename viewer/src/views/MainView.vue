@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount } from 'vue'
 import { ConnectionBridge } from '../scripts/connection/connection-bridge.js'
 import { ConnectionBridgeOnebot } from "../scripts/connection/virtual-backend/connection-bridge-onebot.js";
-import ContactList from '../components/ContactList.vue'
+import LeftView from '../components/LeftView.vue'
 import ChatArea from '../components/ChatArea.vue'
 import {
   fetchContacts,
@@ -423,7 +423,7 @@ onUnmounted(destroy)
 <template>
   <div class="main-view">
     <div class="chat-container" v-if="wsInited">
-      <ContactList
+      <LeftView
         :contacts="contacts"
         :active-contact="activeContact"
         :loading="loadingContacts"
