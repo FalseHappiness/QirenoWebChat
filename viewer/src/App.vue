@@ -3,12 +3,10 @@ import { onMounted, ref } from 'vue';
 import './App.scss';
 import AccountsView from "./views/AccountsView.vue";
 import MainView from "./views/MainView.vue";
-import { useBase } from './composables/useBase.js'
-
-const baseUrl = useBase()
 
 const currentView = ref('loading') // 'loading' | 'accounts' | 'main'
 const selectedAccount = ref(null)
+const forceShowWelcome = ref(false)
 
 // 从 localStorage 读取已保存的账号
 const loadSavedAccount = () => {
@@ -37,7 +35,14 @@ onMounted(() => {
 
 const onAccountSelected = (account) => {
   selectedAccount.value = account
+  forceShowWelcome.value = false
   currentView.value = 'main'
+}
+
+const onMainViewDisconnect = () => {
+  selectedAccount.value = null
+  currentView.value = 'accounts'
+  forceShowWelcome.value = true
 }
 
 </script>
@@ -51,11 +56,13 @@ const onAccountSelected = (account) => {
 
   <AccountsView
     v-else-if="currentView === 'accounts'"
+    :force-show-welcome="forceShowWelcome"
     @account-selected="onAccountSelected"
   />
   <MainView
     v-else-if="currentView === 'main' && selectedAccount"
     :account="selectedAccount"
+    @disconnect="onMainViewDisconnect"
   />
 </template>
 
@@ -90,11 +97,5 @@ const onAccountSelected = (account) => {
   color: #808080;
   font-size: 14px;
   margin: 0;
-}
-</style>
-
-<style>
-:root {
-  --base: v-bind(baseUrl);
 }
 </style>

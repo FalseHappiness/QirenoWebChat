@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import RecentContactItem from './RecentContactItem.vue'
 import ContactsViewCategories from './ContactsViewCategories.vue'
+import SettingsView from './SettingsView.vue'
 import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
 import VirtualScroller from "./Utils/VirtualScroller.vue";
 import { fetchSetLongNick, getUserLogo } from "../scripts/backend-api.js";
@@ -15,7 +16,7 @@ const props = defineProps({
   selfInfo: Object
 })
 
-const emit = defineEmits(['select', 'change-self-long-nick'])
+const emit = defineEmits(['select', 'change-self-long-nick', 'disconnect'])
 
 // 按最后联系时间排序
 const sortedContacts = computed(() => {
@@ -108,7 +109,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div v-if="loading" class="text-center">加载中...</div>
+      <div v-if="loading" class="text-center flex-1">加载中...</div>
       <VirtualScroller :item-height="60"
                        :items="sortedContacts"
                        v-else-if="sortedContacts?.length"
@@ -122,7 +123,7 @@ onMounted(() => {
           />
         </template>
       </VirtualScroller>
-      <div v-else class="text-center">
+      <div v-else class="text-center flex-1">
         暂无最近会话
       </div>
     </template>
@@ -133,7 +134,10 @@ onMounted(() => {
       <ContactsViewCategories @select="selectContact" class="contacts-view-categories"/>
     </template>
     <template v-else-if="isSettingsNavView">
-      <div class="settings-view"></div>
+      <SettingsView
+        :self-info="selfInfo"
+        @disconnect="() => emit('disconnect')"
+      />
     </template>
     <div class="navigation-bar">
       <div class="nav-function-button nav-function-message flex-center-children"

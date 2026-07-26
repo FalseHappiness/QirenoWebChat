@@ -182,11 +182,4 @@ export class ConnectionBridge extends AbstractConnectionBridge {
       this.socket.value?.close()
     }
   }
-
-  /**
-   * 在组件卸载时调用，释放资源
-   */
-  destroy() {
-    this.disconnect()
-  }
 }

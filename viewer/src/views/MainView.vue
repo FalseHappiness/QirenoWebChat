@@ -25,6 +25,7 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['disconnect'])
 
 const contacts = ref([])
 const loadingContacts = ref(false)
@@ -264,6 +265,10 @@ function handleDownload(info) {
   showDownloadPopup.value = true;
 }
 
+const handleDisconnect = () => {
+  emit('disconnect')
+}
+
 // 从 account prop 决定是否是直连模式
 const effectiveIsDirect = computed(() => {
   return props.account.mode === 'direct'
@@ -430,6 +435,7 @@ onUnmounted(destroy)
         @select="selectContact"
         :self-info="selfInfo"
         @change-self-long-nick="changeSelfLongNick"
+        @disconnect="handleDisconnect"
       />
       <ChatArea
         :active-contact="activeContact"

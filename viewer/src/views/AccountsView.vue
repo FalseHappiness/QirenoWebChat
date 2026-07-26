@@ -5,6 +5,13 @@ import { renderPolar } from "../QQ/app/scripts/polar.ai-anti-obf.js";
 import CustomScrollBar from "../components/Utils/CustomScrollBar.vue";
 import { strToBool } from "../scripts/util.js";
 
+const props = defineProps({
+  forceShowWelcome: {
+    type: Boolean,
+    default: false
+  }
+})
+
 const emit = defineEmits(["account-selected"]);
 
 const enabledBackendDetector = ref(strToBool(import.meta.env.VITE_BACKEND_DETECTOR))
@@ -27,7 +34,10 @@ const polar = ref(null);
 const STORAGE_KEY = "directConnections";
 
 // 计算属性：是否显示欢迎面板
-const showWelcome = computed(() => savedAccount.value && !savedAccount.value.autoLogin);
+// 当 forceShowWelcome 为 true 时，强制显示欢迎面板（来自断开连接场景）
+const showWelcome = computed(() =>
+  savedAccount.value && (!savedAccount.value.autoLogin || props.forceShowWelcome)
+);
 
 // 加载已保存的连接
 const loadSavedConnections = () => {
@@ -71,7 +81,10 @@ onMounted(() => {
     const saved = localStorage.getItem("selectedAccount");
     if (saved) {
       savedAccount.value = JSON.parse(saved);
-      if (savedAccount.value.autoLogin) {
+      // autoLoginEnabled 默认跟随已保存的 autoLogin 值
+      autoLoginEnabled.value = savedAccount.value.autoLogin;
+      // 如果 forceShowWelcome 为 true（来自断开连接），跳过自动登录，直接显示欢迎面板
+      if (savedAccount.value.autoLogin && !props.forceShowWelcome) {
         emit("account-selected", savedAccount.value);
         return;
       }
