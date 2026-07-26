@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue';
 import './App.scss';
 import AccountsView from "./views/AccountsView.vue";
 import MainView from "./views/MainView.vue";
+import LoadingSpinner from "./components/Common/LoadingSpinner.vue";
 
 const currentView = ref('loading') // 'loading' | 'accounts' | 'main'
 const selectedAccount = ref(null)
@@ -48,11 +49,7 @@ const onMainViewDisconnect = () => {
 </script>
 
 <template>
-  <!-- 加载中 -->
-  <div v-if="currentView === 'loading'" class="loading-view">
-    <div class="loading-spinner"></div>
-    <p class="loading-text">正在加载...</p>
-  </div>
+  <LoadingSpinner v-if="currentView === 'loading'"/>
 
   <AccountsView
     v-else-if="currentView === 'accounts'"
@@ -75,27 +72,5 @@ const onMainViewDisconnect = () => {
   align-items: center;
   justify-content: center;
   background: #f5f5f5;
-}
-
-.loading-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba(0, 0, 0, 0.06);
-  border-top-color: #0099ff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  margin-bottom: 14px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  color: #808080;
-  font-size: 14px;
-  margin: 0;
 }
 </style>

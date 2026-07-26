@@ -2,7 +2,7 @@
 import { defineComponent } from 'vue'
 import SimplePopUp from "../Utils/SimplePopUp.vue";
 import { fetchCategoricalFriends, fetchContacts, fetchGroupList } from "../../scripts/backend-api.js";
-import { Collapse, CollapsePanel, Checkbox, CheckboxGroup, ConfigProvider } from 'ant-design-vue'
+import { Collapse, CollapsePanel, Checkbox, CheckboxGroup } from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css';
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
 import ColorSvg from "../Utils/ColorSvg.vue";
@@ -19,7 +19,6 @@ export default defineComponent({
     ACollapsePanel: CollapsePanel,
     ACheckbox: Checkbox,
     ACheckboxGroup: CheckboxGroup,
-    AConfigProvider: ConfigProvider
   },
   data() {
     return {
@@ -202,42 +201,26 @@ export default defineComponent({
           </div>
           <div class="contacts-picker-contacts-area-contacts">
             <CustomScrollBar>
-              <a-config-provider
-                :theme="{ token: { colorPrimary: '#0099ff' } }"
-              >
-                <a-checkbox-group v-model:value="selectedContactsKeys" style="width: 100%;">
-                  <a-collapse v-if="filteredContacts === undefined"
-                              ghost
-                              v-model:activeKey="collapseActiveKeys"
-                              style="width: 100%">
-                    <template #expandIcon="{ isActive }">
-                      <img
-                        :src="qqIconSvg('arrow_right_small_16')"
-                        alt=""
-                        class="contacts-picker-expand-icon"
-                        :class="{ active: isActive }"
-                      >
-                    </template>
-                    <a-collapse-panel
-                      v-if="categorizedContacts?.length"
-                      v-for="category in categorizedContacts"
-                      :key="category.id"
-                      :header="category.name">
-                      <a-checkbox
-                        v-for="contact in category.contacts"
-                        :value="`${contact.type}.${contact.id}`"
-                        class="contacts-picker-contacts-area-contact">
-                        <img class="contacts-picker-contacts-area-contact-logo" alt=""
-                             :src="getLogo(contact.id, contact.type)"
-                             loading="lazy">
-                        {{ contact.name }}
-                      </a-checkbox>
-                    </a-collapse-panel>
-                  </a-collapse>
-                  <div v-else style="width: 100%;">
+              <a-checkbox-group v-model:value="selectedContactsKeys" style="width: 100%;">
+                <a-collapse v-if="filteredContacts === undefined"
+                            ghost
+                            v-model:activeKey="collapseActiveKeys"
+                            style="width: 100%">
+                  <template #expandIcon="{ isActive }">
+                    <img
+                      :src="qqIconSvg('arrow_right_small_16')"
+                      alt=""
+                      class="contacts-picker-expand-icon"
+                      :class="{ active: isActive }"
+                    >
+                  </template>
+                  <a-collapse-panel
+                    v-if="categorizedContacts?.length"
+                    v-for="category in categorizedContacts"
+                    :key="category.id"
+                    :header="category.name">
                     <a-checkbox
-                      v-if="filteredContacts.length"
-                      v-for="contact in filteredContacts"
+                      v-for="contact in category.contacts"
                       :value="`${contact.type}.${contact.id}`"
                       class="contacts-picker-contacts-area-contact">
                       <img class="contacts-picker-contacts-area-contact-logo" alt=""
@@ -245,10 +228,22 @@ export default defineComponent({
                            loading="lazy">
                       {{ contact.name }}
                     </a-checkbox>
-                    <p v-else style="color: gray;text-align: center">无搜索结果</p>
-                  </div>
-                </a-checkbox-group>
-              </a-config-provider>
+                  </a-collapse-panel>
+                </a-collapse>
+                <div v-else style="width: 100%;">
+                  <a-checkbox
+                    v-if="filteredContacts.length"
+                    v-for="contact in filteredContacts"
+                    :value="`${contact.type}.${contact.id}`"
+                    class="contacts-picker-contacts-area-contact">
+                    <img class="contacts-picker-contacts-area-contact-logo" alt=""
+                         :src="getLogo(contact.id, contact.type)"
+                         loading="lazy">
+                    {{ contact.name }}
+                  </a-checkbox>
+                  <p v-else style="color: gray;text-align: center">无搜索结果</p>
+                </div>
+              </a-checkbox-group>
             </CustomScrollBar>
           </div>
         </div>

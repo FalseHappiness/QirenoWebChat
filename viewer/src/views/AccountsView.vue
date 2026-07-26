@@ -4,6 +4,7 @@ import { fetchBackendHealth, fetchBackendBots, getUserLogo } from "../scripts/ba
 import { renderPolar } from "../QQ/app/scripts/polar.ai-anti-obf.js";
 import CustomScrollBar from "../components/Utils/CustomScrollBar.vue";
 import { strToBool } from "../scripts/util.js";
+import { Checkbox as ACheckbox, ConfigProvider as AConfigProvider } from 'ant-design-vue'
 
 const props = defineProps({
   forceShowWelcome: {
@@ -254,10 +255,9 @@ const clearAndReselect = () => {
           <div class="saved-account-enter">点击进入</div>
         </div>
         <div class="auto-login-section">
-          <label class="auto-login-toggle">
-            <input type="checkbox" v-model="autoLoginEnabled" @click.stop/>
-            <span class="toggle-label">记住此次选择，下次自动登录</span>
-          </label>
+          <a-checkbox v-model:checked="autoLoginEnabled">
+            记住此次选择，下次自动登录
+          </a-checkbox>
         </div>
         <button class="btn btn--secondary" @click="clearAndReselect">切换账号</button>
       </div>
@@ -305,10 +305,9 @@ const clearAndReselect = () => {
 
         <!-- 自动登录复选框（统一位置） -->
         <div class="auto-login-wrapper">
-          <label class="auto-login-toggle">
-            <input type="checkbox" v-model="autoLoginEnabled"/>
-            <span class="toggle-label">记住此次选择，下次自动登录</span>
-          </label>
+          <a-checkbox v-model:checked="autoLoginEnabled">
+            记住此次选择，下次自动登录
+          </a-checkbox>
         </div>
 
         <!-- 直连区域 -->
@@ -321,6 +320,11 @@ const clearAndReselect = () => {
               </svg>
             </button>
           </div>
+
+          <p v-if="isSecureContext" class="direct-hint">
+            ⚠️ 当前处于安全上下文（HTTPS），请务必使用 <strong>WSS</strong> 加密连接
+            或者 <strong>本地回环</strong> 地址
+          </p>
 
           <!-- 添加新连接表单 -->
           <div v-if="showAddForm" class="direct-connection-entry">
@@ -352,10 +356,6 @@ const clearAndReselect = () => {
 
           <!-- 已保存连接列表 -->
           <template v-if="directConnections.length > 0">
-            <p v-if="isSecureContext" class="direct-hint">
-              ⚠️ 当前处于安全上下文（HTTPS），请务必使用 <strong>WSS</strong> 加密连接
-              或者 <strong>本地回环</strong> 地址
-            </p>
             <div class="saved-connections-list">
               <div
                 v-for="(conn, index) in directConnections"

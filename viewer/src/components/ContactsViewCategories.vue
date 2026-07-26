@@ -229,12 +229,12 @@ onMounted(async () => {
 
 .contacts-view-search {
   margin: 8px 12px 4px 12px;
-  background-color: #f1f1f1;
+  background-color: #EBEBEB;
   border-radius: 6px;
   display: flex;
   height: 28px;
   align-items: center;
-  border: 1px solid #f1f1f1;
+  border: 1px solid #EBEBEB;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -248,7 +248,7 @@ onMounted(async () => {
 }
 
 .contacts-view-search:focus-within {
-  border-color: #0077ed;
+  border-color: #0099ff;
 }
 
 .contacts-view-search-input {

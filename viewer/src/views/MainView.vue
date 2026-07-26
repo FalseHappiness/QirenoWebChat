@@ -17,6 +17,7 @@ import { CalledEmitter } from "../composables/useEventBus.js";
 import ContactInfoTooltip from "../components/Popups/ContactInfoTooltip.vue";
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
 import DownloadProgressPopup from "../components/Popups/DownloadProgressPopup.vue";
+import LoadingSpinner from "../components/Common/LoadingSpinner.vue";
 
 const props = defineProps({
   account: {
@@ -458,9 +459,7 @@ onUnmounted(destroy)
         @confirm="showDownloadPopup = false"
       />
     </div>
-    <div class="text-center" v-else>
-      WebSocket 初始化...
-    </div>
+    <LoadingSpinner class="flex-center-children flex-column size-100" v-else text="WebSocket 初始化..."/>
   </div>
 </template>
 

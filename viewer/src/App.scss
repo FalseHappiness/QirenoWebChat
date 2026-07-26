@@ -21,17 +21,6 @@
   transform: translate(-50%, -50%);
 }
 
-* {
-  outline: none;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-}
-
-body, html {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
 :root {
   line-height: 1.5;
   font-weight: 400;
@@ -42,32 +31,22 @@ body, html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --ant-color-primary: #0099ff;
 }
 
 * {
   font-family: "Color Emoji", system-ui, "PingFang SC", PingFangSC-Regular, "Microsoft YaHei", "Hiragino Sans GB", "Heiti SC", "WenQuanYi Micro Hei", Arial, Helvetica, sans-serif, "Apple Braille", "Color Emoji Fix"
 }
 
-.can-drag {
-  -webkit-app-region: drag;
+* {
+  outline: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
-.cannot-drag {
-  -webkit-app-region: no-drag;
-}
-
-.no-user-select {
-  -webkit-user-select: none; /* Safari */
-  -khtml-user-select: none; /* Konqueror HTML */
-  -moz-user-select: none; /* Firefox */
-  -o-user-select: none; /* Opera */
-  user-select: none; /* Generic */
-
-  -webkit-user-drag: none; /* Safari */
-  -khtml-user-drag: none; /* Konqueror HTML */
-  -moz-user-drag: none; /* Firefox */
-  -o-user-drag: none; /* Opera */
-  user-drag: none; /* Generic */
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 a {
