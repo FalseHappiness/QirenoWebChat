@@ -10,7 +10,7 @@ import {
   convertContactsSL,
   convertEssenceMsgListSL,
   convertGroupAlbumListSL, convertGroupAlbumMediaListSL,
-  convertGroupFilesSL,
+  convertGroupFilesSL, convertStrangerInfoSL,
   convertWrappedMsgSL
 } from "./snow-luma-translator.js";
 import { trimTrailingSlash } from "./util.js";
@@ -169,7 +169,7 @@ export const fetchGroupInfo = async (group_id) => {
 }
 
 const fetchStrangerInfo = async (user_id) => {
-  return await fetchActionData("get_stranger_info", { user_id: user_id })
+  return convertStrangerInfoSL(await fetchActionData("get_stranger_info", { user_id: user_id }))
 }
 
 const fetchGroupMemberInfo = async (group_id, user_id) => {

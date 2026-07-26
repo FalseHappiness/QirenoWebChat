@@ -164,6 +164,9 @@ const objectFieldCompatMap = (sourcePair, fieldMap, deleteSourceField = true) =>
   } else {
     [sourceObj, targetObj] = sourcePair;
   }
+  if (!isObject(sourceObj)) {
+    return sourceObj
+  }
 
   // finalKey：最终要使用的字段名
   for (const finalKey in fieldMap) {
@@ -311,6 +314,14 @@ const convertGroupFilesSL = data => {
   return data
 }
 
+const isObject = variable => typeof variable === 'object'
+
+const convertStrangerInfoSL = data => {
+  return objectFieldCompatMap({ ...data }, {
+    qqLevel: ["qq_level", "level"]
+  })
+}
+
 export {
   convertWrappedMsgSL,
   convertEssenceMsgListSL,
@@ -318,4 +329,5 @@ export {
   convertGroupAlbumMediaListSL,
   convertGroupFilesSL,
   convertContactsSL,
+  convertStrangerInfoSL,
 }

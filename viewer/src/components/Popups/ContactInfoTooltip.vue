@@ -41,11 +41,15 @@ export default defineComponent({
       if (!position) {
         return
       }
+      // console.log(options)
       const showId = this.showId = nanoid()
       this.showTime = Date.now();
-      const setter = key => {
+      const setter = (key, merge = true) => {
         return info => {
           if (this.showId === showId) {
+            if (merge) {
+              info = { ...this[key], ...info }
+            }
             this[key] = info
           }
         }
@@ -132,7 +136,7 @@ export default defineComponent({
             </div>
             <div class="row" v-if="group_user?.card">
               <div class="label">群昵称</div>
-              <div class="value clickable overflow-ellipsis">{{ group_user.card }}</div>
+              <div class="value overflow-ellipsis">{{ group_user.card }}</div>
             </div>
             <div class="row">
               <div class="label">QQ 空间</div>
