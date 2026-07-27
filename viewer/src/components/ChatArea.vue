@@ -425,18 +425,32 @@ const handleEnterBlur = (e) => {
 const handleClickShowContactInfo = (e, user_id) => {
   let group_user, user, group;
   if (user_id) {
+    let nickname;
+    if (typeof user_id === 'object') {
+      ({
+        nickname, user_id
+      } = user_id)
+    }
+    if (typeof user_id === "string") {
+      user_id = Number.parseInt(user_id)
+    }
     if (isGroup?.value) {
-      // noinspection EqualityComparisonWithCoercionJS
       group_user = {
-        ...groupUsers.value?.find(user => user.qq == user_id),
+        nickname,
+        ...groupUsers.value?.find(user => user.qq === user_id),
         user_id,
         group_id: props.activeContact.contact_id
       }
     } else {
       user = {
         user_id,
-        nickname: props.activeContact?.real_name,
-        remark: props.activeContact?.remark
+        nickname
+      }
+      if (user.user_id === props.activeContact.contact_id) {
+        ({
+          real_name: user.nickname,
+          remark: user.remark
+        } = props.activeContact)
       }
     }
   } else {

@@ -227,7 +227,8 @@ const handleAvatarDoubleClick = {
     }])
   },
   singleClick: e => {
-    emit("click-show-contacts-info", e, props.message.user_id)
+    const event = JSON.parse(props.message.event)
+    emit("click-show-contacts-info", e, { user_id: event.user_id, nickname: event.sender.nickname })
   }
 }
 
