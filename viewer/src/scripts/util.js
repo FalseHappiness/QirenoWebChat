@@ -27,6 +27,10 @@ function dateToTimestamp(dateStr) {
   return Math.floor(new Date(dateStr).getTime() / 1000);
 }
 
+function nowSecondTimestamp() {
+  return Math.floor(Date.now() / 1000);
+}
+
 const formatRelativeTime = (timeStr, alwaysHm = false) => {
   return formatTimeOptions({
     timestamp: dateToTimestamp(timeStr),
@@ -391,4 +395,5 @@ export {
   triggerDownloadFile,
   strToBool,
   trimTrailingSlash,
+  nowSecondTimestamp,
 }

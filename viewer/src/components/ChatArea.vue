@@ -490,12 +490,37 @@ const initContactInfo = () => {
   }
 }
 
+// 内部状态
+const visibleStatusText = ref(false)
+const peerStatusText = ref('')
+let peerStatusTimer = null
+const SHOW_DURATION = 3000 // 默认3秒消失
+
+// 核心方法：供父组件调用，刷新提示+重置倒计时
+const refreshPeerStatus = (text) => {
+  clearPeerStatus()
+  peerStatusText.value = text
+  visibleStatusText.value = true
+
+  // 重新计时3秒，超时隐藏
+  peerStatusTimer = setTimeout(() => {
+    visibleStatusText.value = false
+  }, SHOW_DURATION)
+}
+
+const clearPeerStatus = () => {
+  // 清除上一次倒计时
+  clearTimeout(peerStatusTimer)
+  visibleStatusText.value = false
+}
+
 // 联系人更改时获取名称
 watch(() => props.activeContact, (newVal, oldVal) => {
   if (newVal?.contact_id !== oldVal?.contact_id || newVal?.type !== oldVal?.type) {
     groupUsers.value = null
     showGroupAnnounceViewer.value = false
     showContactMore.value = false
+    clearPeerStatus()
     initContactInfo();
   }
 }, { deep: true })
@@ -503,6 +528,11 @@ watch(() => props.activeContact, (newVal, oldVal) => {
 onMounted(initContactInfo)
 onUnmounted(() => {
   Emitter.off("show-group-notices")
+})
+
+// 暴露方法给父组件调用
+defineExpose({
+  refreshPeerStatus
 })
 </script>
 
@@ -547,10 +577,15 @@ onUnmounted(() => {
         <img class="chat-area-go-back-btn" alt="" :src="qqIconSvg('arrow_left_24')"
              @click="() => { showContactMore ? showContactMore = false : selectContact(null) }">
         <span class="chat-area-head-display-name" @click="handleClickShowContactInfo">{{ displayName }}</span>
-        <span v-if="tempSession">&nbsp;</span>
-        <small class="text-muted" v-if="tempSession" style="font-size: 100%">
-          {{ tempSession }}
-        </small>
+        <template> v-if="tempSession"
+          <span>&nbsp;</span>
+          <small class="text-muted font-size-100">
+            {{ tempSession }}
+          </small>
+        </template>
+        <template v-if="visibleStatusText">
+          <span class="text-muted font-size-100">&nbsp;{{ peerStatusText }}</span>
+        </template>
       </span>
       <span class="chat-area-head-control" v-if="isGroup">
         <Tooltip

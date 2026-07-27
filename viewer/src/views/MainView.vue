@@ -26,6 +26,8 @@ import ContactInfoTooltip from "../components/Popups/ContactInfoTooltip.vue";
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
 import DownloadProgressPopup from "../components/Popups/DownloadProgressPopup.vue";
 import LoadingSpinner from "../components/Common/LoadingSpinner.vue";
+import { checkMsgIsCurrentContact } from "../scripts/contacts-util.js";
+import { nowSecondTimestamp } from "../scripts/util.js";
 
 const props = defineProps({
   account: {
@@ -328,20 +330,10 @@ onMounted(() => {
       }
     },
     onNotice: notice => {
-      if (['group_recall', 'friend_recall'].includes(notice.notice_type)) {
-        const is_group = notice.notice_type === 'group_recall'
-        const isCurrentContact = activeContact.value && (
-          (
-            is_group &&
-            activeContact.value.type === 'group' &&
-            notice.group_id === activeContact.value.contact_id
-          ) ||
-          (
-            !is_group &&
-            activeContact.value.type === 'private' &&
-            (notice.user_id === activeContact.value.contact_id || notice.user_id === notice.self_id)
-          )
-        )
+      const isCurrentContact = checkMsgIsCurrentContact(notice, activeContact.value)
+      const { notice_type, sub_type } = notice
+      if (['group_recall', 'friend_recall'].includes(notice_type)) {
+        const is_group = notice_type === 'group_recall'
         if (isCurrentContact) {
           const visibleMessages = chatArea.value?.$refs?.scroller?.visibleMessages
           if (visibleMessages) {
@@ -355,20 +347,12 @@ onMounted(() => {
             })
           }
         }
+      } else if (notice_type === 'notify' && sub_type === 'input_status') {
+        console.log(isCurrentContact, nowSecondTimestamp(), notice.time)
+        if (isCurrentContact && (nowSecondTimestamp() - notice.time <= 10)) {
+          chatArea.value?.refreshPeerStatus?.(JSON.parse(notice.event)?.status_text)
+        }
       } else if (isSupportedNoticeMessage(notice)) {
-        const is_group = !!notice.group_id
-        const isCurrentContact = activeContact.value && (
-          (
-            is_group &&
-            activeContact.value.type === 'group' &&
-            notice.group_id === activeContact.value.contact_id
-          ) ||
-          (
-            !is_group &&
-            activeContact.value.type === 'private' &&
-            notice.user_id === activeContact.value.contact_id
-          )
-        )
         if (isCurrentContact) {
           chatArea.value?.$refs?.scroller?.addMessage(notice)
         }
