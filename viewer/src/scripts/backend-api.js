@@ -724,8 +724,15 @@ async function fetchCategorizedContacts() {
 }
 
 async function fetchTranslateEnglish(text) {
-  const result = await fetchActionData('translate_en2zh', { words: [text] })
-  return result?.words?.[0]
+  return (
+    await fetchActionData('translate_en2zh', { words: [text] })
+  )?.words?.[0]
+}
+
+async function fetchRecordToText(message_id) {
+  return (
+    await fetchActionData('fetch_ptt_text', { message_id })
+  ).text
 }
 
 const isObjectProp = (obj, key, elseSetEmptyObj = false, returnObj = false) => {
@@ -1169,4 +1176,5 @@ export {
   isSnowLuma,
   fetchCategorizedContacts,
   fetchTranslateEnglish,
+  fetchRecordToText,
 }

@@ -5,7 +5,7 @@ import '@lottiefiles/lottie-player';
 import {
   fetchChangeEssenceMsg,
   fetchDisplayName,
-  fetchMsg, fetchRecallMessage,
+  fetchMsg, fetchRecallMessage, fetchRecordToText,
   fetchSendMessage, fetchTranslateEnglish,
   getCacheGroupLevelTitle,
   getCacheName, getUserLogo
@@ -247,6 +247,18 @@ const isEnabledTranslate = ref(false);
 const translatedText = ref(undefined)
 const translateErrorText = ref(null)
 
+const messageRecordSegment = computed(() => {
+  const msg = parseJSON(props.message.event)?.message?.[0]
+  if (msg?.type === 'record') {
+    return msg
+  }
+  return false
+})
+
+const isEnabledPTT = ref(false);
+const pttText = ref(undefined)
+const pttErrorText = ref(null)
+
 const customContextMenu = () => {
   const self_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
   const sender_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
@@ -266,6 +278,22 @@ const customContextMenu = () => {
       },
       qqIconSvg("translate_24"),
       hasEnglish(messagePlainTextContent.value) && (!isEnabledTranslate.value || translateErrorText.value !== null)
+    ),
+    basicContextItem(
+      '转文字',
+      async () => {
+        isEnabledPTT.value = true
+        pttText.value = pttErrorText.value = undefined
+        try {
+          pttText.value = await fetchRecordToText(props.message.message_id)
+        } catch (e) {
+          pttErrorText.value = e
+          pttText.value = null
+          console.error("Record to text error:", e)
+        }
+      },
+      qqIconSvg("speech_to_text_16"),
+      messageRecordSegment.value && (!isEnabledPTT.value || pttErrorText.value !== null)
     ),
     basicContextItem('复制', () => {
       let copyAll = false
@@ -517,6 +545,14 @@ onUnmounted(() => {
           <span v-else-if="translateErrorText" style="color: red;">{{ translateErrorText }}</span>
           <template v-else>翻译无结果</template>
         </div>
+        <div v-if="isEnabledPTT" class="message-ext-content">
+          <template v-if="pttText">
+            {{ pttText }}
+          </template>
+          <LoadingSpinner no-text v-else-if="pttText === undefined" :size="20"/>
+          <span v-else-if="pttErrorText" style="color: red;">{{ pttErrorText }}</span>
+          <template v-else>[呃，什么都没有听到]</template>
+        </div>
       </div>
       <div class="message-tips no-user-select">
         <div class="message-red-tip message-tip" v-if="isRecalled">
@@ -573,6 +609,8 @@ onUnmounted(() => {
   font-size: 85%;
   margin: 5px 0;
   direction: ltr;
+  word-break: break-all;
+  text-align: left;
 }
 
 .message-tips {
