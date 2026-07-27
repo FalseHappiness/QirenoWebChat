@@ -193,6 +193,7 @@ export default defineComponent({
   background-size: 100% auto; /* 宽度铺满，高度自适应原图比例 */
   width: 300px;
   padding-top: 10px;
+  max-width: 100%;
 }
 
 .contact-info-header {
