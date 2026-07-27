@@ -371,7 +371,7 @@ const parseMessage = (wrappedMsg) => {
             children.push(
               h(AudioMessage, {
                 width: '200px',
-                maxWidth: '100%,',
+                maxWidth: '100%',
                 src: getFileDataUrl(item),
                 cursorColor: isSelfSent ? 'rgba(255, 255, 255, 0.8)' : 'rgba(204, 235, 255, 0.8)'
               })

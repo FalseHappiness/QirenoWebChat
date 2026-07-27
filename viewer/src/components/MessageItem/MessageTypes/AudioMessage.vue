@@ -1,5 +1,5 @@
 <template>
-  <div class="audio-message" :style="{ width: width, maxWidth:maxWidth }">
+  <div class="audio-message" :style="{ width, maxWidth }">
     <div class="audio-controls">
       <div class="play-button" @click="togglePlay" :style="{ color: color }">
         <svg v-if="!isPlaying" id="play_circle_filled_24" viewBox="0 0 24 24" fill="none"

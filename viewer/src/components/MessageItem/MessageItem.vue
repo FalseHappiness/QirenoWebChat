@@ -794,14 +794,14 @@ onUnmounted(() => {
 }
 
 .message:deep(.message-image), .message:deep(.message-video) {
-  max-width: 100%;
-  max-height: 500px;
+  max-height: 324px;
   border-radius: 5px;
-  width: auto; /* 或 100% */
+  width: 100%;
   height: auto;
   object-fit: contain;
   display: block;
   margin: 4px 0;
+  max-width: 324px;
 }
 
 .message:has(.message-emoji-picture) {

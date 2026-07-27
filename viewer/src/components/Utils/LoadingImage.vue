@@ -15,15 +15,15 @@ export default defineComponent({
     },
     placeholderWidth: {
       type: String,
-      default: '400px'
+      default: '324px'
     },
     placeholderHeight: {
       type: String,
-      default: '250px'
+      default: '324px'
     },
     maxHeight: {
       type: String,
-      default: '500px'
+      default: '324px'
     },
     scrollerElement: {
       type: [Element, undefined, null],
