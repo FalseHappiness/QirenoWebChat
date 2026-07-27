@@ -121,17 +121,22 @@ const checkMsgIsCurrentContact = (event, activeContact) => {
   if (!activeContact || typeof event !== 'object') {
     return false
   }
-  const { group_id, target_id, user_id, post_type, message_type, notice_type } = event;
-  const isGroup = message_type === 'group'
+  const { group_id, target_id, user_id, post_type, message_type, notice_type, sub_type } = event;
   if (['message', 'message_sent'].includes(event.post_type)) {
+    const isGroup = message_type === 'group'
     return checkSameContact({
       type: message_type,
       contact_id: isGroup ? group_id : target_id
     }, activeContact)
   } else if (post_type === 'notice') {
-    if (['group_recall', 'friend_recall'].includes(notice_type) || isSupportedNoticeMessage(event)) {
+    const isGroup = !!group_id
+    if (
+      ['group_recall', 'friend_recall'].includes(notice_type) ||
+      sub_type === 'input_status' ||
+      isSupportedNoticeMessage(event)
+    ) {
       return checkSameContact({
-        type: message_type,
+        type: isGroup ? 'group' : 'private',
         contact_id: isGroup ? group_id : user_id
       }, activeContact)
     }
