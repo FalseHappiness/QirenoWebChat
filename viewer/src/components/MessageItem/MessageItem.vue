@@ -24,6 +24,7 @@ import { showToast } from "../../scripts/toast.js";
 import { Emitter } from "../../composables/useEventBus.js";
 import { qqAppImg, qqIconSvg } from "../../composables/useBase.js";
 import LoadingSpinner from "../Common/LoadingSpinner.vue";
+import QIcon from "../Utils/QIcon.vue";
 
 const props = defineProps({
   message: {
@@ -556,7 +557,7 @@ onUnmounted(() => {
       </div>
       <div class="message-tips no-user-select">
         <div class="message-red-tip message-tip" v-if="isRecalled">
-          <img alt="" :src="qqIconSvg('recall_24')">
+          <QIcon name="recall_24"/>
           已撤回
         </div>
         <div class="message-tip" v-if="isEssence" @click="emit('change-show-essence-list')">
@@ -634,15 +635,19 @@ onUnmounted(() => {
   direction: ltr;
 }
 
-.message-tip img {
+.message-tip img, .message-tip:deep(svg) {
   width: 12px;
   height: 12px;
   margin-right: 2px;
 }
 
 .message-red-tip {
-  color: white;
+  color: #b90000;
   background-color: rgb(255 0 0 / 25%);
+}
+
+.message-red-tip:deep(svg) {
+  color: #900000;
 }
 
 .message-before {
