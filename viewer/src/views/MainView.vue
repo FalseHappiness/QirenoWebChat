@@ -348,7 +348,6 @@ onMounted(() => {
           }
         }
       } else if (notice_type === 'notify' && sub_type === 'input_status') {
-        console.log(isCurrentContact, nowSecondTimestamp(), notice.time)
         if (isCurrentContact && (nowSecondTimestamp() - notice.time <= 10)) {
           chatArea.value?.refreshPeerStatus?.(JSON.parse(notice.event)?.status_text)
         }
