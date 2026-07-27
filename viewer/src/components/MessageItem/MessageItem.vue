@@ -450,6 +450,18 @@ const handleMessageExecuteCommand = e => {
   }
 }
 
+const openImageViewer = inject("open-image-viewer")
+
+const handleMessageDoubleClick = e => {
+  const element = e.target?.closest('.message-image')
+  if (element) {
+    const src = element.querySelector('img')?.src
+    if (src) {
+      openImageViewer(src)
+    }
+  }
+}
+
 // 组件加载时
 onMounted(() => {
   document.addEventListener('mouseenter', handleMouseEnter, { capture: true })
@@ -534,6 +546,7 @@ onUnmounted(() => {
         @copy="handleCopy"
         ref="messageContent"
         @click="handleMessageExecuteCommand"
+        @dblclick="handleMessageDoubleClick"
       >
         <message-html/>
       </div>

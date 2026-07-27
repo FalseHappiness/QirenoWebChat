@@ -23,6 +23,7 @@ import ColorSvg from "./Utils/ColorSvg.vue";
 import GroupAlbumViewer from "./GroupViews/GroupAlbumViewer.vue";
 import { qqAppImg, qqIconSvg } from "../composables/useBase.js";
 import CustomScrollBar from "./Utils/CustomScrollBar.vue";
+import ImageViewer from "./Utils/ImageViewer.vue";
 
 const props = defineProps({
   activeContact: Object,
@@ -528,6 +529,12 @@ const clearPeerStatus = () => {
   visibleStatusText.value = false
 }
 
+const imageViewer = ref(null)
+
+provide("open-image-viewer", src => {
+  imageViewer.value?.open?.(src)
+})
+
 // 联系人更改时获取名称
 watch(() => props.activeContact, (newVal, oldVal) => {
   if (newVal?.contact_id !== oldVal?.contact_id || newVal?.type !== oldVal?.type) {
@@ -573,6 +580,7 @@ defineExpose({
       :group_id="activeContact?.contact_id"
       :on-close="() => changeShowGroupAlbum(false)"
     />
+    <ImageViewer ref="imageViewer"/>
 
     <div class="cannot-drag window-controls" v-if="false">
       <div class="window-control-btn window-control-minimize">
