@@ -389,7 +389,9 @@ onMounted(() => {
         ]
         // 批量同步字段
         for (const key of syncFields) {
-          target[key] = newContact[key]
+          if (newContact[key]) {
+            target[key] = newContact[key]
+          }
         }
       }
     }
