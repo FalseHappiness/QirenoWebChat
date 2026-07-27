@@ -1,6 +1,7 @@
 import { pinyin, convert } from "pinyin-pro";
+import { isSupportedNoticeMessage } from "./parse-message.js";
 
-export const flattenCategorizedContacts = categorizedContacts => {
+const flattenCategorizedContacts = categorizedContacts => {
   // 使用 Map 来存储唯一联系人，键为 type + id 的组合
   const uniqueContactsMap = new Map();
 
@@ -45,7 +46,7 @@ const getShortPinyin = (text) => {
   return fullArr.map(py => py[0]).join("");
 };
 
-export const filterSearchContacts = (searchText, flattenContacts) => {
+const filterSearchContacts = (searchText, flattenContacts) => {
   const trimText = searchText.trim();
   if (!trimText) return undefined;
 
@@ -108,3 +109,38 @@ export const filterSearchContacts = (searchText, flattenContacts) => {
   // 按优先级拼接返回
   return [...directMatches, ...pinyinMatches, ...shortMatches, ...idMatches];
 };
+
+const checkSameContact = (newContact, activeContact) => {
+  if (!newContact || !activeContact) {
+    return false
+  }
+  return newContact.contact_id === activeContact.contact_id && newContact.type === activeContact.type;
+}
+
+const checkMsgIsCurrentContact = (event, activeContact) => {
+  if (!activeContact || typeof event !== 'object') {
+    return false
+  }
+  const { group_id, target_id, user_id, post_type, message_type, notice_type } = event;
+  const isGroup = message_type === 'group'
+  if (['message', 'message_sent'].includes(event.post_type)) {
+    return checkSameContact({
+      type: message_type,
+      contact_id: isGroup ? group_id : target_id
+    }, activeContact)
+  } else if (post_type === 'notice') {
+    if (['group_recall', 'friend_recall'].includes(notice_type) || isSupportedNoticeMessage(event)) {
+      return checkSameContact({
+        type: message_type,
+        contact_id: isGroup ? group_id : user_id
+      }, activeContact)
+    }
+  }
+  return false
+}
+
+export {
+  flattenCategorizedContacts,
+  filterSearchContacts,
+  checkMsgIsCurrentContact,
+}
