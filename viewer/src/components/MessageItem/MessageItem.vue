@@ -6,7 +6,7 @@ import {
   fetchChangeEssenceMsg,
   fetchDisplayName,
   fetchMsg, fetchRecallMessage,
-  fetchSendMessage,
+  fetchSendMessage, fetchTranslateEnglish,
   getCacheGroupLevelTitle,
   getCacheName, getUserLogo
 } from "../../scripts/backend-api.js";
@@ -19,10 +19,11 @@ import {
   vCustomMenu
 } from "../../directives/context-menu.js";
 import { vDoubleClick } from '../../directives/double-click-directive.js';
-import { formatRelativeTime, parseJSON } from "../../scripts/util.js";
+import { formatRelativeTime, hasEnglish, parseJSON } from "../../scripts/util.js";
 import { showToast } from "../../scripts/toast.js";
 import { Emitter } from "../../composables/useEventBus.js";
 import { qqAppImg, qqIconSvg } from "../../composables/useBase.js";
+import LoadingSpinner from "../Common/LoadingSpinner.vue";
 
 const props = defineProps({
   message: {
@@ -234,10 +235,38 @@ const handleAvatarDoubleClick = {
 
 const settingEssence = ref(false)
 
+const messagePlainTextContent = computed(() => {
+  const message = parseJSON(props.message.event)?.message
+  if (Array.isArray(message)) {
+    return message.filter(item => item?.type === 'text' && item?.data?.text).map(item => item.data.text).join('\n')
+  }
+  return null
+})
+
+const isEnabledTranslate = ref(false);
+const translatedText = ref(undefined)
+const translateErrorText = ref(null)
+
 const customContextMenu = () => {
   const self_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
   const sender_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
   return formatBasicContextItems([
+    basicContextItem(
+      '英译中',
+      async () => {
+        isEnabledTranslate.value = true
+        translateErrorText.value = translatedText.value = undefined
+        try {
+          translatedText.value = await fetchTranslateEnglish(messagePlainTextContent.value)
+        } catch (e) {
+          translateErrorText.value = e
+          translatedText.value = null
+          console.error("Translate error:", e)
+        }
+      },
+      qqIconSvg("translate_24"),
+      hasEnglish(messagePlainTextContent.value) && (!isEnabledTranslate.value || translateErrorText.value !== null)
+    ),
     basicContextItem('复制', () => {
       let copyAll = false
       const range = window.getSelection()?.getRangeAt(0)
@@ -479,6 +508,16 @@ onUnmounted(() => {
       >
         <message-html/>
       </div>
+      <div class="message-extensions">
+        <div v-if="isEnabledTranslate" class="message-ext-content">
+          <template v-if="translatedText">
+            {{ translatedText }}
+          </template>
+          <LoadingSpinner no-text v-else-if="translatedText === undefined" :size="20"/>
+          <span v-else-if="translateErrorText" style="color: red;">{{ translateErrorText }}</span>
+          <template v-else>翻译无结果</template>
+        </div>
+      </div>
       <div class="message-tips no-user-select">
         <div class="message-red-tip message-tip" v-if="isRecalled">
           <img alt="" :src="qqIconSvg('recall_24')">
@@ -520,20 +559,21 @@ onUnmounted(() => {
   white-space: pre-wrap;
 }
 
-/*
-.message-container.recalled .message {
-  box-shadow: 0 0 8px 2px rgb(255 0 0 / 50%);
+.message-extensions {
+  display: flex;
+  flex-direction: column;
+  margin: 0 8px;
+  align-items: flex-start;
 }
 
-.message-container.recalled .message:has(.message-box-less) {
-  box-shadow: unset;
-  filter: drop-shadow(0 0 10px rgb(255 0 0 / 50%));
+.message-ext-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-size: 85%;
+  margin: 5px 0;
+  direction: ltr;
 }
-
-.message-container.recalled .message:has(.message-box-less).darkness-effect {
-  filter: brightness(85%) drop-shadow(0 0 10px rgb(255 0 0 / 50%));
-}
-*/
 
 .message-tips {
   display: flex;

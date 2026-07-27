@@ -14,6 +14,7 @@ import {
   convertWrappedMsgSL
 } from "./snow-luma-translator.js";
 import { trimTrailingSlash } from "./util.js";
+import { isObject } from "ant-design-vue/es/_util/util.js";
 
 /**
  * 替换URL中的 sitehost 为当前页面真实主机
@@ -722,9 +723,10 @@ async function fetchCategorizedContacts() {
   return categories
 }
 
-const isObject = (variable) => {
-  return typeof variable === 'object' && !Array.isArray(variable);
-};
+async function fetchTranslateEnglish(text) {
+  const result = await fetchActionData('translate_en2zh', { words: [text] })
+  return result?.words?.[0]
+}
 
 const isObjectProp = (obj, key, elseSetEmptyObj = false, returnObj = false) => {
   if (!isObject(obj)) {
@@ -1166,4 +1168,5 @@ export {
   fetchBackendBots,
   isSnowLuma,
   fetchCategorizedContacts,
+  fetchTranslateEnglish,
 }

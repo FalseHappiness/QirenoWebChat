@@ -385,6 +385,18 @@ function trimTrailingSlash(url) {
   return url.replace(/\/$/, '')
 }
 
+function hasEnglish(str) {
+  if (!isString(str)) {
+    return false
+  }
+  // /[a-zA-Z]/ 匹配大小写英文字母
+  return /[a-zA-Z]/.test(str)
+}
+
+const isObject = (variable) => {
+  return typeof variable === 'object' && !Array.isArray(variable);
+};
+
 export {
   hasMouseSupport,
   formatRelativeTime,
@@ -396,4 +408,7 @@ export {
   strToBool,
   trimTrailingSlash,
   nowSecondTimestamp,
+  hasEnglish,
+  isObject,
+  isString,
 }

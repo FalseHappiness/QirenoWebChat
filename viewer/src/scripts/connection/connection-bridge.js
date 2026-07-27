@@ -32,6 +32,10 @@ export class ConnectionBridge extends AbstractConnectionBridge {
    */
   _commonWebSocketRequest(options, signal, timeout, pendingMap) {
     return new Promise((resolve, reject) => {
+      if (!navigator.onLine) {
+        reject(new Error("Network Error: Unable to connect to the internet."))
+        return;
+      }
       if (!this.socket.value || this.socket.value.readyState !== WebSocket.OPEN) {
         reject(new Error('WebSocket is not connected'))
         return
