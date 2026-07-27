@@ -321,7 +321,7 @@ class VirtualDB extends Dexie {
 
       originalEvent.recall_operator = event.notice_type === 'group_recall'
         ? event.operator_id
-        : event.user_id;
+        : originalMsg.target_id;
 
       const updatedEvent = JSON.stringify(originalEvent);
       await this.messages.update(originalMsg.id, { event: updatedEvent });

@@ -521,7 +521,7 @@ class Database:
             if event['notice_type'] == 'group_recall':
                 recall_operator = event.get('operator_id')
             else:  # friend_recall
-                recall_operator = event.get('user_id')
+                recall_operator = original_msg.get('target_id')
 
             # 更新event字段
             original_event['recall_operator'] = recall_operator

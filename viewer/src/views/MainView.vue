@@ -341,7 +341,7 @@ onMounted(() => {
               if (msg?.message_id === notice.message_id) {
                 let event = msg.event
                 event = typeof event === 'string' ? JSON.parse(event) : event
-                event.recall_operator = is_group ? notice.operator_id : notice.user_id
+                event.recall_operator = is_group ? notice.operator_id : msg.target_id
                 msg.event = JSON.stringify(event)
               }
             })
