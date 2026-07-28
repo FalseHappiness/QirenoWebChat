@@ -520,8 +520,8 @@ class Database:
             # 设置recall_operator
             if event['notice_type'] == 'group_recall':
                 recall_operator = event.get('operator_id')
-            else:  # friend_recall
-                recall_operator = original_msg.get('target_id')
+            else:  # friend_recall 谁发的就是谁撤回
+                recall_operator = original_msg.get('user_id')
 
             # 更新event字段
             original_event['recall_operator'] = recall_operator

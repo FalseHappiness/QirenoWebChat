@@ -341,7 +341,7 @@ onMounted(() => {
             visibleMessages.forEach(msg => {
               if (msg?.message_id === notice.message_id) {
                 const event = parseJSON(msg.event)
-                event.recall_operator = is_group ? notice.operator_id : msg.target_id
+                event.recall_operator = is_group ? notice.operator_id : msg.user_id
                 msg.event = JSON.stringify(event)
               }
             })
