@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/main.js",
   "scripts": {
-    "dev": "vite --port 51730",
+    "dev": "vite --port 51730 --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
     "update-packages": "ncu -u && npm install",

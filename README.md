@@ -58,12 +58,14 @@ cd ..
 可通过环境变量配置前端行为（参见 [`viewer/.env.development`](viewer/.env.development) / [
 `viewer/.env.production`](viewer/.env.production)）：
 
-| 环境变量                    | 说明                  | 开发环境默认值                            | 生产环境默认值                      |
-|-------------------------|---------------------|------------------------------------|------------------------------|
-| `VITE_API_BASE_URL`     | 后端 API 地址           | `http://127.0.0.1:58471`           | `http://sitehost`（自动替换为当前主机） |
-| `VITE_WS_URI`           | 前端 WebSocket 连接地址   | `ws://127.0.0.1:58471/ws/frontend` | `ws://sitehost/ws/frontend`  |
-| `VITE_BACKEND_DETECTOR` | 是否检测后端连接状态          | `true`                             | `true`                       |
-| `VITE_BASE`             | 前端部署基础路径（需以 `/` 结尾） | `/`                                | `/`                          |
+`sitehost` 作为主机时将自动替换为当前网站主机。如不带端口，则使用当前网站端口；如带端口，将保留环境变量的端口。
+
+| 环境变量                    | 说明                  | 开发环境默认值                           | 生产环境默认值                     |
+|-------------------------|---------------------|-----------------------------------|-----------------------------|
+| `VITE_API_BASE_URL`     | 后端 API 地址           | `http://sitehost:58471`           | `http://sitehost`           |
+| `VITE_WS_URI`           | 前端 WebSocket 连接地址   | `ws://sitehost:58471/ws/frontend` | `ws://sitehost/ws/frontend` |
+| `VITE_BACKEND_DETECTOR` | 是否检测后端连接状态          | `true`                            | `true`                      |
+| `VITE_BASE`             | 前端部署基础路径（需以 `/` 结尾） | `/`                               | `/`                         |
 
 ### 3. 安装 Python 依赖并启动后端
 
