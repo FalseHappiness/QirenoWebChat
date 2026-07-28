@@ -163,8 +163,8 @@ onMounted(() => {
       <div class="nav-function-button nav-function-settings flex-center-children"
            @click="changeNavView(navKey.SETTINGS)"
            :class="{ active: isSettingsNavView }">
-        <QMaskIcon :name="`nav_setting_normal_16${ isSettingsNavView ? '.modify_fill' : '' }`"
-                   animate-target="nav_setting_normal_16.modify_fill"/>
+        <QMaskIcon :name="`nav_setting_normal_16${ isSettingsNavView ? '.modify.fill' : '' }`"
+                   animate-target="nav_setting_normal_16.modify.fill"/>
       </div>
     </div>
   </vue-resizable>

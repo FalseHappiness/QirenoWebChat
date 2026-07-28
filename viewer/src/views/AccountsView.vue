@@ -1,9 +1,9 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import { fetchBackendHealth, fetchBackendBots, getUserLogo } from "../scripts/backend-api.js";
-import { renderPolar } from "../QQ/app/scripts/polar.ai-anti-obf.js";
+import { renderPolar } from "../QQ/app/scripts/polar.modify.ai-anti-obf.js";
 import CustomScrollBar from "../components/Utils/CustomScrollBar.vue";
-import { Checkbox as ACheckbox, ConfigProvider as AConfigProvider } from 'ant-design-vue'
+import { Checkbox as ACheckbox } from 'ant-design-vue'
 import { strToBool } from "../scripts/types-util.js";
 
 const props = defineProps({
