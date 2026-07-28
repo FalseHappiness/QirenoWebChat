@@ -1,5 +1,6 @@
 import { parseJSON, stringifyJSON } from "./util.js";
 import { getStreamFileDataUrl } from "./backend-api.js";
+import { isObject, objectHasKey } from "./types-util.js";
 
 const convertNoticeSL = event => {
   event = parseJSON(event);
@@ -32,11 +33,9 @@ const convertMessageSL = event => {
     event = { ...event }
     // NapCatQQ: message_seq=message_id, real_seq 为序列号（顺序递增）
     // SnowLuma: message_id 为消息 id, message_seq 相当于 NapCatQQ 的 real_seq
-    if (!event.hasOwnProperty("real_seq")) {
-      if (event.hasOwnProperty("message_seq")) {
-        event.real_seq = event.message_seq
-      }
-    }
+    objectFieldCompatMap(event, {
+      real_seq: "message_seq"
+    }, false)
     if (Array.isArray(event.message)) {
       const contents = []
       for (const content of event.message) {
@@ -171,7 +170,7 @@ const objectFieldCompatMap = (sourcePair, fieldMap, deleteSourceField = true) =>
   // finalKey：最终要使用的字段名
   for (const finalKey in fieldMap) {
     // 核心条件：源对象没有最终字段，才进行兼容赋值
-    if (!sourceObj.hasOwnProperty(finalKey)) {
+    if (!objectHasKey(sourceObj, finalKey)) {
       let fallbackFieldList = fieldMap[finalKey];
       if (!Array.isArray(fallbackFieldList)) {
         fallbackFieldList = [fallbackFieldList];
@@ -179,7 +178,7 @@ const objectFieldCompatMap = (sourcePair, fieldMap, deleteSourceField = true) =>
 
       // fallbackField：旧的备选字段名称
       for (const fallbackField of fallbackFieldList) {
-        if (sourceObj.hasOwnProperty(fallbackField)) {
+        if (objectHasKey(sourceObj, fallbackField)) {
           targetObj[finalKey] = sourceObj[fallbackField];
           if (deleteSourceField) {
             delete sourceObj[fallbackField];
@@ -195,7 +194,7 @@ const convertEssenceMsgListSL = list => {
   if (!Array.isArray(list)) return list;
   const newList = []
   for (const msg of list) {
-    if (typeof msg === 'object') {
+    if (isObject(msg)) {
       const newMsg = { ...msg }
 
       objectFieldCompatMap([msg, newMsg], {
@@ -205,7 +204,7 @@ const convertEssenceMsgListSL = list => {
         sender_id: "sender_id"
       })
 
-      if (!msg.hasOwnProperty("content") && Array.isArray(msg.msg_content)) {
+      if (!objectHasKey(msg, "content") && Array.isArray(msg.msg_content)) {
         newMsg.content = translateEssenceMsgContent(msg.msg_content)
       }
       newList.push(newMsg)
@@ -217,7 +216,7 @@ const convertEssenceMsgListSL = list => {
 }
 
 const compatGroupAlbumImageField = image => {
-  return typeof image === 'object' ? objectFieldCompatMap({ ...image }, {
+  return isObject(image) ? objectFieldCompatMap({ ...image }, {
     photo_url: "photoUrls",
     default_url: "defaultUrl",
     is_gif: "isGif",
@@ -226,7 +225,7 @@ const compatGroupAlbumImageField = image => {
 }
 
 function convertGroupAlbum(input) {
-  if (typeof input !== 'object') {
+  if (!isObject(input)) {
     return input
   }
   const coverImage = input.cover?.image
@@ -269,7 +268,7 @@ const convertGroupAlbumMediaListSL = data => {
     next_attach_info: "nextAttachInfo"
   })
 
-  if (!data.hasOwnProperty("next_has_more")) {
+  if (!objectHasKey(data, "next_has_more")) {
     data.next_has_more = false
     if (data.next_attach_info) {
       try {
@@ -287,12 +286,12 @@ const convertGroupAlbumMediaListSL = data => {
   const media_list = [...data.media_list]
   for (const key in media_list) {
     let media = media_list[key]
-    if (typeof media === 'object') {
+    if (isObject(media)) {
       media = { ...media }
       objectFieldCompatMap(media, { batch_id: "batchId", upload_time: "uploadTime" })
       media.image = compatGroupAlbumImageField(media.image)
       let video = media.video
-      if (typeof video === 'object') {
+      if (isObject(video)) {
         video = objectFieldCompatMap({ ...video }, {
           video_time: "videoTime",
           video_url: ["videoUrl", 'videoUrls']
@@ -313,8 +312,6 @@ const convertGroupFilesSL = data => {
   })
   return data
 }
-
-const isObject = variable => typeof variable === 'object'
 
 const convertStrangerInfoSL = data => {
   return objectFieldCompatMap({ ...data }, {

@@ -5,7 +5,7 @@ import { parseMessagePreview, parseNoticePreview } from "../scripts/parse-messag
 import { fetchDisplayName, getCacheName, getGroupLogo, getUserLogo } from "../scripts/backend-api.js";
 import { basicContextItem, vCustomMenu } from "../directives/context-menu.js";
 import { copy } from "../scripts/clipboard.js";
-import { formatRelativeTime } from "../scripts/util.js";
+import { formatRelativeTime, parseJSON } from "../scripts/util.js";
 import { qqIconSvg } from "../composables/useBase.js";
 
 const props = defineProps({
@@ -43,7 +43,7 @@ const getName = async () => {
     }
     isLoading.value = true;
     let event = props.contact.latest_msg;
-    if (typeof event === 'string') event = JSON.parse(event);
+    event = parseJSON(event);
     let id = props.contact.contact_id;
     let type = props.contact.type;
     if (type === 'private' && event?.group_id) {
@@ -84,7 +84,7 @@ const previewMessage = ref([])
 const getPreviewText = async () => {
   try {
     let event = props.contact.latest_msg;
-    if (typeof event === 'string') event = JSON.parse(event);
+    event = parseJSON(event);
     // console.log(props.contact);
     const isMessage = ['message_sent', 'message'].includes(event?.post_type)
     const isNotice = event?.post_type === 'notice'
@@ -132,7 +132,7 @@ const computedPreviewText = computed(() => {
   if (previewMessage.value) {
     const is_group = isGroup.value;
     let event = props.contact.latest_msg;
-    if (typeof event === 'string') event = JSON.parse(event);
+    event = parseJSON(event);
     const isMessage = ['message_sent', 'message'].includes(event?.post_type)
 
     if ((isMessage && is_group && previewSenderName.value) || !isMessage || !is_group) {

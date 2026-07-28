@@ -1,5 +1,6 @@
 import { pinyin, convert } from "pinyin-pro";
 import { isSupportedNoticeMessage } from "./parse-message.js";
+import { isObject } from "./types-util.js";
 
 const flattenCategorizedContacts = categorizedContacts => {
   // 使用 Map 来存储唯一联系人，键为 type + id 的组合
@@ -118,7 +119,7 @@ const checkSameContact = (newContact, activeContact) => {
 }
 
 const checkMsgIsCurrentContact = (event, activeContact) => {
-  if (!activeContact || typeof event !== 'object') {
+  if (!activeContact || !isObject(event)) {
     return false
   }
   const { group_id, target_id, user_id, post_type, message_type, notice_type, sub_type } = event;

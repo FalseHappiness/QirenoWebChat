@@ -1,3 +1,5 @@
+import { isString } from "../../types-util.js";
+
 /**
  * VirtualProtocol - 虚拟协议拦截器
  *
@@ -108,7 +110,7 @@ class VirtualProtocol {
     this.rawFetch = this.originFetch.bind(window);
     // 修复fetch劫持：使用普通函数+bind绑定实例，调用原生fetch强制call(window)修复Illegal invocation
     window.fetch = function (input, init) {
-      const urlStr = typeof input === 'string' ? input : input.url;
+      const urlStr = isString(input) ? input : input.url;
       if (!urlStr.startsWith(this.protocol)) {
         return this.originFetch.call(window, input, init);
       }
@@ -119,7 +121,7 @@ class VirtualProtocol {
     this.originOpen = window.open;
     // 修复window.open劫持，绑定实例上下文，调用原生open强制绑定window
     window.open = function (url, target, features) {
-      if (typeof url === 'string' && url.startsWith(this.protocol)) {
+      if (isString(url) && url.startsWith(this.protocol)) {
         (async () => {
           const response = await this._handleRequest(url);
           const blob = await response.blob();

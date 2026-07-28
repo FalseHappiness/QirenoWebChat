@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { isString } from "../../types-util.js";
 
 /**
  * 本地 Dexie.js 数据库，仅存储消息，
@@ -311,7 +312,7 @@ class VirtualDB extends Dexie {
       if (!originalMsg) return null;
 
       let originalEvent = originalMsg.event;
-      if (typeof originalEvent === 'string') {
+      if (isString(originalEvent)) {
         try {
           originalEvent = JSON.parse(originalEvent);
         } catch {

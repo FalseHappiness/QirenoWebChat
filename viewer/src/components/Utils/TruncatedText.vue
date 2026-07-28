@@ -13,6 +13,8 @@
 </template>
 
 <script>
+import { isUndefined } from "../../scripts/types-util.js";
+
 export default {
   name: 'TruncatedText',
   props: {
@@ -154,7 +156,7 @@ export default {
       return result;
     },
     setupResizeObserver() {
-      if (typeof ResizeObserver !== 'undefined') {
+      if (!isUndefined(ResizeObserver)) {
         this.resizeObserver = new ResizeObserver(() => {
           this.truncateText();
         });

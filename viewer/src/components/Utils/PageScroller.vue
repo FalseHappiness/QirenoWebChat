@@ -12,7 +12,7 @@
         :key="getMsgId(message)"
         :ref="'message-' + getMsgId(message)"
         class="message-item"
-        :class="typeof itemClass === 'function' ? itemClass(message) : itemClass"
+        :class="isFunction(itemClass) ? itemClass(message) : itemClass"
         v-else
       >
         <slot name="message" :message="message" :index="index" :messages="visibleMessages">
@@ -77,6 +77,8 @@
 </template>
 
 <script>
+import { isFunction, isObject } from "../../scripts/types-util.js";
+
 export default {
   name: 'PageScroller',
   props: {
@@ -253,6 +255,7 @@ export default {
     this.wrapper.removeEventListener('scroll', this.handleScroll)
   },
   methods: {
+    isFunction,
     // 发出加载消息事件，会在删除溢出消息前发送
     emitLoadMessage() {
       this.$emit('load-messages', this.visibleMessages)
@@ -263,7 +266,7 @@ export default {
       if (!msg) {
         return false
       }
-      if (typeof this.detectIsLatestMsgFunction === 'function') {
+      if (isFunction(this.detectIsLatestMsgFunction)) {
         return this.detectIsLatestMsgFunction(msg)
       }
       return this.getMsgId(msg) === this.maxMessageId
@@ -274,14 +277,14 @@ export default {
       if (!msg) {
         return false
       }
-      if (typeof this.detectIsOldestMsgFunction === 'function') {
+      if (isFunction(this.detectIsOldestMsgFunction)) {
         return this.detectIsOldestMsgFunction(msg)
       }
       return this.getMsgId(msg) === this.minMessageId
     },
 
     getMsgId(msg) {
-      if (typeof this.getIdFunction === 'function') {
+      if (isFunction(this.getIdFunction)) {
         return this.getIdFunction(msg)
       } else {
         return msg[this.idKey]
@@ -335,7 +338,7 @@ export default {
     async scrollToMidway(info) {
       let msg_obj
       let id = info
-      if (typeof info === 'object') {
+      if (isObject(info)) {
         msg_obj = info
         id = this.getMsgId(info)
       }

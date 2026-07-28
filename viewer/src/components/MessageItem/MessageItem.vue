@@ -25,6 +25,7 @@ import { Emitter } from "../../composables/useEventBus.js";
 import { qqAppImg, qqIconSvg } from "../../composables/useBase.js";
 import LoadingSpinner from "../Common/LoadingSpinner.vue";
 import QIcon from "../Utils/QIcon.vue";
+import { isString } from "../../scripts/types-util.js";
 
 const props = defineProps({
   message: {
@@ -61,35 +62,31 @@ let hoverTimer = null
 
 // 全局处理鼠标悬浮
 const handleMouseEnter = (e) => {
-  if (typeof e?.target?.closest === 'function') {
-    const container = e.target.closest('.message-container')
-    if (!container) return
+  const container = e?.target?.closest?.('.message-container')
+  if (!container) return
 
-    // 清除之前的定时器
-    if (hoverTimer) {
-      clearTimeout(hoverTimer)
-    }
-
-    // 设置新定时器
-    hoverTimer = setTimeout(() => {
-      container.classList.add('show-message-time')
-    }, 1000)
+  // 清除之前的定时器
+  if (hoverTimer) {
+    clearTimeout(hoverTimer)
   }
+
+  // 设置新定时器
+  hoverTimer = setTimeout(() => {
+    container.classList.add('show-message-time')
+  }, 1000)
 }
 
 const handleMouseLeave = (e) => {
-  if (typeof e?.target?.closest === 'function') {
-    const container = e.target.closest('.message-container')
-    if (!container) return
+  const container = e?.target?.closest?.('.message-container')
+  if (!container) return
 
-    // 清除定时器
-    if (hoverTimer) {
-      clearTimeout(hoverTimer)
-      hoverTimer = null
-    }
-
-    container.classList.remove('show-message-time')
+  // 清除定时器
+  if (hoverTimer) {
+    clearTimeout(hoverTimer)
+    hoverTimer = null
   }
+
+  container.classList.remove('show-message-time')
 }
 
 const handleCopy = (e) => {
@@ -128,7 +125,7 @@ const getDisplayName = () => {
   }
   const id = [message.group_id, message.user_id];
   const type = "group_user";
-  const event = typeof message.event === 'string' ? JSON.parse(message.event) : message.event;
+  const event = parseJSON(message.event);
 
   // 初始值
   displayName.value = getCacheName(id, type) || event?.sender.nickname || props.message.user_id
@@ -319,7 +316,7 @@ const customContextMenu = () => {
     }, qqIconSvg("copy_24")),
     basicContextItem('转发', () => {
       const message = props.message
-      const event = typeof message.event === 'string' ? JSON.parse(message.event) : message.event;
+      const event = parseJSON(message.event);
       Emitter.emit('forward-single-msg', event.message_id, event.message)
     }, qqIconSvg("one_by_one_forward_24")),
     basicContextItem('引用', () => {
@@ -412,7 +409,7 @@ const handleNoticeExecuteCommand = e => {
   const element = e.target?.closest('.notice-execute-command')
   if (element) {
     const command = element.dataset.command
-    if (typeof command === 'string') {
+    if (isString(command)) {
       const jumpToMsg = 'jump-to-msg-'
       const openEssence = 'open-essence-window'
       const viewUserInfo = 'view-user-info-'
@@ -438,7 +435,7 @@ const handleMessageExecuteCommand = e => {
   const element = e.target?.closest('.message-execute-command')
   if (element) {
     const command = element.dataset.command
-    if (typeof command === 'string') {
+    if (isString(command)) {
       const atSomebody = 'at-somebody'
       const showGroupNotice = 'show-group-notice'
       if (command === atSomebody) {
@@ -546,7 +543,7 @@ onUnmounted(() => {
         @copy="handleCopy"
         ref="messageContent"
         @click="handleMessageExecuteCommand"
-        @dblclick="handleMessageDoubleClick"
+        v-double-click="handleMessageDoubleClick"
       >
         <message-html/>
       </div>

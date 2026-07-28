@@ -3,6 +3,8 @@ import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css';
 import "../styles/content-menu.css"
 import { h } from "vue";
 
+import { isFunction } from "../scripts/types-util.js";
+
 let last_open_time = 0
 const detect_fn_name = 'custom-context-menu-should-show-detect'
 const trigger_fn_name = 'custom-context-menu-trigger'
@@ -61,7 +63,7 @@ function installHandler(el, binding, vnode) {
   const { value } = binding;
 
   // 支持多种参数形式
-  if (typeof value === 'function') {
+  if (isFunction(value)) {
     // 简单形式：只提供触发函数
     setContextMenu(el, value);
   } else if (value && (value.trigger || value.detect)) {

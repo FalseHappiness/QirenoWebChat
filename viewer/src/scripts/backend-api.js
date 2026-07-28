@@ -13,30 +13,30 @@ import {
   convertGroupFilesSL, convertStrangerInfoSL,
   convertWrappedMsgSL
 } from "./snow-luma-translator.js";
-import { trimTrailingSlash } from "./util.js";
-import { isObject } from "ant-design-vue/es/_util/util.js";
+import { parseJSON, trimTrailingSlash } from "./util.js";
+
+import { isObject, isString, objectHasKey } from "./types-util.js";
 
 /**
- * 替换URL中的 sitehost 为当前页面真实主机
+ * 替换URL中的 sitehost 为当前页面真实主机（支持 sitehost:自定义端口 格式）
  * @param {string} urlStr 原始带sitehost的链接
  * @returns {string} 替换完成的真实地址
  */
 function replaceSiteHost(urlStr) {
-  if (!urlStr || typeof urlStr !== 'string') return urlStr;
+  if (!urlStr || !isString(urlStr)) return urlStr;
 
-  // 当前页面信息
-  const currentProtocol = location.protocol; // http: / https:
-  const currentHost = location.host;         // localhost:5173 / xxx.com
+  const currentProtocol = location.protocol;
+  const currentHost = location.host; // 自带端口 a.com:5173
   const currentWsProtocol = currentProtocol === 'https:' ? 'wss:' : 'ws:';
 
-  // 正则匹配：http://sitehost / https://sitehost / ws://sitehost / wss://sitehost
-  return urlStr.replace(/(http|https|ws|wss):\/\/sitehost/g, (match, proto) => {
-    // 协议自动映射
+  // 匹配：http://sitehost 或 http://sitehost:自定义端口
+  return urlStr.replace(/(http|https|ws|wss):\/\/sitehost(:\d+)?/g, (match, proto, portPart) => {
+    // 如果原链接带自定义端口，就保留端口；否则用当前页面host（自带端口）
+    const targetHost = portPart ? `${currentHost.split(':')[0]}${portPart}` : currentHost;
     if (proto === 'ws' || proto === 'wss') {
-      return `${currentWsProtocol}//${currentHost}`;
+      return `${currentWsProtocol}//${targetHost}`;
     }
-    // http/https 使用页面当前协议
-    return `${currentProtocol}//${currentHost}`;
+    return `${currentProtocol}//${targetHost}`;
   });
 }
 
@@ -254,14 +254,14 @@ const fetchSendMessageOptions = async ({ contact, message, signal, timeout = und
   const isGroup = contact.type === 'group';
 
   // 字符串JSON解析
-  message = typeof message === 'string' ? JSON.parse(message) : message;
+  message = parseJSON(message);
 
   // 戳一戳特殊逻辑
   if (Array.isArray(message) && message.length > 0) {
     const firstSeg = message[0];
     if (firstSeg.type === 'poke' && firstSeg.data) {
       const pokeData = firstSeg.data;
-      if (!pokeData.hasOwnProperty("id") && !pokeData.hasOwnProperty("type")) { // 不是窗口抖动
+      if (!objectHasKey(pokeData, "id") && !objectHasKey(pokeData, "type")) { // 不是窗口抖动
         const pokeUser = pokeData.user_id ?? -1;
         const pokeGroup = pokeData.group_id ?? -1;
         const pokeTarget = pokeData.target_id ?? -1;
@@ -1022,14 +1022,14 @@ const getMultimediaProxyUrl = (url) => {
 }
 
 const getFileDataUrl = (file_id, type) => {
-  if (typeof file_id === 'object') {
+  if (isObject(file_id)) {
     const data = file_id
-    file_id = data.data.file_id || data.data.file
-    type = data.type
+    file_id = data?.data?.file_id || data?.data?.file
+    type = data?.type
     if (['video'].includes(type)) {
       type = 'file'
     }
-    const url = data.data.url
+    const url = data?.data?.url
     if (url?.startsWith("data:")) {
       return url;
     }
@@ -1040,7 +1040,7 @@ const getFileDataUrl = (file_id, type) => {
 }
 
 const getStreamFileDataUrl = file_id => {
-  if (typeof file_id === 'object') {
+  if (isObject(file_id)) {
     const data = file_id
     file_id = data?.data?.file_id || data?.data?.file
   }

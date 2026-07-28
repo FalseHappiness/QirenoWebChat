@@ -29,6 +29,7 @@ import ActivityMD from "../components/MessageItem/MessageTypes/MessageJSON/Activ
 import UnparsedMessage from "../components/MessageItem/MessageTypes/UnparsedMessage.vue";
 import { getPokeDescription } from "./faces-config.js";
 import { qqFileIcon, qqSystemEmoji } from "../composables/useBase.js";
+import { isObject, objectHasKey } from "./types-util.js";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -204,7 +205,7 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
             })
           )
           break
-        } else if (messagePreviewDirectConversionTypes.hasOwnProperty(item.type)) {
+        } else if (objectHasKey(messagePreviewDirectConversionTypes, item.type)) {
           children.push(`[${messagePreviewDirectConversionTypes[item.type]}]`);
         } else if (item.type === 'json') {
           try {
@@ -246,7 +247,7 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
                 src: item.data.url,
                 class: 'message-reply-image',
                 alt: "",
-                fallbackSrc: item.data.hasOwnProperty("emoji_id") ? getMultimediaProxyUrl(item.data.url) : getStreamFileDataUrl(item),
+                fallbackSrc: objectHasKey(item.data, "emoji_id") ? getMultimediaProxyUrl(item.data.url) : getStreamFileDataUrl(item),
                 decideMaxWidth: '.message-container',
                 maxHeight: '80px',
                 placeholderWidth: '128px',
@@ -511,8 +512,8 @@ const parseMessage = (wrappedMsg) => {
               class:
                 'message-image' +
                 ((message.length === 1) ? " message-box-less" : "") +
-                (item.data.hasOwnProperty("emoji_id") || item.data.summary === '[动画表情]' ? " message-emoji-picture" : ""),
-              fallbackSrc: item.data.hasOwnProperty("emoji_id") ? getMultimediaProxyUrl(image_src) : getStreamFileDataUrl(item),
+                (objectHasKey(item.data, "emoji_id") || item.data.summary === '[动画表情]' ? " message-emoji-picture" : ""),
+              fallbackSrc: objectHasKey(item.data, "emoji_id") ? getMultimediaProxyUrl(image_src) : getStreamFileDataUrl(item),
               decideMaxWidth: '.message-container'
             })
           );
@@ -725,7 +726,7 @@ const createNoticeExecuteCommand = (type, arg2, arg3, arg4) => {
   } else {
     command = arg4
   }
-  if (typeof props !== 'object') {
+  if (!isObject(props)) {
     props = {}
   }
   return h(type, {

@@ -1,8 +1,9 @@
 <script>
 import { defineComponent } from 'vue'
-import { fetchDisplayName, fetchForwardMessage, getCacheName } from "../../../scripts/backend-api.js";
+import { fetchForwardMessage } from "../../../scripts/backend-api.js";
 import { parseMessagePreview } from "../../../scripts/parse-message.js";
 import ForwardMessageElement from "./ForwardMessageElement.vue";
+import { isObject } from "../../../scripts/types-util.js";
 
 export default defineComponent({
   name: "ForwardMessage",
@@ -33,6 +34,9 @@ export default defineComponent({
       private_users: undefined,
       parsedMessages: undefined
     }
+  },
+  methods:{
+    isObject
   },
   async mounted() {
     if (this.content === undefined) {
@@ -70,7 +74,7 @@ export default defineComponent({
   <ForwardMessageElement :messages="messages">
     <template #source>
       <span v-if="message_type === 'group'">群聊</span>
-      <span v-else-if="message_type === 'private' && typeof private_users === 'object'">{{
+      <span v-else-if="message_type === 'private' && isObject(private_users)">{{
           Object.values(private_users).join("和")
         }}</span>
       <span v-else>未知</span>

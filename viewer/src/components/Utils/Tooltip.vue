@@ -22,6 +22,8 @@
 </template>
 
 <script>
+import { isNumber, isString } from "../../scripts/types-util.js";
+
 export default {
   name: 'Tooltip',
   props: {
@@ -215,10 +217,10 @@ export default {
         if (value === null || value === undefined) return null;
 
         // 如果是数字，直接返回
-        if (typeof value === 'number') return value;
+        if (isNumber(value)) return value;
 
         // 如果是字符串
-        if (typeof value === 'string') {
+        if (isString(value)) {
           value = value
             // 正则表达式匹配所有var(--xxx)格式的CSS变量
             .replace(/var\((--[a-zA-Z0-9_-]+)\)/g, (match, variableName) => {
@@ -297,7 +299,7 @@ export default {
         }
         return this.$refs.target
       }
-      if (typeof this.target === 'string') {
+      if (isString(this.target)) {
         return document.querySelector(this.target);
       }
       return this.target;

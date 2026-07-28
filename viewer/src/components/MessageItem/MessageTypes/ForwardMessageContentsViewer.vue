@@ -6,6 +6,8 @@ import { formatTimeOptions } from "../../../scripts/util.js";
 import SimplePopUp from "../../Utils/SimplePopUp.vue";
 import CustomScrollBar from "../../Utils/CustomScrollBar.vue";
 import { qqIconSvg } from "../../../composables/useBase.js";
+import { isString } from "fast-glob/out/utils/string.js";
+import { isObject } from "../../../scripts/types-util.js";
 
 export default defineComponent({
   name: "ForwardMessageContentsViewer",
@@ -70,6 +72,7 @@ export default defineComponent({
     }
   },
   methods: {
+    isObject,
     qqIconSvg,
     getUserLogo,
     formatTime(timestamp) {
@@ -93,7 +96,7 @@ export default defineComponent({
     getMessageContent(msg) {
       try {
         // 模拟 MessageItem 的消息结构，让 parseMessage 正常工作
-        const wrapped = { event: typeof msg.event === 'string' ? msg.event : msg }
+        const wrapped = { event: (isString(msg.event) || isObject(msg.event)) ? msg.event : msg }
         const vnodes = parseMessage(wrapped)
         if (Array.isArray(vnodes)) {
           return h('div', { class: 'fv-message-content-inner' }, vnodes)
@@ -139,7 +142,7 @@ export default defineComponent({
         <div class="fv-head">
           <span class="fv-head-name">
             <span v-if="message_type === 'group'">群聊</span>
-            <span v-else-if="message_type === 'private' && typeof private_users === 'object'">{{
+            <span v-else-if="message_type === 'private' && isObject(private_users)">{{
                 Object.values(private_users).join("和")
               }}</span>
             <span v-else>未知</span>

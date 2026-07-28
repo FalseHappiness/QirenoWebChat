@@ -17,6 +17,7 @@ import VirtualProtocol, {
   createProxyGroupFileHandler,
   createProxyPrivateFileHandler,
 } from './virtual-protocol.js';
+import { isObject } from "../../types-util.js";
 
 /**
  * ConnectionBridgeOnebot
@@ -38,7 +39,7 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
     super(urlOpt, { onMessage, onNewContact, onNotice });
 
     this.token = null
-    if (typeof urlOpt === 'object') {
+    if (isObject(urlOpt)) {
       ({ url: this.url, token: this.token } = urlOpt)
     }
 

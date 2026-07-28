@@ -3,6 +3,8 @@ import { h } from 'vue'
 import { fetchDisplayName } from "../../../scripts/backend-api.js";
 import { parseMessagePreview } from "../../../scripts/parse-message.js";
 
+import { isEmptyObject } from "../../../scripts/types-util.js";
+
 export default {
   name: "ReplyMessage",
   props: {
@@ -64,9 +66,7 @@ export default {
         this.name = result.name
       }
     },
-    isEmptyObject(obj) {
-      return typeof obj === 'object' && Object.keys(obj).length === 0;
-    },
+    isEmptyObject,
     async scrollToMidway(msg) {
       this.scrollToMidwayMsg(msg);
     },

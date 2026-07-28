@@ -12,7 +12,7 @@ import SimpleBarCore from "simplebar";
 import 'simplebar/dist/simplebar.min.css';
 import MessageInputBox from "./MessageInput/MessageInputBox.vue";
 import { useGlobalStore } from "../store/global.js";
-import { sortGroupUsers } from "../scripts/util.js";
+import { parseJSON, sortGroupUsers } from "../scripts/util.js";
 import Tooltip from "./Utils/Tooltip.vue";
 import { Emitter } from "../composables/useEventBus.js";
 import GroupAnnounceViewer from "./GroupViews/GroupAnnounceViewer.vue";
@@ -24,6 +24,7 @@ import GroupAlbumViewer from "./GroupViews/GroupAlbumViewer.vue";
 import { qqAppImg, qqIconSvg } from "../composables/useBase.js";
 import CustomScrollBar from "./Utils/CustomScrollBar.vue";
 import ImageViewer from "./Utils/ImageViewer.vue";
+import { isEmptyObject, isObject, isString } from "../scripts/types-util.js";
 
 const props = defineProps({
   activeContact: Object,
@@ -65,7 +66,7 @@ const getName = async () => {
     let type = props.activeContact.type;
     if (tempSession.value) {
       let event = props.activeContact.latest_msg;
-      if (typeof event === 'string') event = JSON.parse(event);
+      event = parseJSON(event);
       id = [event.group_id, id]
       type = 'group_user'
     }
@@ -90,7 +91,7 @@ const tempSession = computed(() => {
   if (props.activeContact) {
     if (props.activeContact.latest_msg) {
       let event = props.activeContact.latest_msg;
-      event = typeof event === 'string' ? JSON.parse(event) : event;
+      event = parseJSON(event);
       return event.message_type === 'private' && event.sub_type === 'group' ? "临时会话" : ""
     }
   }
@@ -352,9 +353,6 @@ const findMessage = async (message_id) => {
       item => item.message_id === parseInt(message_id) && ['message', 'message_sent'].includes(item.post_type)
     )
   }
-  const isEmptyObject = (obj) => {
-    return typeof obj === 'object' && Object.keys(obj).length === 0;
-  }
   if (!msg || isEmptyObject(msg)) {
     msg = await fetchMsg(message_id)
   }
@@ -427,12 +425,12 @@ const handleClickShowContactInfo = (e, user_id) => {
   let group_user, user, group;
   if (user_id) {
     let nickname;
-    if (typeof user_id === 'object') {
+    if (isObject(user_id)) {
       ({
         nickname, user_id
       } = user_id)
     }
-    if (typeof user_id === "string") {
+    if (isString(user_id)) {
       user_id = Number.parseInt(user_id)
     }
     if (isGroup?.value) {

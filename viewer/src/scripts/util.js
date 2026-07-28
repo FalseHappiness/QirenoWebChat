@@ -1,5 +1,6 @@
 import { isMobile, isSafari } from '@tenrok/vue3-device-detect'
 import { pinyin } from 'pinyin-pro';
+import { isNumber, isString } from "./types-util.js";
 
 const hasMouseSupport = () => {
   const support_list = []
@@ -8,10 +9,10 @@ const hasMouseSupport = () => {
     support_list.push(window.matchMedia('(hover: hover)').matches)
     support_list.push(window.matchMedia('(any-hover: hover)').matches)
   }
-  if (typeof navigator.maxTouchPoints === 'number') {
+  if (isNumber(navigator.maxTouchPoints)) {
     support_list.push(navigator.maxTouchPoints === 0)
   }
-  if (typeof navigator.msMaxTouchPoints === 'number') {
+  if (isNumber(navigator.msMaxTouchPoints)) {
     support_list.push(navigator.msMaxTouchPoints === 0)
   }
   if (!isSafari) {
@@ -174,10 +175,6 @@ function sortGroupUsers(users) {
     // 角色相同则按名称排序
     return compareStrings(a.name, b.name);
   });
-}
-
-function isString(str) {
-  return typeof str === 'string'
 }
 
 function parseJSON(json) {
@@ -364,23 +361,12 @@ function triggerDownloadFile(url, name) {
 }
 
 /**
- * 字符串/任意值转为标准布尔
- * "true"/"1"/"yes"/"on" → true
- * "false"/"0"/"no"/"off"/空字符串/null/undefined → false
- */
-function strToBool(val) {
-  if (val == null) return false;
-  const s = String(val).trim().toLowerCase();
-  return ['true', '1', 'yes', 'on'].includes(s);
-}
-
-/**
  * 删除字符串末尾单个斜杠
  * @param {string} url
  * @returns {string}
  */
 function trimTrailingSlash(url) {
-  if (typeof url !== 'string') return url
+  if (!isString(url)) return url
   // 正则：匹配结尾的 / 并替换为空
   return url.replace(/\/$/, '')
 }
@@ -393,10 +379,6 @@ function hasEnglish(str) {
   return /[a-zA-Z]/.test(str)
 }
 
-const isObject = (variable) => {
-  return typeof variable === 'object' && !Array.isArray(variable);
-};
-
 export {
   hasMouseSupport,
   formatRelativeTime,
@@ -405,10 +387,9 @@ export {
   stringifyJSON,
   formatTimeOptions,
   triggerDownloadFile,
-  strToBool,
   trimTrailingSlash,
   nowSecondTimestamp,
   hasEnglish,
-  isObject,
-  isString,
+
+
 }

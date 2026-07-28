@@ -14,6 +14,7 @@
 import TruncatedText from "../../Utils/TruncatedText.vue";
 import { defineComponent } from "vue";
 import { qqFileIcon } from "../../../composables/useBase.js";
+import { isString } from "../../../scripts/types-util.js";
 
 
 const getFileIcon = (name) => {
@@ -63,7 +64,7 @@ const getFileIcon = (name) => {
 
 const formatFileSize = (bytesStr) => {
   // 处理非字符串输入
-  if (typeof bytesStr !== 'string') {
+  if (!isString(bytesStr)) {
     bytesStr = String(bytesStr);
   }
 

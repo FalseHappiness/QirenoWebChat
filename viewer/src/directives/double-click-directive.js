@@ -1,48 +1,41 @@
 // double-click-directive.js
 
-const DoubleClick = {
-  // Vue 2 钩子
-  bind(el, binding, vnode) {
-    installHandler(el, binding, vnode);
-  },
-  unbind(el) {
-    uninstallHandler(el);
-  },
+import { isFunction } from "../scripts/types-util.js";
 
-  // Vue 3 钩子
-  mounted(el, binding, vnode) {
-    installHandler(el, binding, vnode);
+const vDoubleClick = {
+  mounted(el, binding) {
+    installHandler(el, binding);
   },
   unmounted(el) {
     uninstallHandler(el);
   }
 };
 
-function installHandler(el, binding, vnode) {
+function installHandler(el, binding) {
   let clicks = 0;
   let timer = null;
-  const delay = binding.value?.delay || 300;
+  const opts = binding.value || {};
+  const delay = opts.delay || 300;
 
   const handleClick = (originalEvent) => {
     clicks++;
 
     if (clicks === 1) {
       timer = setTimeout(() => {
-        // 触发单击回调
-        if (binding.value?.singleClick) {
-          binding.value.singleClick(originalEvent);
-        } else if (typeof binding.value === 'function') {
-          // 向后兼容：如果只传了一个函数，默认是双击回调
+        // 单击回调
+        if (opts.singleClick) {
+          opts.singleClick(originalEvent);
         }
         clicks = 0;
       }, delay);
     } else {
-      // 双击
+      // 双击触发
       clearTimeout(timer);
-      if (typeof binding.value === 'function') {
-        binding.value(originalEvent);
-      } else if (binding.value?.doubleClick) {
-        binding.value.doubleClick(originalEvent);
+      if (isFunction(opts)) {
+        // 直接传函数的兼容写法
+        opts(originalEvent);
+      } else if (opts.doubleClick) {
+        opts.doubleClick(originalEvent);
       }
       clicks = 0;
     }
@@ -59,6 +52,4 @@ function uninstallHandler(el) {
   }
 }
 
-export {
-  DoubleClick as vDoubleClick
-};
+export { vDoubleClick };

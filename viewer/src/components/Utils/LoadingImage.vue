@@ -1,6 +1,7 @@
 <script>
 import { defineComponent } from 'vue'
 import { qqAppImg, qqIconSvg } from "../../composables/useBase.js";
+import { isString } from "../../scripts/types-util.js";
 
 export default defineComponent({
   name: "LoadingImage",
@@ -175,7 +176,7 @@ export default defineComponent({
     getDecideMaxWidthElement() {
       if (this.decideMaxWidth === undefined) {
         return this.$refs.loadingImageContainer
-      } else if (typeof this.decideMaxWidth === 'string') {
+      } else if (isString(this.decideMaxWidth)) {
         return this.$refs.loadingImageContainer?.closest(this.decideMaxWidth)
       } else {
         return null

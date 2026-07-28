@@ -27,6 +27,7 @@ import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
 import { getPokeDescription } from "../../scripts/faces-config.js";
 import { qqAppPoke, qqIconSvg, qqSystemEmoji } from "../../composables/useBase.js";
+import { isBoolean, isObject } from "../../scripts/types-util.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -541,7 +542,7 @@ export default defineComponent({
 
         let files = await this.processDataTransferItems(e.dataTransfer.items)
         if (files) {
-          const filteredFiles = files.filter(file => typeof file.data !== 'object' || file.data.size)
+          const filteredFiles = files.filter(file => !isObject(file.data) || file.data.size)
           if (filteredFiles.length !== files.length) {
             showToast('info', '已自动过滤空文件/文件夹')
           }
@@ -568,7 +569,7 @@ export default defineComponent({
 
     // 移动多元素内容到光标位置（修复了节点位置问题）
     insertNodeAtCursor(arg1, arg2) {
-      let { copy, node } = typeof arg1 === 'boolean' ? { copy: arg1, node: arg2 } : { copy: arg2, node: arg1 }
+      let { copy, node } = isBoolean(arg1) ? { copy: arg1, node: arg2 } : { copy: arg2, node: arg1 }
       if (node === undefined) {
         node = this.draggedFragment
       }

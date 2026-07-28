@@ -27,7 +27,8 @@ import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
 import DownloadProgressPopup from "../components/Popups/DownloadProgressPopup.vue";
 import LoadingSpinner from "../components/Common/LoadingSpinner.vue";
 import { checkMsgIsCurrentContact } from "../scripts/contacts-util.js";
-import { nowSecondTimestamp } from "../scripts/util.js";
+import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
+import { isNumber } from "../scripts/types-util.js";
 
 const props = defineProps({
   account: {
@@ -248,7 +249,7 @@ const getMessages = async (
       const response_messages = response.messages
       if (response_messages.length) {
         const response_id = response_messages
-          .filter(obj => typeof obj.id === 'number')
+          .filter(obj => isNumber(obj.id))
           .map(obj => obj.id);
         lastMessageId.value = Math.max(lastMessageId.value, ...response_id)
       }
@@ -339,8 +340,7 @@ onMounted(() => {
           if (visibleMessages) {
             visibleMessages.forEach(msg => {
               if (msg?.message_id === notice.message_id) {
-                let event = msg.event
-                event = typeof event === 'string' ? JSON.parse(event) : event
+                const event = parseJSON(msg.event)
                 event.recall_operator = is_group ? notice.operator_id : msg.target_id
                 msg.event = JSON.stringify(event)
               }

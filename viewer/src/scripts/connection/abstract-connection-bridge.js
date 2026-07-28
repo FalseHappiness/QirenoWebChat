@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { convertWrappedMsgSL } from '../snow-luma-translator.js'
 import { isSupportedNoticeMessage } from '../parse-message.js'
+import { parseJSON } from "../util.js";
 
 /**
  * AbstractConnectionBridge
@@ -151,7 +152,7 @@ export class AbstractConnectionBridge {
     // 检查是否是新的联系人
     const contactId = message.message_type === 'group' ? message.group_id : (message.target_id || message.user_id)
     const contactType = message.message_type
-    const event = typeof message.event === 'string' ? JSON.parse(message.event) : message.event
+    const event = parseJSON(message.event)
     const contactName = event?.group_name || event?.sender?.nickname
 
     this.callbacks.onNewContact({

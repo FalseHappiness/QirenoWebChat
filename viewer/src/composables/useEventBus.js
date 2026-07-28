@@ -1,6 +1,8 @@
 import { EventEmitter } from 'eventemitter3'
 import { nanoid } from 'nanoid'
 
+import { isObject, isString } from "../scripts/types-util.js";
+
 // 原有全局 emitter（保持原样不变）
 export const Emitter = new EventEmitter();
 
@@ -46,13 +48,13 @@ class CalledEmitterClass {
    */
   emit(info, ...args) {
     let type, timeout;
-    if (typeof info === 'object') {
+    if (isObject(info)) {
       ({ type, timeout } = info)
     }
     if (Array.isArray(info)) {
       ([type, timeout] = info)
     }
-    if (typeof info === 'string') {
+    if (isString(info)) {
       type = info
     }
     // 检查是否注册监听

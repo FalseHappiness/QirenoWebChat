@@ -1,9 +1,11 @@
+import { isObject, isString } from "../../types-util.js";
+
 /**
  * 将 OneBot 原始事件转换为标准化的消息数据格式
  * 与 Python 端 convert_event_to_message_data 等效
  */
 export function convertEventToMessageData(event) {
-  const eventDict = typeof event === 'object' ? { ...event } : {};
+  const eventDict = isObject(event) ? { ...event } : {};
 
   let realSeq = null;
   try {
@@ -506,7 +508,7 @@ export async function getMessagesCore(params, db, onebotWS) {
         const oldMsg = merged.get(key);
 
         // 处理 event 合并逻辑（与 Python 端一致）
-        if (oldMsg && typeof msg.event === 'string' && typeof oldMsg.event === 'string') {
+        if (oldMsg && isString(msg.event) && isString(oldMsg.event)) {
           try {
             const oldEvent = JSON.parse(oldMsg.event);
             const event = JSON.parse(msg.event);

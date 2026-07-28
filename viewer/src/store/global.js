@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import { reactive } from 'vue';
 import { otherFacesDescribes, secretEmojiids } from "../scripts/faces-config.js";
 
+import { isString } from "../scripts/types-util.js";
+
 function getAllEmojiids(list) {
   // 创建一个 Set 来避免重复的 xxx1
   const result = new Set();
@@ -92,9 +94,9 @@ function sortNumbersAndOthers(arr) {
 
   arr.forEach(item => {
     // 检查是否是数字或字符串形式的整数
-    if (typeof item === 'number' && Number.isInteger(item)) {
+    if (Number.isInteger(item)) {
       numbers.push(item);
-    } else if (typeof item === 'string' && /^-?\d+$/.test(item)) {
+    } else if (isString(item) && /^-?\d+$/.test(item)) {
       numbers.push(parseInt(item, 10));
     } else {
       others.push(item);
@@ -132,7 +134,7 @@ export const useGlobalStore = defineStore(
     );
 
     const emojiEmojiids = sortNumbersAndOthers(
-      allEmojiids.filter(item => typeof item === 'string' && !/^\d+$/.test(item) && !superEmojiids.includes(item))
+      allEmojiids.filter(item => isString(item) && !/^\d+$/.test(item) && !superEmojiids.includes(item))
     );
 
     const normalEmojiids = sortNumbersAndOthers(
