@@ -1,11 +1,11 @@
 <script setup>
-import { ref, onUnmounted, computed, h, onMounted, shallowRef, inject, toRaw, defineComponent } from 'vue'
+import { ref, onUnmounted, computed, h, onMounted, inject, toRaw } from 'vue'
 import { formatTime, parseMessage, parseNotice } from "../../scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
   fetchChangeEssenceMsg,
   fetchDisplayName,
-  fetchMsg, fetchRecallMessage, fetchRecordToText,
+  fetchRecallMessage, fetchRecordToText,
   fetchSendMessage, fetchTranslateEnglish,
   getCacheGroupLevelTitle,
   getCacheName, getUserLogo
@@ -22,7 +22,7 @@ import { vDoubleClick } from '../../directives/double-click-directive.js';
 import { formatRelativeTime, hasEnglish, parseJSON } from "../../scripts/util.js";
 import { showToast } from "../../scripts/toast.js";
 import { Emitter } from "../../composables/useEventBus.js";
-import { qqAppImg, qqIconSvg } from "../../composables/useBase.js";
+import { qqAppImg } from "../../composables/useBase.js";
 import LoadingSpinner from "../Common/LoadingSpinner.vue";
 import QIcon from "../Utils/QIcon.vue";
 import { isString } from "../../scripts/types-util.js";
@@ -274,7 +274,7 @@ const customContextMenu = () => {
           console.error("Translate error:", e)
         }
       },
-      qqIconSvg("translate_24"),
+      "translate_24",
       hasEnglish(messagePlainTextContent.value) && (!isEnabledTranslate.value || translateErrorText.value !== null)
     ),
     basicContextItem(
@@ -290,7 +290,7 @@ const customContextMenu = () => {
           console.error("Record to text error:", e)
         }
       },
-      qqIconSvg("speech_to_text_16"),
+      "speech_to_text_16",
       messageRecordSegment.value && (!isEnabledPTT.value || pttErrorText.value !== null)
     ),
     basicContextItem('复制', () => {
@@ -313,18 +313,18 @@ const customContextMenu = () => {
       if (copyAll) {
         window.getSelection().removeAllRanges();
       }
-    }, qqIconSvg("copy_24")),
+    }, "copy_24"),
     basicContextItem('转发', () => {
       const message = props.message
       const event = parseJSON(message.event);
       Emitter.emit('forward-single-msg', event.message_id, event.message)
-    }, qqIconSvg("one_by_one_forward_24")),
+    }, "one_by_one_forward_24"),
     basicContextItem('引用', () => {
       emit('quote-message', toRaw(props.message), props.message.message_type === 'group' ? {
         name: displayName.value,
         qq: props.message.user_id
       } : null)
-    }, qqIconSvg("quote_24")),
+    }, "quote_24"),
     basicContextItem(
       isEssence.value ? '移除精华' : '设为精华',
       async () => {
@@ -351,7 +351,7 @@ const customContextMenu = () => {
         }
         settingEssence.value = false
       },
-      qqIconSvg("essence_message_24"),
+      "essence_message_24",
       ['owner', 'admin'].includes(self_info.role) &&
       (!isRecalled.value || !isEssence.value)
     ),
@@ -360,7 +360,7 @@ const customContextMenu = () => {
       '撤回', () => {
         fetchRecallMessage(props.message.message_id)
       },
-      qqIconSvg("recall_24"),
+      "recall_24",
       !isRecalled.value &&
       (
         (self_info.role === 'owner') ||

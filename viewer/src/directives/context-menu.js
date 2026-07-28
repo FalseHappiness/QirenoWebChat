@@ -4,6 +4,7 @@ import "../styles/content-menu.css"
 import { h } from "vue";
 
 import { isFunction } from "../scripts/types-util.js";
+import QIcon from "../components/Utils/QIcon.vue";
 
 let last_open_time = 0
 const detect_fn_name = 'custom-context-menu-should-show-detect'
@@ -107,7 +108,7 @@ function contextDividedItem() {
   }
 }
 
-function basicContextItem(text, onclick, icon_src, condition = true, divided = false) {
+function basicContextItem(text, onclick, iconName, condition = true, divided = false) {
   if (!condition) {
     return undefined
   }
@@ -124,13 +125,9 @@ function basicContextItem(text, onclick, icon_src, condition = true, divided = f
       item[key] = value
     }
   }
-  if (icon_src) {
-    item.icon = h('img', {
-      src: icon_src,
-      style: {
-        width: '15px',
-        height: '15px',
-      }
+  if (iconName) {
+    item.icon = h(QIcon, {
+      name: iconName
     })
   }
   return item

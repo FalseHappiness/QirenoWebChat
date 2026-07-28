@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue';
-import './App.scss';
+import './App.css';
 import AccountsView from "./views/AccountsView.vue";
 import MainView from "./views/MainView.vue";
 import LoadingSpinner from "./components/Common/LoadingSpinner.vue";
@@ -63,14 +63,15 @@ const onMainViewDisconnect = () => {
   />
 </template>
 
-<style scoped>
-.loading-view {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #f5f5f5;
+<style lang="scss">
+@font-face {
+  font-family: "Color Emoji";
+  src: url("#{$base-url}QQ/fonts/AppleColorEmoji.ttf") format('truetype');
+  unicode-range: U+1F300-1F5FF, U+1F600-1F64F, U+1F680-1F6FF, U+2600-26FF, U+2700-27BF;/*不包含空白符及数字*/
+}
+
+@font-face {
+  font-family: "Color Emoji Fix";
+  src: url("#{$base-url}QQ/fonts/AppleColorEmoji-fix.ttf") format('truetype');
 }
 </style>

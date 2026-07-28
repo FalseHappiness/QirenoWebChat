@@ -580,18 +580,6 @@ defineExpose({
     />
     <ImageViewer ref="imageViewer"/>
 
-    <div class="cannot-drag window-controls" v-if="false">
-      <div class="window-control-btn window-control-minimize">
-        <img src="/static/assets/Minimize.svg" alt="" class="no-user-select">
-      </div>
-      <div class="window-control-btn window-control-max">
-        <img src="/static/assets/Max.svg" alt="" class="no-user-select">
-      </div>
-      <div class="window-control-btn window-control-close">
-        <img src="/static/assets/Close.svg" alt="" class="no-user-select">
-      </div>
-    </div>
-
     <div v-if="activeContact" class="border-bottom chat-area-head">
       <span class="chat-area-head-name" :class="{'text-error': isError}">
         <img class="chat-area-go-back-btn" alt="" :src="qqIconSvg('arrow_left_24')"
@@ -991,49 +979,6 @@ defineExpose({
     top: 42px;
     box-shadow: none;
   }
-}
-</style>
-
-<style>
-.window-controls {
-  position: fixed;
-  right: 0;
-  top: 0;
-  height: 28px;
-  /*width: 96px;*/
-}
-
-.window-controls .window-control-btn {
-  width: 32px;
-  height: 28px;
-  display: inline-block;
-  text-align: center;
-  line-height: 26px;
-}
-
-.window-controls .window-control-btn:hover {
-  background-color: #0000000A;
-}
-
-.window-controls .window-control-btn:active {
-  background-color: #0000001F;
-}
-
-.window-controls .window-control-close:hover, .window-controls .window-control-close:active {
-  background-color: #C42B1C;
-}
-
-.window-controls .window-control-close:hover img {
-  filter: invert(1); /* 颠倒黑色为白色 */
-}
-
-.window-controls .window-control-close:active img {
-  filter: invert(0.8);
-}
-
-.window-controls .window-control-btn img {
-  width: 16px;
-  height: 16px;
 }
 </style>
 

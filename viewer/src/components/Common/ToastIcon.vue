@@ -10,20 +10,20 @@ export default defineComponent({
   <span></span>
 </template>
 
-<style lang="scss">
+<style>
 .Vue-Toastification__toast--info .Vue-Toastification__icon {
-    background: url("#{$base-url}QQ/icons/tips_noraml.svg");
+    background: url(@/QQ/icons/tips_noraml.svg);
 }
 
 .Vue-Toastification__toast--warning .Vue-Toastification__icon {
-    background: url("#{$base-url}QQ/icons/tips_fail_16.svg");
+    background: url(@/QQ/icons/tips_fail_16.svg);
 }
 
 .Vue-Toastification__toast--error .Vue-Toastification__icon {
-    background: url("#{$base-url}QQ/icons/tips_warning.svg");
+    background: url(@/QQ/icons/tips_warning.svg);
 }
 
 .Vue-Toastification__toast--success .Vue-Toastification__icon {
-    background: url("#{$base-url}QQ/icons/tips_done.svg");
+    background: url(@/QQ/icons/tips_done.svg);
 }
 </style>

@@ -163,7 +163,7 @@ const customContextMenu = () => {
       () => {
         copy(props.contact.contact_id)
       },
-      qqIconSvg('copy_24')
+      "copy_24"
     )
   ]
 }

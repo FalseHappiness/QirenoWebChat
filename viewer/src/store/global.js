@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import { reactive } from 'vue';
 import { otherFacesDescribes, secretEmojiids } from "../scripts/faces-config.js";
+import emojiFiles from '../assets/emoji_files.json';
+import emojiFaceConfig from '../QQ/EmojiConfig/face_config.json'
+import emojiDefaultConfig from '../QQ/EmojiConfig/default_config.json'
 
 import { isString } from "../scripts/types-util.js";
 
@@ -121,10 +124,6 @@ function sortNumbersAndOthers(arr) {
 export const useGlobalStore = defineStore(
   'global',
   () => {
-    const emoji_json = import.meta.glob('/src/assets/EmojiSystermResource/*.json', { eager: true });
-
-    const emojiFiles = emoji_json['/src/assets/EmojiSystermResource/emoji_files.json'].default;
-
     const allEmojiids = sortNumbersAndOthers(
       getAllEmojiids(emojiFiles)
     );
@@ -142,8 +141,8 @@ export const useGlobalStore = defineStore(
     );
 
     const emojiDescribes = getEmojiDescribes(
-      emoji_json['/src/assets/EmojiSystermResource/default_config.json'].default,
-      emoji_json['/src/assets/EmojiSystermResource/face_config.json'].default
+      emojiDefaultConfig,
+      emojiFaceConfig
     )
 
     const nameCaches = reactive({});

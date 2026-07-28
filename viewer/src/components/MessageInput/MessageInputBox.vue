@@ -2717,7 +2717,7 @@ export default defineComponent({
           <div class="message-input-record-microphone message-input-record-icon-container"
                :class="{ active: isRecording && !isRecordPaused }">
             <template v-if="isRecording && isRecordLocked">
-              <Icon icon="prime:send" class="message-input-record-icon" @click.stop="handleSendRecord"/>
+              <Icon icon="tabler:send" class="message-input-record-icon" @click.stop="handleSendRecord"/>
             </template>
             <template v-else>
               <ColorSvg :src="qqIconSvg('microphone_on_24')" class="message-input-record-icon"></ColorSvg>

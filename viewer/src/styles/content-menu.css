@@ -25,11 +25,11 @@
     padding: 0;
 }
 
-.mx-context-menu-item:hover .mx-icon-placeholder img {
+.mx-context-menu-item:hover .mx-icon-placeholder svg {
     animation: content-menu-img-animation 0.5s ease-in-out;
 }
 
-.mx-context-menu-item .mx-icon-placeholder img {
+.mx-context-menu-item .mx-icon-placeholder svg {
     width: 17px !important;
     height: 17px !important;
     margin: auto;
