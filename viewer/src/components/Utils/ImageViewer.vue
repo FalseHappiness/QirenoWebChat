@@ -25,6 +25,21 @@ export default defineComponent({
       dragStartY: 0,
       dragStartTranslateX: 0,
       dragStartTranslateY: 0,
+      // 移动端触摸状态
+      isPinching: false,
+      touchStartDistance: 0,
+      touchStartScale: 1,
+      touchStartMidX: 0,
+      touchStartMidY: 0,
+      touchStartTranslateX: 0,
+      touchStartTranslateY: 0,
+      // 双指旋转
+      isRotating: false,
+      touchStartAngle: 0,
+      touchStartRotation: 0,
+      rotationThreshold: 15, // 旋转触发角度阈值（度）
+      // 是否经历过双指手势，用于在手指全部抬起时自动吸附角度
+      pendingSnap: false,
     }
   },
   computed: {
@@ -34,7 +49,8 @@ export default defineComponent({
     },
     zoomPercent() {
       if (!this.naturalWidth || !this.imageLoaded) return '--%'
-      const percent = Math.round(this.userScale * 100)
+      // 实际显示比例 = baseFitScale * userScale，相对于图片原始大小
+      const percent = Math.round(this.baseFitScale * this.userScale * 100)
       return `${Math.max(1, Math.min(9999, percent))}%`
     }
   },
@@ -53,6 +69,9 @@ export default defineComponent({
       this.translateX = 0
       this.translateY = 0
       this.isDragging = false
+      this.isPinching = false
+      this.isRotating = false
+      this.pendingSnap = false // 重置吸附标志
       const mask = this.$refs.imageViewerMask
       if (mask) {
         mask.style.display = ''
@@ -85,10 +104,20 @@ export default defineComponent({
       if (!container || !img || !img.naturalWidth) return
       this.naturalWidth = img.naturalWidth
       this.naturalHeight = img.naturalHeight
-      const cw = container.clientWidth
-      const ch = container.clientHeight
+      // 排除 padding 对计算的影响，使图片内容区域充分利用容器
+      const style = getComputedStyle(container)
+      const padLeft = parseFloat(style.paddingLeft) || 0
+      const padRight = parseFloat(style.paddingRight) || 0
+      const padTop = parseFloat(style.paddingTop) || 0
+      const padBottom = parseFloat(style.paddingBottom) || 0
+      const cw = container.clientWidth - padLeft - padRight
+      const ch = container.clientHeight - padTop - padBottom
+      // 旋转 90° 或 270°（奇数倍 90°）时，有效显示宽高交换
+      const isSwapped = Math.round(this.rotation / 90) % 2 !== 0
+      const displayW = isSwapped ? img.naturalHeight : img.naturalWidth
+      const displayH = isSwapped ? img.naturalWidth : img.naturalHeight
       if (cw > 0 && ch > 0) {
-        this.baseFitScale = Math.min(cw / img.naturalWidth, ch / img.naturalHeight)
+        this.baseFitScale = Math.min(cw / displayW, ch / displayH)
       }
     },
     zoomIn() {
@@ -98,6 +127,7 @@ export default defineComponent({
       this.userScale = Math.max(0.1, this.userScale / 1.25)
     },
     fitToWindow() {
+      this.calculateFitScale()
       this.userScale = 1
       this.translateX = 0
       this.translateY = 0
@@ -109,8 +139,14 @@ export default defineComponent({
       this.translateX = 0
       this.translateY = 0
     },
+    /** 逆时针旋转90° */
     rotate() {
-      this.rotation = (this.rotation + 90) % 360
+      // 直接减去 90，避免模运算导致的角度跳跃与方向反转
+      this.rotation -= 90
+      // 仅在当前为适应窗口状态下，旋转后重新适应
+      if (this.userScale === 1 && this.translateX === 0 && this.translateY === 0) {
+        this.$nextTick(() => this.calculateFitScale())
+      }
     },
     download() {
       window.open(this.currentImageUrl, '_blank')
@@ -161,6 +197,146 @@ export default defineComponent({
     onImageError() {
       this.imageError = true
       this.imageLoaded = false
+    },
+
+    // ========== 移动端触摸事件 ==========
+    /** 获取两点触摸距离 */
+    getTouchDistance(touches) {
+      const dx = touches[0].clientX - touches[1].clientX
+      const dy = touches[0].clientY - touches[1].clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    },
+    /** 获取两点触摸中点 */
+    getTouchMidPoint(touches) {
+      return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2
+      }
+    },
+    /** 获取两点触摸角度（度），从 touch0 指向 touch1 的向量与 X 轴夹角 */
+    getTouchAngle(touches) {
+      const dx = touches[1].clientX - touches[0].clientX
+      const dy = touches[1].clientY - touches[0].clientY
+      return Math.atan2(dy, dx) * (180 / Math.PI)
+    },
+    /** 将角度归一化到 [-180, 180) */
+    normalizeAngleDelta(delta) {
+      while (delta > 180) delta -= 360
+      while (delta <= -180) delta += 360
+      return delta
+    },
+    /** 吸附到最近的 90° 倍数（基于当前连续角度值，避免反向动画） */
+    snapRotationToNearest90() {
+      // 直接对当前 rotation 取整到最近 90° 倍数，不进行 0~360 归一化。
+      // 这样目标值与当前值的数值差最小，CSS transition 会沿最短路径平滑过渡。
+      const target = Math.round(this.rotation / 90) * 90
+      this.isPinching = false
+      this.isRotating = false
+      this.isDragging = false
+      this.pendingSnap = false
+      // 记录当前是否为适应窗口状态
+      const wasFitted = this.userScale === 1 && this.translateX === 0 && this.translateY === 0
+      // 移除 pinching 类后，确保 transition 重新生效
+      this.$nextTick(() => {
+        if (this.$refs.imageElement) {
+          void this.$refs.imageElement.offsetWidth
+        }
+        this.rotation = target
+        // 仅在旋转前是适应窗口状态，旋转后才重新适应
+        if (wasFitted) {
+          this.calculateFitScale()
+        }
+      })
+    },
+    onTouchStart(e) {
+      const touches = e.touches
+      if (touches.length === 1) {
+        // 单指拖动
+        this.isDragging = true
+        this.isPinching = false
+        this.isRotating = false
+        this.dragStartX = touches[0].clientX
+        this.dragStartY = touches[0].clientY
+        this.dragStartTranslateX = this.translateX
+        this.dragStartTranslateY = this.translateY
+        // 注意：如果之前有双指操作，pendingSnap 仍然保留，确保最后松开时能吸附
+      } else if (touches.length === 2) {
+        // 双指操作（缩放 + 拖动 + 旋转）
+        this.isPinching = true
+        this.isDragging = false
+        this.isRotating = false
+        this.pendingSnap = true // 标记经历过双指手势
+        this.touchStartDistance = this.getTouchDistance(touches)
+        this.touchStartScale = this.userScale
+        const mid = this.getTouchMidPoint(touches)
+        this.touchStartMidX = mid.x
+        this.touchStartMidY = mid.y
+        this.touchStartTranslateX = this.translateX
+        this.touchStartTranslateY = this.translateY
+        this.touchStartAngle = this.getTouchAngle(touches)
+        this.touchStartRotation = this.rotation
+      }
+    },
+    onTouchMove(e) {
+      e.preventDefault()
+      const touches = e.touches
+      if (touches.length === 1 && this.isDragging) {
+        // 单指拖动
+        this.translateX = this.dragStartTranslateX + (touches[0].clientX - this.dragStartX)
+        this.translateY = this.dragStartTranslateY + (touches[0].clientY - this.dragStartY)
+      } else if (touches.length === 2 && this.isPinching) {
+        // 双指缩放
+        const currentDist = this.getTouchDistance(touches)
+        const scaleRatio = currentDist / this.touchStartDistance
+        this.userScale = Math.max(0.1, Math.min(20, this.touchStartScale * scaleRatio))
+
+        // 双指拖动（以两指中点为参考）
+        const mid = this.getTouchMidPoint(touches)
+        this.translateX = this.touchStartTranslateX + (mid.x - this.touchStartMidX)
+        this.translateY = this.touchStartTranslateY + (mid.y - this.touchStartMidY)
+
+        // 双指旋转
+        const currentAngle = this.getTouchAngle(touches)
+        let angleDelta = this.normalizeAngleDelta(currentAngle - this.touchStartAngle)
+
+        if (!this.isRotating) {
+          // 角度变化超过阈值才激活旋转模式，避免普通缩放误触发
+          if (Math.abs(angleDelta) > this.rotationThreshold) {
+            this.isRotating = true
+            // 重置基准：将当前旋转角度和手指角度作为新基准
+            this.touchStartRotation = this.rotation
+            this.touchStartAngle = currentAngle
+            // 重新计算 angleDelta，因为基准已变，避免瞬间跳跃
+            angleDelta = 0
+          }
+        }
+
+        if (this.isRotating) {
+          this.rotation = this.touchStartRotation + angleDelta
+        }
+      }
+    },
+    onTouchEnd(e) {
+      if (e.touches.length === 0) {
+        // 所有手指抬起
+        // 如果之前经历过双指手势（缩放或旋转），则需要自动吸附角度
+        if (this.isPinching || this.isRotating || this.pendingSnap) {
+          this.snapRotationToNearest90()
+        } else {
+          this.isDragging = false
+        }
+      } else if (e.touches.length === 1 && this.isPinching) {
+        // 双指变为单指时，切换到单指拖动模式
+        // 注意：保留 pendingSnap 标志，以便在最终松开所有手指时依然吸附
+        this.isRotating = false
+        this.isDragging = true
+        this.isPinching = false
+        // 不重置 pendingSnap，因为双指手势尚未完全结束
+        this.dragStartX = e.touches[0].clientX
+        this.dragStartY = e.touches[0].clientY
+        this.dragStartTranslateX = this.translateX
+        this.dragStartTranslateY = this.translateY
+      }
     }
   }
 })
@@ -168,10 +344,19 @@ export default defineComponent({
 
 <template>
   <teleport to="body">
-    <div class="image-viewer-mask" :class="{ closed }" ref="imageViewerMask" style="display: none" @wheel="onWheel">
+    <div
+      class="image-viewer-mask"
+      :class="{ closed }"
+      ref="imageViewerMask"
+      style="display: none"
+      @wheel="onWheel"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+    >
       <!-- 关闭按钮 -->
       <div class="image-viewer-close-btn" @click="close">
-        <QIcon name="close_fill_24" />
+        <QIcon name="close_fill_24"/>
       </div>
 
       <!-- 图片显示区域 -->
@@ -185,7 +370,7 @@ export default defineComponent({
           :src="currentImageUrl"
           ref="imageElement"
           class="image-viewer-image"
-          :class="{ dragging: isDragging }"
+          :class="{ dragging: isDragging, pinching: isPinching }"
           :style="{ transform: displayTransform }"
           @load="onImageLoad"
           @error="onImageError"
@@ -201,7 +386,7 @@ export default defineComponent({
       <div class="image-viewer-toolbar">
         <Tooltip use-target-slot placement="top" :distance-from-target="12">
           <template #target>
-            <QIcon name="shrink_24" class="image-viewer-toolbar-icon" @click="zoomOut" />
+            <QIcon name="shrink_24" class="image-viewer-toolbar-icon" @click="zoomOut"/>
           </template>
           <template #content>
             <div class="image-viewer-tooltip">缩小</div>
@@ -210,7 +395,7 @@ export default defineComponent({
         <span class="image-viewer-zoom-percent">{{ zoomPercent }}</span>
         <Tooltip use-target-slot placement="top" :distance-from-target="12">
           <template #target>
-            <QIcon name="enlarge_24" class="image-viewer-toolbar-icon" @click="zoomIn" />
+            <QIcon name="enlarge_24" class="image-viewer-toolbar-icon" @click="zoomIn"/>
           </template>
           <template #content>
             <div class="image-viewer-tooltip">放大</div>
@@ -219,7 +404,7 @@ export default defineComponent({
         <div class="image-viewer-divider"></div>
         <Tooltip use-target-slot placement="top" :distance-from-target="12">
           <template #target>
-            <QIcon name="self_adapting_24" class="image-viewer-toolbar-icon" @click="originalSize" />
+            <QIcon name="self_adapting_24" class="image-viewer-toolbar-icon" @click="originalSize"/>
           </template>
           <template #content>
             <div class="image-viewer-tooltip">原始大小</div>
@@ -227,7 +412,7 @@ export default defineComponent({
         </Tooltip>
         <Tooltip use-target-slot placement="top" :distance-from-target="12">
           <template #target>
-            <QIcon name="original_size_24" class="image-viewer-toolbar-icon" @click="fitToWindow" />
+            <QIcon name="original_size_24" class="image-viewer-toolbar-icon" @click="fitToWindow"/>
           </template>
           <template #content>
             <div class="image-viewer-tooltip">适应窗口</div>
@@ -236,15 +421,15 @@ export default defineComponent({
         <div class="image-viewer-divider"></div>
         <Tooltip use-target-slot placement="top" :distance-from-target="12">
           <template #target>
-            <QIcon name="group_video_rotate_24" class="image-viewer-toolbar-icon" @click="rotate" />
+            <QIcon name="group_video_rotate_24" class="image-viewer-toolbar-icon" @click="rotate"/>
           </template>
           <template #content>
-            <div class="image-viewer-tooltip">旋转</div>
+            <div class="image-viewer-tooltip">逆时针旋转</div>
           </template>
         </Tooltip>
         <Tooltip use-target-slot placement="top" :distance-from-target="12">
           <template #target>
-            <QIcon name="download_new_24" class="image-viewer-toolbar-icon" @click="download" />
+            <QIcon name="download_new_24" class="image-viewer-toolbar-icon" @click="download"/>
           </template>
           <template #content>
             <div class="image-viewer-tooltip">下载</div>
@@ -270,6 +455,8 @@ export default defineComponent({
   opacity: 1;
   --anim-time: 0.3s;
   animation: imageViewerMaskIn var(--anim-time) ease-in-out;
+  /* 阻止移动端浏览器默认触摸行为（如滚动、双指缩放页面） */
+  touch-action: none;
 }
 
 .image-viewer-mask.closed {
@@ -278,8 +465,12 @@ export default defineComponent({
 }
 
 @keyframes imageViewerMaskIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .image-viewer-mask.closed .image-viewer-image-area {
@@ -319,18 +510,23 @@ export default defineComponent({
 /* 关闭按钮 - 右上角 */
 .image-viewer-close-btn {
   position: fixed;
-  top: 16px;
-  right: 16px;
-  width: 36px;
-  height: 36px;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: #fff;
-  z-index: 10000;
+  z-index: 889;
   border-radius: 50%;
   transition: background-color 0.2s;
+}
+
+.image-viewer-close-btn svg {
+  height: 100%;
+  width: 100%;
 }
 
 .image-viewer-close-btn:hover {
@@ -346,7 +542,7 @@ export default defineComponent({
   width: 100%;
   min-height: 0;
   overflow: visible;
-  padding: 60px 0 0;
+  padding: 45px 0 0;
   box-sizing: border-box;
 }
 
@@ -356,10 +552,16 @@ export default defineComponent({
   -webkit-user-drag: none;
   cursor: grab;
   transition: transform 0.15s ease;
+  /* 阻止移动端长按弹出菜单/保存图片 */
+  -webkit-touch-callout: none;
 }
 
 .image-viewer-image.dragging {
   cursor: grabbing;
+  transition: none;
+}
+
+.image-viewer-image.pinching {
   transition: none;
 }
 
@@ -377,7 +579,7 @@ export default defineComponent({
   justify-content: center;
   gap: 14px;
   padding: 10px 24px;
-  margin: 0 auto 28px;
+  margin: 14px auto;
   background-color: rgba(0, 0, 0, 0.55);
   border-radius: 22px;
   backdrop-filter: blur(6px);
@@ -416,6 +618,32 @@ export default defineComponent({
   height: 20px;
   background-color: rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
+}
+
+/* 移动端适配：触摸时不显示滚动条、调整工具栏大小 */
+@media (pointer: coarse) {
+  .image-viewer-toolbar {
+    gap: 10px;
+    padding: 8px 16px;
+    margin: 10px auto;
+    border-radius: 18px;
+  }
+
+  .image-viewer-toolbar-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .image-viewer-close-btn {
+    top: 10px;
+    right: 10px;
+    width: 25px;
+    height: 25px;
+  }
+
+  .image-viewer-image-area {
+    padding: 40px 0 0;
+  }
 }
 </style>
 
