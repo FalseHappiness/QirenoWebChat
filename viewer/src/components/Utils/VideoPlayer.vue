@@ -286,7 +286,7 @@ export default defineComponent({
 }
 
 .video-player-close-btn:hover {
-  background-color: rgba(0, 0, 0, 0.80);
+  background-color: rgba(0, 0, 0, 0.75);
 }
 
 /* 视频显示区域 - 自适应剩余空间 */
@@ -353,11 +353,11 @@ export default defineComponent({
 }
 
 .video-player-nav-arrow-left svg {
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 .video-player-nav-arrow-right svg {
-  margin-left: 4px;
+  margin-left: 2px;
 }
 
 /* 移动端适配 */

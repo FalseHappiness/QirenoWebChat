@@ -5,13 +5,13 @@ import { formatTimeOptions } from "../../scripts/util.js"
 import CustomScrollBar from "../Utils/CustomScrollBar.vue"
 import SimplePopUp from "../Utils/SimplePopUp.vue"
 import { qqIconSvg } from "../../composables/useBase.js";
-import ColorSvg from "../Utils/ColorSvg.vue";
 import { showInfoToast } from "../../scripts/toast.js";
 import ImageViewer from "../Utils/ImageViewer.vue";
+import VideoPlayer from "../Utils/VideoPlayer.vue";
 
 export default defineComponent({
   name: "GroupAlbumViewer",
-  components: { ColorSvg, CustomScrollBar, SimplePopUp, ImageViewer },
+  components: { CustomScrollBar, SimplePopUp, ImageViewer, VideoPlayer },
   props: {
     group_id: { type: [Number, String], required: true },
     onClose: {
@@ -41,6 +41,7 @@ export default defineComponent({
 
       // 媒体详情
       currentMediaIndex: 0,
+      detailClosing: false,
 
       // 保存滚动位置
       savedAlbumScrollTop: 0,
@@ -324,10 +325,15 @@ export default defineComponent({
     },
 
     goBackToMedia() {
-      this.view = 'media'
-      this.$nextTick(() => {
-        this.restoreMediaScrollPosition()
-      })
+      if (this.detailClosing) return
+      this.detailClosing = true
+      setTimeout(() => {
+        this.view = 'media'
+        this.detailClosing = false
+        this.$nextTick(() => {
+          this.restoreMediaScrollPosition()
+        })
+      }, 300)
     },
 
     prevMedia() {
@@ -527,40 +533,15 @@ export default defineComponent({
                      @click-right="nextMedia"
                      @close="goBackToMedia"/>
 
-        <!-- ===== 媒体详情视图 - 视频保持原有布局 ===== -->
-        <div v-if="view === 'detail' && currentMedia && currentMedia.type === 1"
-             class="gav-detail-overlay"
-             @click.self="goBackToMedia">
-          <div class="gav-detail-header">
-            <ColorSvg alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
-                      @click="goBackToMedia"/>
-            <span class="gav-detail-counter">{{ counterText }}</span>
-            <ColorSvg alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
-                      @click="close"/>
-          </div>
-
-          <div class="gav-detail-body" @click.self="goBackToMedia">
-            <video v-if="getVideoUrl(currentMedia)"
-                   :src="getVideoUrl(currentMedia)" controls class="gav-detail-media"
-                   @click.self="goBackToMedia"></video>
-            <div v-else class="gav-detail-error">无法加载此媒体</div>
-          </div>
-
-          <div class="gav-detail-info">
-            <span>上传者: {{ currentMedia.uploader }}</span>
-            <span>{{ formatDateTime(currentMedia.upload_time) }}</span>
-          </div>
-
-          <button v-if="currentMediaIndex > 0" class="gav-nav-btn gav-nav-prev"
-                  @click="prevMedia">
-            <img :src="qqIconSvg('arrow_left_24')" alt="">
-          </button>
-          <button v-if="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
-                  class="gav-nav-btn gav-nav-next"
-                  @click="nextMedia">
-            <img :src="qqIconSvg('arrow_right_24')" alt="">
-          </button>
-        </div>
+        <!-- ===== 媒体详情视图 - 视频使用 VideoPlayer ===== -->
+        <VideoPlayer v-if="view === 'detail' && currentMedia && currentMedia.type === 1"
+                     :videoUrl="getVideoUrl(currentMedia) || ''"
+                     :showLeftArrow="currentMediaIndex > 0"
+                     :showRightArrow="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
+                     :counterText="counterText"
+                     @click-left="prevMedia"
+                     @click-right="nextMedia"
+                     @close="goBackToMedia"/>
       </template>
     </SimplePopUp>
   </div>
@@ -741,112 +722,6 @@ export default defineComponent({
   margin-bottom: 8px;
 }
 
-/* ===== 详情视图 ===== */
-.gav-detail-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.92);
-  display: flex;
-  flex-direction: column;
-  z-index: 10;
-  border-radius: inherit;
-}
-
-.gav-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  position: relative;
-  min-height: 40px;
-}
-
-.gav-detail-header .gav-back-btn {
-  position: absolute;
-  left: 12px;
-}
-
-.gav-detail-header .gav-close-btn {
-  position: absolute;
-  right: 12px;
-}
-
-.gav-detail-counter {
-  color: #fff;
-  font-size: 14px;
-}
-
-.gav-detail-body {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 8px;
-}
-
-.gav-detail-media {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 4px;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
-.gav-detail-error {
-  color: #999;
-  font-size: 16px;
-}
-
-.gav-detail-info {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  padding: 8px 12px;
-  color: #aaa;
-  font-size: 12px;
-}
-
-/* 导航按钮 */
-.gav-nav-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  z-index: 11;
-}
-
-.gav-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.gav-nav-btn img {
-  width: 24px;
-  height: 24px;
-  filter: brightness(0) invert(1);
-}
-
-.gav-nav-prev {
-  left: 12px;
-}
-
-.gav-nav-next {
-  right: 12px;
-}
-
 /* ===== 响应式 ===== */
 @media (max-width: 480px) {
   .gav-scroll {
@@ -866,15 +741,6 @@ export default defineComponent({
     font-size: 10px;
   }
 
-  .gav-nav-btn {
-    width: 36px;
-    height: 36px;
-  }
-
-  .gav-nav-btn img {
-    width: 20px;
-    height: 20px;
-  }
 }
 </style>
 

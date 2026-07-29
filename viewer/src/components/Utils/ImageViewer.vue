@@ -595,6 +595,9 @@ export default defineComponent({
   z-index: 889;
   border-radius: 50%;
   transition: background-color 0.2s;
+  background-color: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  padding: 3px;
 }
 
 .image-viewer-close-btn svg {
@@ -603,7 +606,7 @@ export default defineComponent({
 }
 
 .image-viewer-close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.75);
 }
 
 /* 图片显示区域 - 自适应剩余空间，功能栏不参与计算 */
@@ -688,11 +691,11 @@ export default defineComponent({
 }
 
 .image-viewer-nav-arrow-left svg {
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 .image-viewer-nav-arrow-right svg {
-  margin-left: 4px;
+  margin-left: 2px;
 }
 
 /* 底部功能栏 */
