@@ -55,7 +55,7 @@ const chatAreaContactMore = ref(null)
 const handleChatAreaClick = e => {
   const target = e?.target
   if (target) {
-    if (!chatAreaContactMore.value?.$el?.contains(target)) {
+    if (!chatAreaContactMore.value?.$el?.contains(target) && !target.closest?.('.chat-area-ctrl-show-more')) {
       showContactMore.value = false;
     }
   }
@@ -610,9 +610,8 @@ defineExpose({
           <template #target>
             <QIcon
               name="more_24"
-              class="chat-area-head-control-btn"
-              @click="showContactMore = !showContactMore"
-              @click.stop/>
+              class="chat-area-head-control-btn chat-area-ctrl-show-more"
+              @click="showContactMore = !showContactMore"/>
           </template>
         </Tooltip>
       </span>
@@ -767,7 +766,7 @@ defineExpose({
   flex-direction: column;
   height: 100%;
   background: rgb(245, 245, 245);
-  max-width: calc(100% - var(--sidebar-width));
+  /*max-width: calc(100% - var(--sidebar-width));*/
   min-width: 390px;
 }
 
@@ -859,7 +858,7 @@ defineExpose({
   right: -100%;
   z-index: 5;
   box-shadow: 0 3px 6px 0 #b6b6b68f;
-  transition: right ease-in-out 0.2s;
+  transition: right ease-out 0.3s;
   padding: 0 18px;
 }
 
