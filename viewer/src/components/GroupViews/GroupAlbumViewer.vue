@@ -4,14 +4,14 @@ import { fetchGroupAlbumList, fetchGroupAlbumMediaList } from "../../scripts/bac
 import { formatTimeOptions } from "../../scripts/util.js"
 import CustomScrollBar from "../Utils/CustomScrollBar.vue"
 import SimplePopUp from "../Utils/SimplePopUp.vue"
-import { qqIconSvg } from "../../composables/useBase.js";
 import { showInfoToast } from "../../scripts/toast.js";
 import ImageViewer from "../Utils/ImageViewer.vue";
 import VideoPlayer from "../Utils/VideoPlayer.vue";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "GroupAlbumViewer",
-  components: { CustomScrollBar, SimplePopUp, ImageViewer, VideoPlayer },
+  components: { QIcon, CustomScrollBar, SimplePopUp, ImageViewer, VideoPlayer },
   props: {
     group_id: { type: [Number, String], required: true },
     onClose: {
@@ -77,9 +77,7 @@ export default defineComponent({
     }
   },
   methods: {
-    qqIconSvg,
     /* ========== 格式化工具 ========== */
-
     formatDateOnly(timestamp) {
       if (!timestamp) return ''
       const date = new Date(parseInt(timestamp) * 1000)
@@ -454,8 +452,8 @@ export default defineComponent({
         <template v-if="view === 'albums'">
           <div class="gav-title">
             群相册
-            <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
-                 @click="close">
+            <QIcon name="close_fill_24" class="gav-close-btn cannot-drag"
+                 @click="close"/>
           </div>
           <CustomScrollBar ref="albumScroller" class="gav-scroll" @scroll="onAlbumScroll">
             <div v-if="loadingAlbums && !albums.length" class="gav-loading">加载中...</div>
@@ -491,11 +489,11 @@ export default defineComponent({
         <!-- ===== 媒体列表视图（详情视图时保持显示作为背景） ===== -->
         <template v-if="view === 'media' || view === 'detail'">
           <div class="gav-title">
-            <img alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
-                 @click="goBackToAlbums">
+            <QIcon name="arrow_left_24" class="gav-back-btn cannot-drag"
+                 @click="goBackToAlbums"/>
             {{ (currentAlbum && currentAlbum.name) || '相册' }}
-            <img alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
-                 @click="close">
+            <QIcon name="close_fill_24" class="gav-close-btn cannot-drag"
+                 @click="close"/>
           </div>
           <CustomScrollBar ref="mediaScroller" class="gav-scroll" @scroll="onMediaScroll">
             <div v-if="loadingMedia && !mediaList.length" class="gav-loading">加载中...</div>
@@ -570,7 +568,6 @@ export default defineComponent({
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  background-color: white;
 }
 
 .gav-back-btn {
@@ -581,7 +578,6 @@ export default defineComponent({
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  background-color: white;
 }
 
 .gav-scroll {

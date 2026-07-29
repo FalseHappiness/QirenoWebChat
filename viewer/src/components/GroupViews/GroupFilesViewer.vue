@@ -1,21 +1,21 @@
 <script>
 import { defineComponent } from 'vue'
 import {
-  fetchGroupRootFiles,
   fetchGroupFolderFiles,
   fetchGroupFileSysInfo,
-  getFileDataUrl, getGroupFileProxyUrl, fetchGroupFileUrl
+  getGroupFileProxyUrl,
 } from "../../scripts/backend-api.js";
 import { formatTimeOptions } from "../../scripts/util.js";
 import { getFileIcon, formatFileSize } from "../MessageItem/MessageTypes/FileMessage.vue";
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
 import SimplePopUp from "../Utils/SimplePopUp.vue";
 import TruncatedText from "../Utils/TruncatedText.vue";
-import { qqFileIcon, qqIconSvg } from "../../composables/useBase.js";
+import { qqFileIcon } from "../../composables/useBase.js";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "GroupFilesViewer",
-  components: { TruncatedText, SimplePopUp, CustomScrollBar },
+  components: { QIcon, TruncatedText, SimplePopUp, CustomScrollBar },
   props: {
     group_id: {
       type: [Number, String],
@@ -130,7 +130,6 @@ export default defineComponent({
   },
   methods: {
     qqFileIcon,
-    qqIconSvg,
     formatFileSize,
     getFileIcon,
     formatTime(timestamp) {
@@ -209,8 +208,8 @@ export default defineComponent({
       <template #default>
         <div class="gv-title">
           群文件
-          <img alt="" :src="qqIconSvg('close_fill_24')" class="gv-close-btn cannot-drag"
-               @click="close">
+          <QIcon name="close_fill_24" class="gv-close-btn cannot-drag"
+                 @click="close"/>
         </div>
 
         <!-- 工具栏 -->

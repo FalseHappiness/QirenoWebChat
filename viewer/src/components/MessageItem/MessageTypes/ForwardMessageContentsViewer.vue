@@ -5,13 +5,13 @@ import { parseMessage } from "../../../scripts/parse-message.js";
 import { formatTimeOptions } from "../../../scripts/util.js";
 import SimplePopUp from "../../Utils/SimplePopUp.vue";
 import CustomScrollBar from "../../Utils/CustomScrollBar.vue";
-import { qqIconSvg } from "../../../composables/useBase.js";
-import { isString } from "fast-glob/out/utils/string.js";
-import { isObject } from "../../../scripts/types-util.js";
+import { isObject, isString } from "../../../scripts/types-util.js";
+import QIcon from "../../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "ForwardMessageContentsViewer",
   components: {
+    QIcon,
     SimplePopUp,
     CustomScrollBar,
     RenderVNode: {
@@ -73,7 +73,6 @@ export default defineComponent({
   },
   methods: {
     isObject,
-    qqIconSvg,
     getUserLogo,
     formatTime(timestamp) {
       if (!timestamp) return ''
@@ -148,7 +147,7 @@ export default defineComponent({
             <span v-else>未知</span>
             <span>的聊天记录</span>
           </span>
-          <img alt="" :src="qqIconSvg('close_fill_24')" class="fv-close-btn" @click="close">
+          <QIcon name="close_fill_24" class="fv-close-btn" @click="close"/>
         </div>
 
         <!-- 主体区域 -->

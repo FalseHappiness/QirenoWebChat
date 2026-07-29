@@ -5,11 +5,12 @@ import TruncatedText from "../Utils/TruncatedText.vue";
 import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import SimplePopUp from "../Utils/SimplePopUp.vue";
-import { qqFileIcon, qqIconSvg } from "../../composables/useBase.js";
+import { qqFileIcon } from "../../composables/useBase.js";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "FilesConfirm",
-  components: { SimplePopUp, SimpleBar, TruncatedText },
+  components: { QIcon, SimplePopUp, SimpleBar, TruncatedText },
   props: {
     contactName: {
       type: String,
@@ -34,7 +35,6 @@ export default defineComponent({
   },
   methods: {
     qqFileIcon,
-    qqIconSvg,
     getFileIcon: getFileIcon,
     formatFileSize: formatFileSize,
     confirm(confirm = true) {
@@ -50,8 +50,8 @@ export default defineComponent({
       <template #default>
         <div class="files-confirm-title">
           发送<span v-if="typeName">{{ ` ${typeName} ` }}</span>给 {{ contactName }}
-          <img alt="" :src="qqIconSvg('close_fill_24')" class="files-confirm-close-btn cannot-drag"
-               @click="confirm(false)">
+          <QIcon name="close_fill_24" class="files-confirm-close-btn cannot-drag"
+               @click="confirm(false)"/>
         </div>
         <div class="files-confirm-files">
           <SimpleBar class="files-confirm-files-scroller" data-simplebar data-simplebar-auto-hide="false">

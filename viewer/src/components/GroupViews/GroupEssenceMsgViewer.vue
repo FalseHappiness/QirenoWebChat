@@ -5,7 +5,7 @@ import { formatTimeOptions } from "../../scripts/util.js";
 import { parseMessage } from "../../scripts/parse-message.js";
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
 import SimplePopUp from "../Utils/SimplePopUp.vue";
-import { qqIconSvg } from "../../composables/useBase.js";
+import QIcon from "../Utils/QIcon.vue";
 
 /**
  * 使用 parseMessage 渲染消息段的内联组件
@@ -25,7 +25,7 @@ const MessageContentRenderer = {
 
 export default defineComponent({
   name: "GroupEssenceMsgViewer",
-  components: { SimplePopUp, CustomScrollBar, MessageContentRenderer },
+  components: { QIcon, SimplePopUp, CustomScrollBar, MessageContentRenderer },
   props: {
     messages: {
       type: Array,
@@ -63,7 +63,6 @@ export default defineComponent({
     }
   },
   methods: {
-    qqIconSvg,
     getAvatarUrl(user_id) {
       return getUserLogo(user_id)
     },
@@ -109,8 +108,8 @@ export default defineComponent({
       <template #default>
         <div class="essence-msg-viewer-title">
           精华消息
-          <img alt="" :src="qqIconSvg('close_fill_24')" class="essence-msg-viewer-close-btn cannot-drag"
-               @click="close">
+          <QIcon name="close_fill_24" class="essence-msg-viewer-close-btn cannot-drag"
+                 @click="close"/>
         </div>
         <CustomScrollBar class="essence-msg-viewer-list">
           <div v-if="!messages?.length" class="essence-msg-viewer-empty">
@@ -150,7 +149,7 @@ export default defineComponent({
             </div>
             <div class="essence-msg-viewer-item-footer">
               <span class="essence-msg-viewer-operator">
-                <img :src="qqIconSvg('essence_message_24')" alt="" class="essence-msg-viewer-essence-icon">
+                <QIcon name="essence_message_24" class="essence-msg-viewer-essence-icon"/>
                 <span class="essence-msg-viewer-operator-text">{{ msg.operator_nick || msg.operator_id }} 加精</span>
                 <span class="essence-msg-viewer-operator-time">{{ formatTime(msg.operator_time) }}</span>
               </span>
@@ -266,6 +265,7 @@ export default defineComponent({
   width: 16px;
   height: 16px;
   flex-shrink: 0;
+  color: black;
 }
 
 .essence-msg-viewer-operator-text {

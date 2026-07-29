@@ -6,11 +6,12 @@ import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import SimplePopUp from "../Utils/SimplePopUp.vue";
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
-import { qqFileIcon, qqIconSvg } from "../../composables/useBase.js";
+import { qqFileIcon } from "../../composables/useBase.js";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "FilesUploadTasksViewer",
-  components: { CustomScrollBar, SimplePopUp, SimpleBar, TruncatedText },
+  components: { QIcon, CustomScrollBar, SimplePopUp, SimpleBar, TruncatedText },
   props: {
     tasks: {
       type: Array,
@@ -24,7 +25,6 @@ export default defineComponent({
   },
   methods: {
     qqFileIcon,
-    qqIconSvg,
     getFileIcon: getFileIcon,
     formatFileSize: formatFileSize,
     close() {
@@ -136,8 +136,8 @@ export default defineComponent({
       <template #default>
         <div class="files-upload-tasks-title">
           文件上传任务
-          <img alt="" :src="qqIconSvg('close_fill_24')" class="files-upload-tasks-close-btn cannot-drag"
-               @click="close()">
+          <QIcon name="close_fill_24" class="files-upload-tasks-close-btn cannot-drag"
+               @click="close()"/>
         </div>
 
         <!-- 任务列表 -->

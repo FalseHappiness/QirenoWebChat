@@ -4,14 +4,13 @@ import SimplePopUp from "../Utils/SimplePopUp.vue";
 import { Collapse, CollapsePanel, Checkbox, CheckboxGroup } from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css';
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
-import ColorSvg from "../Utils/ColorSvg.vue";
-import { qqIconSvg } from "../../composables/useBase.js";
 import { filterSearchContacts, flattenCategorizedContacts } from "../../scripts/contacts-util.js";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "ContactsPicker",
   components: {
-    ColorSvg,
+    QIcon,
     CustomScrollBar,
     SimplePopUp,
     ACollapse: Collapse,
@@ -49,7 +48,6 @@ export default defineComponent({
     }
   },
   methods: {
-    qqIconSvg,
     getLogo(id, type) {
       return type === 'group'
         ? `https://p.qlogo.cn/gh/${id}/${id}/40`
@@ -80,7 +78,7 @@ export default defineComponent({
       <template #default>
         <div class="contacts-picker-contacts-area">
           <div class="contacts-picker-contacts-area-search">
-            <ColorSvg :src="qqIconSvg('search_24')" class="contacts-picker-contacts-area-search-icon"/>
+            <QIcon name="search_24" class="contacts-picker-contacts-area-search-icon"/>
             <input @input="filterContactsValue = $event.target.value" placeholder="搜索"
                    class="contacts-picker-contacts-area-search-input">
           </div>
@@ -92,12 +90,11 @@ export default defineComponent({
                             v-model:activeKey="collapseActiveKeys"
                             style="width: 100%">
                   <template #expandIcon="{ isActive }">
-                    <img
-                      :src="qqIconSvg('arrow_right_small_16')"
-                      alt=""
+                    <QIcon
+                      name="arrow_right_small_16"
                       class="contacts-picker-expand-icon"
                       :class="{ active: isActive }"
-                    >
+                    />
                   </template>
                   <a-collapse-panel
                     v-if="categorizedContacts?.length"
@@ -151,9 +148,7 @@ export default defineComponent({
                        loading="lazy">
                   {{ contact.name }}
                 </div>
-                <div class="contacts-picker-contacts-area-contact-close-btn-background">
-                  <ColorSvg :src="qqIconSvg('close_16')" class="contacts-picker-contacts-area-contact-close-btn"/>
-                </div>
+                <QIcon name="close_16" class="contacts-picker-contacts-area-contact-close-btn"/>
               </div>
             </CustomScrollBar>
           </div>
@@ -274,13 +269,8 @@ export default defineComponent({
 .contacts-picker-contacts-area-contact-close-btn {
   width: 14px;
   height: 14px;
-  background: #ffffff;
-}
-
-.contacts-picker-contacts-area-contact-close-btn-background {
+  color: #ffffff;
   background-color: #b8b8b8;
-  width: 14px;
-  height: 14px;
   border-radius: 50%;
 }
 
@@ -348,7 +338,7 @@ export default defineComponent({
   height: 18px;
   width: 18px;
   margin: 0 4px 0 6px;
-  background-color: gray;
+  color: gray;
   flex-shrink: 0;
 }
 

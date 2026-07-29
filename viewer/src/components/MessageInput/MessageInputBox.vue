@@ -1,7 +1,6 @@
 <script>
 import { defineComponent, toRaw } from 'vue'
 import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
-import ColorSvg from "../Utils/ColorSvg.vue";
 import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import Tooltip from "../Utils/Tooltip.vue";
@@ -26,12 +25,14 @@ import { showErrorToast, showWarningToast } from "../../scripts/toast.js";
 import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
 import { getPokeDescription } from "../../scripts/faces-config.js";
-import { qqAppPoke, qqIconSvg, qqSystemEmoji } from "../../composables/useBase.js";
+import { qqAppPoke, qqSystemEmoji } from "../../composables/useBase.js";
 import { isBoolean, isObject } from "../../scripts/types-util.js";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "MessageInputBox",
   components: {
+    QIcon,
     GroupAiRecordEditor,
     CustomScrollBar,
     ContactsPicker,
@@ -40,7 +41,6 @@ export default defineComponent({
     VirtualScroller,
     InputQuote,
     Tooltip,
-    ColorSvg,
     VueResizable,
     SimpleBar,
     Icon,
@@ -124,7 +124,6 @@ export default defineComponent({
     this.handleUnmounted()
   },
   methods: {
-    qqIconSvg,
     handleUnmounted() {
       this.$refs.editor?.removeEventListener('compositionstart', this.handleCompositionStart)
       this.$refs.editor?.removeEventListener('compositionend', this.handleCompositionEnd)
@@ -2287,11 +2286,9 @@ export default defineComponent({
       return this.isRecordLocked ? 'tabler:lock' : 'tabler:lock-open'
     },
     playSwitchIcon() {
-      return qqIconSvg(
-        (this.isRecording && !this.isRecordPaused)
-          ? 'pause_24'
-          : 'play_fill_24'
-      )
+      return (this.isRecording && !this.isRecordPaused)
+        ? 'pause_24'
+        : 'play_fill_24'
     },
     emojiGroupList() {
       const category = {
@@ -2461,9 +2458,7 @@ export default defineComponent({
               >
                 <div class="at-group-user" v-if="item.qq === 'all'">
                   <div class="at-group-user-name">
-                    <div class="at-group-all-members-icon-background">
-                      <ColorSvg class="at-group-all-members-icon" :src="qqIconSvg('at_24')" :size="65"></ColorSvg>
-                    </div>
+                    <QIcon class="at-group-all-members-icon" name="at_24"></QIcon>
                     <span class="text-truncate">全体成员</span>
                   </div>
                   <span class="at-group-user-qq">剩余 {{
@@ -2497,16 +2492,14 @@ export default defineComponent({
       <div class="message-input-common-panel message-input-panel" :class="{ 'display-none': isShowRecordPanel }">
         <div class="message-input-controls">
           <div class="message-input-controls-left">
-            <color-svg
-              :src="qqIconSvg('expression_24')"
-              class="message-input-ctrl-icon"
-              ref="expressionControl"
-            ></color-svg>
             <Tooltip
-              v-if="refReady"
-              :target="$refs.expressionControl.svg"
               content="表情"
-            />
+              use-target-slot
+            >
+              <template #target>
+                <QIcon ref="expressionControl" class="message-input-ctrl-icon" name="expression_24"/>
+              </template>
+            </Tooltip>
             <Tooltip
               v-if="refReady"
               :target="$refs.expressionControl.svg"
@@ -2565,30 +2558,23 @@ export default defineComponent({
               </template>
             </Tooltip>
 
-            <color-svg
-              :src="qqIconSvg('folder_24')"
-              class="message-input-ctrl-icon"
-              ref="folderControl"
-              @click="handleMessageInputSelectFiles"
-            ></color-svg>
             <Tooltip
-              v-if="refReady"
-              :target="$refs.folderControl.svg"
               content="文件"
-            />
+              use-target-slot
+            >
+              <template #target>
+                <QIcon @click="handleMessageInputSelectFiles" class="message-input-ctrl-icon" name="folder_24"/>
+              </template>
+            </Tooltip>
 
-            <color-svg
-              :src="qqIconSvg('image_24')"
-              class="message-input-ctrl-icon"
-              ref="imageControl"
-              @click="handleMessageInputSelectImages"
-            ></color-svg>
             <Tooltip
-              v-if="refReady"
-              :target="$refs.imageControl.svg"
               content="图片"
-            />
-
+              use-target-slot
+            >
+              <template #target>
+                <QIcon @click="handleMessageInputSelectImages" class="message-input-ctrl-icon" name="image_24"/>
+              </template>
+            </Tooltip>
 
             <Tooltip
               v-if="isPrivate"
@@ -2596,26 +2582,20 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <color-svg
-                  :src="qqIconSvg('shake_24')"
-                  class="message-input-ctrl-icon"
-                  ref="shakeControl"
-                  @click="handleMessageInputShake()"
-                ></color-svg>
+                <QIcon @click="handleMessageInputShake()" class="message-input-ctrl-icon" name="shake_24"/>
               </template>
             </Tooltip>
 
-            <color-svg
-              :src="qqIconSvg('microphone_on_24')"
-              class="message-input-ctrl-icon message-input-ctrl-icon-microphone"
-              ref="recordPanelControl"
-              @click="handleOpenRecordPanel"
-            ></color-svg>
             <Tooltip
-              v-if="refReady"
-              :target="$refs.recordPanelControl.svg"
               content="语言消息"
-            />
+              use-target-slot
+            >
+              <template #target>
+                <QIcon @click="handleOpenRecordPanel"
+                       class="message-input-ctrl-icon message-input-ctrl-icon-microphone"
+                       name="microphone_on_24"/>
+              </template>
+            </Tooltip>
           </div>
 
 
@@ -2626,11 +2606,11 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <color-svg
-                  :src="qqIconSvg('files_24')"
+                <QIcon
+                  name="files_24"
                   class="message-input-ctrl-icon"
                   @click="handleFilesUploadTasksViewer"
-                ></color-svg>
+                />
               </template>
             </Tooltip>
           </div>
@@ -2669,11 +2649,11 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <color-svg
-                  :src="qqIconSvg('folder_24')"
+                <QIcon
+                  name="folder_24"
                   class="message-input-ctrl-icon"
                   @click="handleMessageInputSelectAudios"
-                ></color-svg>
+                />
               </template>
             </Tooltip>
             <Tooltip
@@ -2682,11 +2662,11 @@ export default defineComponent({
               v-if="isGroup"
             >
               <template #target>
-                <color-svg
-                  :src="qqIconSvg('ai_label_16')"
+                <QIcon
+                  name="ai_label_16"
                   class="message-input-ctrl-icon"
                   @click="handleOpenGroupAiRecordEditor"
-                ></color-svg>
+                />
               </template>
             </Tooltip>
           </div>
@@ -2697,11 +2677,11 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <color-svg
-                  :src="qqIconSvg('files_24')"
+                <QIcon
+                  name="files_24"
                   class="message-input-ctrl-icon"
                   @click="handleFilesUploadTasksViewer"
-                ></color-svg>
+                />
               </template>
             </Tooltip>
           </div>
@@ -2710,29 +2690,26 @@ export default defineComponent({
         <div class="message-input-record-container"
              @mousedown="handleRecordIconMouseDown"
              @mouseleave="isHoveringCancel = false">
-          <div class="message-input-record-lock message-input-record-icon-container"
-               @click.stop="handleLockClick">
-            <Icon :icon="lockIcon" class="message-input-record-icon"/>
-          </div>
-          <div class="message-input-record-microphone message-input-record-icon-container"
+          <Icon
+            :icon="lockIcon"
+            @click.stop="handleLockClick"
+            class="message-input-record-icon message-input-record-lock"/>
+          <div class="message-input-record-microphone message-input-record-icon"
                :class="{ active: isRecording && !isRecordPaused }">
             <template v-if="isRecording && isRecordLocked">
-              <Icon icon="tabler:send" class="message-input-record-icon" @click.stop="handleSendRecord"/>
+              <Icon icon="tabler:send" @click.stop="handleSendRecord"/>
             </template>
             <template v-else>
-              <ColorSvg :src="qqIconSvg('microphone_on_24')" class="message-input-record-icon"></ColorSvg>
+              <QIcon name="microphone_on_24"></QIcon>
             </template>
           </div>
-          <div class="message-input-record-play-switch message-input-record-icon-container"
-               @mousedown.stop
-               @click.stop="handlePlaySwitchClick">
-            <ColorSvg
-              :src="playSwitchIcon"
-              :size="92"
-              class="message-input-record-icon"
-              :style="{ marginLeft: playSwitchIcon.endsWith('play_fill_24.svg') ? '2px' : '0' }"
-            />
-          </div>
+          <QIcon
+            :name="playSwitchIcon"
+            class="message-input-record-icon message-input-record-play-switch"
+            @mousedown.stop
+            @click.stop="handlePlaySwitchClick"
+            :style="{ paddingLeft: playSwitchIcon === 'play_fill_24' ? '12px' : '10px' }"
+          />
         </div>
         <div class="text-muted message-input-record-hint">
           <template v-if="isRecording">
@@ -2808,7 +2785,7 @@ export default defineComponent({
   width: 24px;
   display: inline-block;
   margin: 0 0 0 15px;
-  background-color: black;
+  color: black;
   vertical-align: middle;
 }
 
@@ -2817,7 +2794,7 @@ export default defineComponent({
 }
 
 .message-input-ctrl-icon:hover {
-  background-color: #0099ff;
+  color: #0099ff;
 }
 
 .message-input-send-button {
@@ -2986,7 +2963,7 @@ export default defineComponent({
   overflow: hidden;
 }
 
-.at-group-user-name img, .at-group-all-members-icon-background {
+.at-group-user-name img, .at-group-all-members-icon {
   width: 20px;
   height: 20px;
   border-radius: 100%;
@@ -3006,11 +2983,9 @@ export default defineComponent({
 .at-group-all-members-icon {
   width: 20px;
   height: 20px;
-  background-color: white;
-}
-
-.at-group-all-members-icon-background {
+  color: white;
   background-color: #0099ff;
+  padding: 4px;
 }
 
 .message-input-panel {
@@ -3066,7 +3041,7 @@ export default defineComponent({
   width: 100%;
 }
 
-.message-input-record-icon-container {
+.message-input-record-icon {
   height: 45px;
   width: 45px;
   display: flex;
@@ -3076,16 +3051,8 @@ export default defineComponent({
   --inner-color: transparent;
   --outer-color: transparent;
   background: radial-gradient(38.02% 38.02% at 50% 50%, var(--inner-color) 0px, var(--outer-color) 100%);
-}
-
-.message-input-record-icon {
-  height: 24px;
-  width: 24px;
   color: white;
-}
-
-.message-input-record-icon.color-svg {
-  background-color: white;
+  padding: 10px;
 }
 
 .message-input-record-lock {
@@ -3114,6 +3081,11 @@ export default defineComponent({
   outline-width: 6px;
   --inner-color: rgb(0, 177, 255);
   --outer-color: rgb(0, 128, 255);
+}
+
+.message-input-record-microphone svg {
+  height: 24px;
+  width: 24px;
 }
 </style>
 

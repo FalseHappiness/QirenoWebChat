@@ -2,11 +2,10 @@
 <script setup>
 import { computed, ref, onMounted, h, watch } from "vue";
 import { parseMessagePreview, parseNoticePreview } from "../scripts/parse-message.js";
-import { fetchDisplayName, getCacheName, getGroupLogo, getUserLogo } from "../scripts/backend-api.js";
+import { fetchDisplayName, getGroupLogo, getUserLogo } from "../scripts/backend-api.js";
 import { basicContextItem, vCustomMenu } from "../directives/context-menu.js";
 import { copy } from "../scripts/clipboard.js";
 import { formatRelativeTime, parseJSON } from "../scripts/util.js";
-import { qqIconSvg } from "../composables/useBase.js";
 
 const props = defineProps({
   contact: {

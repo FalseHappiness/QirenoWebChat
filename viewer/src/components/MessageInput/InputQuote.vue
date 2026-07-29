@@ -2,12 +2,11 @@
 import { defineComponent, h } from 'vue'
 import { parseMessagePreview } from "../../scripts/parse-message.js";
 import { fetchDisplayName } from "../../scripts/backend-api.js";
-import ColorSvg from "../Utils/ColorSvg.vue";
 import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "InputQuote",
-  components: { QIcon, ColorSvg },
+  components: { QIcon },
   props: {
     msg: {
       type: Object,

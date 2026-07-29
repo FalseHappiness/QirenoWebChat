@@ -58,13 +58,13 @@ export default defineConfig(({ mode }) => {
         targetFiles: ['dist'] // 要删除的目录/文件
       }),
       createSvgIconsPlugin({
-        // 扫描根目录下 public/QQ/icons
-        iconDirs: [path.resolve(process.cwd(), 'public/QQ/icons')],
+        // 扫描根目录下 src/QQ/icons
+        iconDirs: [path.resolve(process.cwd(), 'src/QQ/icons')],
         symbolId: 'qq-icon-[name]',
       }),
       iconifyOffline({
         scanDir: "src",
-        verbose: true,
+        verbose: false,
         exclude: ["12"], // 直接屏蔽 12 这个不存在的图标集前缀
         icons: [] // 没有遗漏图标留空即可，缺图标再手动填 ["tabler:xxx"]
       }),

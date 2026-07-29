@@ -4,11 +4,11 @@ import SimplePopUp from "../Utils/SimplePopUp.vue";
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
 import { fetchAiRecordCharacters, fetchSendGroupAiRecord } from "../../scripts/backend-api.js";
 import { showToast } from "../../scripts/toast.js";
-import { qqIconSvg } from "../../composables/useBase.js";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "GroupAiRecordEditor",
-  components: { SimplePopUp, CustomScrollBar },
+  components: { QIcon, SimplePopUp, CustomScrollBar },
   props: {
     group_id: {
       type: [Number, String],
@@ -35,7 +35,6 @@ export default defineComponent({
     this.loadCharacters()
   },
   methods: {
-    qqIconSvg,
     async loadCharacters() {
       if (!this.group_id) return
       this.loading = true
@@ -143,8 +142,8 @@ export default defineComponent({
       <template #default>
         <div class="group-ai-record-editor-title">
           AI 语音
-          <img alt="" :src="qqIconSvg('close_fill_24')" class="group-ai-record-editor-close-btn cannot-drag"
-               @click="close">
+          <QIcon name="close_fill_24" class="group-ai-record-editor-close-btn cannot-drag"
+               @click="close"/>
         </div>
 
         <div class="group-ai-record-editor-body">
@@ -177,13 +176,11 @@ export default defineComponent({
                       <div class="group-ai-record-editor-character-preview"
                            @click.stop="previewAudio(character)"
                            :title="isPlaying(character.character_id) ? '停止播放' : '预览声音'">
-                        <img v-if="isPlaying(character.character_id)"
-                             :src="qqIconSvg('pause_24')"
-                             alt="暂停"
+                        <QIcon v-if="isPlaying(character.character_id)"
+                             name="pause_24"
                              class="group-ai-record-editor-preview-icon"/>
-                        <img v-else
-                             :src="qqIconSvg('play_fill_24')"
-                             alt="播放"
+                        <QIcon v-else
+                             name="play_fill_24"
                              class="group-ai-record-editor-preview-icon"
                              style="margin-left: 2px;"/>
                       </div>

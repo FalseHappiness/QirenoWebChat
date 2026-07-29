@@ -5,11 +5,11 @@ import { convertMessageTextHTMLSyntax } from "../../scripts/parse-message.js";
 import SimplePopUp from "../Utils/SimplePopUp.vue";
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
 import { formatTimeOptions } from "../../scripts/util.js";
-import { qqIconSvg } from "../../composables/useBase.js";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "GroupAnnounceViewer",
-  components: { SimplePopUp, CustomScrollBar },
+  components: { QIcon, SimplePopUp, CustomScrollBar },
   props: {
     group_id: {
       type: Number,
@@ -45,7 +45,6 @@ export default defineComponent({
     }
   },
   methods: {
-    qqIconSvg,
     formatTime(timestamp) {
       return formatTimeOptions({
         timestamp,
@@ -80,8 +79,8 @@ export default defineComponent({
       <template #default>
         <div class="group-announce-viewer-title">
           群公告
-          <img alt="" :src="qqIconSvg('close_fill_24')" class="group-announce-viewer-close-btn cannot-drag"
-               @click="$refs.popUp.confirm(false)">
+          <QIcon name="close_fill_24" class="group-announce-viewer-close-btn cannot-drag"
+               @click="$refs.popUp.confirm(false)"/>
         </div>
         <CustomScrollBar class="group-announce-viewer-list">
           <div class="group-announce-viewer-notice" v-for="(notice) in notices" :key="notice.notice_id">

@@ -19,13 +19,13 @@ import GroupAnnounceViewer from "./GroupViews/GroupAnnounceViewer.vue";
 import EnterArrow from "./Common/EnterArrow.vue";
 import GroupEssenceMsgViewer from "./GroupViews/GroupEssenceMsgViewer.vue";
 import GroupFilesViewer from "./GroupViews/GroupFilesViewer.vue";
-import ColorSvg from "./Utils/ColorSvg.vue";
 import GroupAlbumViewer from "./GroupViews/GroupAlbumViewer.vue";
-import { qqAppImg, qqIconSvg } from "../composables/useBase.js";
+import { qqAppImg } from "../composables/useBase.js";
 import CustomScrollBar from "./Utils/CustomScrollBar.vue";
 import ImageViewer from "./Utils/ImageViewer.vue";
 import { isEmptyObject, isObject, isString } from "../scripts/types-util.js";
 import VideoPlayer from "./Utils/VideoPlayer.vue";
+import QIcon from "./Utils/QIcon.vue";
 
 const props = defineProps({
   activeContact: Object,
@@ -588,8 +588,8 @@ defineExpose({
 
     <div v-if="activeContact" class="border-bottom chat-area-head">
       <span class="chat-area-head-name" :class="{'text-error': isError}">
-        <img class="chat-area-go-back-btn" alt="" :src="qqIconSvg('arrow_left_24')"
-             @click="() => { showContactMore ? showContactMore = false : selectContact(null) }">
+        <QIcon class="chat-area-go-back-btn" name="arrow_left_24"
+               @click="() => { showContactMore ? showContactMore = false : selectContact(null) }"/>
         <span class="chat-area-head-display-name" @click="handleClickShowContactInfo">{{ displayName }}</span>
         <template> v-if="tempSession"
           <span>&nbsp;</span>
@@ -608,11 +608,11 @@ defineExpose({
           placement="bottom"
         >
           <template #target>
-            <img
-              alt="" :src="qqIconSvg('more_24')"
+            <QIcon
+              name="more_24"
               class="chat-area-head-control-btn"
               @click="showContactMore = !showContactMore"
-              @click.stop>
+              @click.stop/>
           </template>
         </Tooltip>
       </span>
@@ -640,11 +640,11 @@ defineExpose({
         群应用
         <div class="group-applications-list">
           <div @click="changeShowGroupFiles()" class="group-app-list-app-container">
-            <img alt="" :src="qqIconSvg('filelook_folder_16')" class="group-app-icon"/>
+            <QIcon name="filelook_folder_16" class="group-app-icon"/>
             群文件
           </div>
           <div @click="changeShowGroupAlbum()" class="group-app-list-app-container">
-            <ColorSvg alt="" :src="qqIconSvg('image_24')" class="group-app-icon" style="background-color: #0099ff;"/>
+            <QIcon name="image_24" class="group-app-icon" style="color: #0099ff;"/>
             群相册
           </div>
           <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">

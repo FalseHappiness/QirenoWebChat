@@ -1,10 +1,12 @@
 <script>
 import { defineComponent } from 'vue'
-import { qqAppImg, qqIconSvg } from "../../composables/useBase.js";
+import { qqAppImg } from "../../composables/useBase.js";
 import { isString } from "../../scripts/types-util.js";
+import QIcon from "./QIcon.vue";
 
 export default defineComponent({
   name: "LoadingImage",
+  components: { QIcon },
   props: {
     src: {
       type: String,
@@ -77,7 +79,6 @@ export default defineComponent({
     this.loadImage(this.src)
   },
   methods: {
-    qqIconSvg,
     qqAppImg,
     loadImage(src) {
       const This = this
@@ -261,7 +262,8 @@ export default defineComponent({
     </div>
     <div v-if="failed" class="failed-image-placeholder"
          :style="{ width: placeholderWidth, height: placeholderHeight, maxHeight }">
-      <img :src="videoMode ? qqIconSvg('video_off_24') : qqAppImg('qui_image_broken.png')" alt="">
+      <QIcon v-if="videoMode" name="video_off_24"/>
+      <img :src="qqAppImg('qui_image_broken.png')" alt="" v-else>
       <p><b>原链接: </b>{{ src }}</p>
       <p v-if="fallbackSrc"><b>后备链接: </b>{{ fallbackSrc }}</p>
     </div>
@@ -300,7 +302,7 @@ export default defineComponent({
   line-height: 10px;
 }
 
-.loading-image-placeholder img, .failed-image-placeholder img {
+.loading-image-placeholder img, .failed-image-placeholder img, .failed-image-placeholder svg {
   width: 40px;
   height: 40px;
   margin: 5px;
@@ -310,7 +312,7 @@ export default defineComponent({
   opacity: 0.5;
 }
 
-.failed-image-placeholder img {
+.failed-image-placeholder img, .failed-image-placeholder svg {
   opacity: 0.3;
 }
 </style>

@@ -6,10 +6,9 @@ import {
   getGroupLogo,
   getUserLogo
 } from "../scripts/backend-api.js"
-import { qqIconSvg } from "../composables/useBase.js"
-import ColorSvg from "./Utils/ColorSvg.vue"
 import CustomScrollBar from "./Utils/CustomScrollBar.vue"
 import { filterSearchContacts, flattenCategorizedContacts } from "../scripts/contacts-util.js";
+import QIcon from "./Utils/QIcon.vue";
 
 const emit = defineEmits(['select'])
 
@@ -43,7 +42,7 @@ const handleSelectContact = (contact) => {
 <template>
   <div class="contacts-view-categories">
     <div class="contacts-view-search">
-      <ColorSvg :src="qqIconSvg('search_24')" class="contacts-view-search-icon"/>
+      <QIcon name="search_24" class="contacts-view-search-icon"/>
       <input
         @input="filterContactsValue = $event.target.value"
         :value="filterContactsValue"
@@ -62,12 +61,11 @@ const handleSelectContact = (contact) => {
         style="width: 100%"
       >
         <template #expandIcon="{ isActive }">
-          <img
-            :src="qqIconSvg('arrow_right_small_16')"
-            alt=""
+          <QIcon
+            name="arrow_right_small_16"
             class="contacts-view-expand-icon"
             :class="{ active: isActive }"
-          >
+          />
         </template>
         <a-collapse-panel
           v-for="category in categorizedContacts"
@@ -136,7 +134,7 @@ const handleSelectContact = (contact) => {
   height: 18px;
   width: 18px;
   margin: 0 4px 0 6px;
-  background-color: gray;
+  color: gray;
   flex-shrink: 0;
 }
 

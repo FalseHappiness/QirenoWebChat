@@ -29,7 +29,7 @@ export default {
   props: {
     target: {
       // 支持传入选择器字符串或DOM元素
-      type: [String, HTMLElement],
+      type: [String, HTMLElement, SVGSVGElement],
       default: null
     },
     trigger: {

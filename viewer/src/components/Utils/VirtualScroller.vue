@@ -1,5 +1,5 @@
 <template>
-  <div class="virtual-scroller">
+  <div class="virtual-scroller" :style="{ height: `${totalHeight}px` }">
     <CustomScrollBar ref="container" class="scroll-container" @scroll="handleScroll">
       <div class="content" :style="{ height: `${totalHeight}px` }">
         <div class="viewport" :style="{ transform: `translateY(${startOffset}px)` }">
