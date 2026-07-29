@@ -737,14 +737,8 @@ defineExpose({
       </template>
       <template #scroll-to-bottom-btn="{ scrollToBottom }">
         <div class="scroll-to-bottom-btn" @click="scrollToBottom">
-          <svg style="transform: translateY(10%);" class="arrow_down_small_16" viewBox="0 0 16 16" fill="none"
-               xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 6.0001L8.00004 10L4 6" stroke="#6fc6ff" stroke-linejoin="round" stroke-width="1.8"></path>
-          </svg>
-          <svg style="transform: translateY(-55%);" class="arrow_down_small_16" viewBox="0 0 16 16" fill="none"
-               xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 6.0001L8.00004 10L4 6" stroke="#0099ff" stroke-linejoin="round" stroke-width="1.8"></path>
-          </svg>
+          <QIcon name="arrow_down_mini_16" style="transform: translateY(-8%); color: #58bafb;"/>
+          <QIcon name="arrow_down_mini_16" style="transform: translateY(-80%); color: #0099ff;"/>
         </div>
       </template>
     </page-scroller>
@@ -1017,13 +1011,6 @@ defineExpose({
 </style>
 
 <style scoped>
-.arrow_down_small_16 {
-  width: 18px;
-  height: 18px;
-  display: block;
-  margin: auto;
-}
-
 .scroll-to-bottom-btn {
   height: 28px;
   border: 1px solid white;
@@ -1034,6 +1021,13 @@ defineExpose({
   position: absolute;
   right: 20px;
   bottom: 10px;
+}
+
+.scroll-to-bottom-btn svg {
+  width: 25px;
+  height: 25px;
+  display: block;
+  margin: auto;
 }
 
 .scroll-to-bottom-btn:hover {
