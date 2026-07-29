@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { fetchAPIVersionInfo, fetchSyncMessages } from "../backend-api.js";
-import { useGlobalStore } from "../../store/global.js";
+import { useGlobalStore } from "@/store/global.js";
 import { AbstractConnectionBridge } from "./abstract-connection-bridge.js";
 
 export class ConnectionBridge extends AbstractConnectionBridge {

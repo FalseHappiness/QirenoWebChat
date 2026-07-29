@@ -529,12 +529,12 @@ const clearPeerStatus = () => {
 }
 
 const imageViewer = ref(null)
-provide("open-image-viewer", src => {
+provide("openImageViewer", src => {
   imageViewer.value?.open?.(src)
 })
 
 const videoPlayer = ref(null)
-provide("open-video-player", src => {
+provide("openVideoPlayer", src => {
   videoPlayer.value?.open?.(src)
 })
 

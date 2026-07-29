@@ -1,16 +1,17 @@
 <script>
 import { defineComponent } from 'vue'
 import Tooltip from "../Utils/Tooltip.vue";
-import { Emitter } from "../../composables/useEventBus.js";
+import { Emitter } from "@/composables/useEventBus.js";
 import {
   fetchGroupInfo,
-  fetchGroupMemberInfo, fetchGroupNotice,
+  fetchGroupMemberInfo, fetchGroupNotice, fetchSetFriendRemark, fetchSetGroupRemark,
   fetchStrangerInfo,
   getGroupLogo,
   getUserLogo
-} from "../../scripts/backend-api.js";
+} from "@/scripts/backend-api.js";
 import { nanoid } from "nanoid";
 import EnterArrow from "../Common/EnterArrow.vue";
+import { isString } from "@/scripts/types-util.js";
 
 export default defineComponent({
   name: "ContactInfoTooltip",
@@ -25,15 +26,18 @@ export default defineComponent({
       position: null,
       showId: null,
       showTime: null,
-      latestGroupNotice: null
+      latestGroupNotice: null,
+      remarkModel: null
     }
   },
+  inject: ['selfId'],
   methods: {
+    isString,
     getGroupLogo,
     getUserLogo,
     disappear() {
       this.group_user = this.user = this.group = this.group_id = this.user_id =
-        this.position = this.showId = this.showTime = this.latestGroupNotice = null
+        this.position = this.showId = this.showTime = this.latestGroupNotice = this.remarkModel = null
     },
     showContactInfo(options) {
       this.disappear()
@@ -93,7 +97,18 @@ export default defineComponent({
     showGroupNotices() {
       Emitter.emit("show-group-notices")
       this.disappear()
-    }
+    },
+    handleRemarkBlur() {
+      if (this.isGroupContact && this.group_id) {
+        if (this.remarkModel !== this.group?.group_remark) {
+          fetchSetGroupRemark(this.group_id, this.remarkModel)
+        }
+      } else if (this.user_id) {
+        if (this.remarkModel !== this.userRemark) {
+          fetchSetFriendRemark(this.user_id, this.remarkModel)
+        }
+      }
+    },
   },
   mounted() {
     Emitter.on("show-contact-info", this.showContactInfo)
@@ -102,6 +117,29 @@ export default defineComponent({
   unmounted() {
     Emitter.off("show-contact-info")
     document.removeEventListener("click", this.documentClick)
+  },
+  computed: {
+    isGroupContact() {
+      return !this.user_id && this.group_id
+    },
+    userRemark() {
+      return this.user?.remark || this.group_user?.remark
+    },
+    userNickname() {
+      return this.group_user?.nickname || this.user?.nickname
+    }
+  },
+  watch: {
+    user(val) {
+      if (isString(val?.remark) && !isString(this.remarkModel) && !this.isGroupContact) {
+        this.remarkModel = val.remark
+      }
+    },
+    group(val) {
+      if (isString(val?.group_remark) && !isString(this.remarkModel) && this.isGroupContact) {
+        this.remarkModel = val.group_remark
+      }
+    }
   }
 })
 </script>
@@ -121,7 +159,7 @@ export default defineComponent({
           <div class="contact-info-header">
             <img class="contact-info-logo" :src="getUserLogo(user_id)" alt="">
             <div class="contact-info-header-text overflow-ellipsis">
-              <span class="contact-info-name">{{ group_user?.nickname || user?.nickname }}</span>
+              <span class="contact-info-name">{{ userNickname }}</span>
               <span class="contact-info-id">QQ {{ user_id }}</span>
             </div>
           </div>
@@ -130,9 +168,10 @@ export default defineComponent({
               <div class="label">等级</div>
               <div class="value">{{ user.qqLevel }}</div>
             </div>
-            <div class="row" v-if="user?.remark">
+            <div class="row" v-if="user_id !== selfId && isString(userRemark)">
               <div class="label">备注</div>
-              <div class="value clickable overflow-ellipsis">{{ user.remark }}</div>
+              <input class="value clickable overflow-ellipsis" :placeholder="userNickname" v-model="remarkModel"
+                     @blur="handleRemarkBlur">
             </div>
             <div class="row" v-if="group_user?.card">
               <div class="label">群昵称</div>
@@ -160,9 +199,10 @@ export default defineComponent({
             </div>
           </div>
           <div class="contact-info-details">
-            <div class="row" v-if="group?.group_remark">
+            <div class="row" v-if="isString(group?.group_remark)">
               <div class="label">备注</div>
-              <div class="value clickable overflow-ellipsis">{{ group.group_remark }}</div>
+              <input class="value clickable overflow-ellipsis" placeholder="设置群聊备注" v-model="remarkModel"
+                     @blur="handleRemarkBlur"/>
             </div>
             <div class="row" v-if="latestGroupNotice">
               <div class="label">群公告</div>

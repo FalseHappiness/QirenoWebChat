@@ -447,8 +447,8 @@ const handleMessageExecuteCommand = e => {
   }
 }
 
-const openImageViewer = inject("open-image-viewer")
-const openVideoPlayer = inject("open-video-player")
+const openImageViewer = inject("openImageViewer")
+const openVideoPlayer = inject("openVideoPlayer")
 
 const handleMessageDoubleClick = e => {
   const target = e?.target

@@ -53,9 +53,16 @@ provide("categorizedContacts", categorizedContacts)
 
 // bridge实例，onMounted内部初始化
 let bridge = null
-// 向外暴露bridge响应式状态，替代原来useWebSocket解构变量
 const isConnected = ref(false)
 const lastMessageId = ref(0)
+const selfId = ref(null)
+
+watch(() => isConnected.value && selfId.value, val => {
+  if (val) {
+    console.log(`WebSocket ${wsInited ? '' : 're'}connected, checking for missed messages...`)
+    wsInited.value = true;
+  }
+})
 
 // 选择联系人
 const selectContact = (contact) => {
@@ -73,8 +80,6 @@ const selectContact = (contact) => {
 const setRealContactName = name => {
   activeContact.value.name = name
 }
-
-const selfInfo = ref(null)
 
 const changeGroupContactRemark = async (contact_id, remark) => {
   const result = await fetchSetGroupRemark(
@@ -95,6 +100,11 @@ const changeGroupContactRemark = async (contact_id, remark) => {
   }
 }
 
+const selfInfo = ref(null)
+
+provide("selfId", selfId)
+provide("selfInfo", selfInfo)
+
 const changeSelfLongNick = async longNick => {
   const result = await fetchSetLongNick(longNick)
   if (result?.status === 'ok') {
@@ -109,10 +119,10 @@ const changeSelfLongNick = async longNick => {
 const initAppData = () => {
   getFriendsDisplayName()
   getContacts()
-  fetchLoginInfo().then(
-    async info => {
+  selfInfo.value = { user_id: selfId.value }
+  fetchStrangerInfo(selfId.value).then(
+    info => {
       selfInfo.value = info
-      selfInfo.value = await fetchStrangerInfo(info.user_id)
     }
   )
 }
@@ -400,14 +410,17 @@ onMounted(() => {
   // 同步bridge内部响应式变量到组件作用域
   watch(bridge.isConnected, val => {
     isConnected.value = val
-    if (val) {
-      console.log(`WebSocket ${wsInited ? '' : 're'}connected, checking for missed messages...`)
-      wsInited.value = true;
-    }
   })
   watch(bridge.lastMessageId, val => {
     lastMessageId.value = val
   })
+  watch(bridge.selfId, val => {
+    selfId.value = val
+  })
+
+  if (!isDirect) {
+    bridge.selfId.value = props.account.self_id
+  }
 
   // 提供 sendAction 和 reqBackend 给子组件
   CalledEmitter.on("sendAction", bridge.sendAction.bind(bridge))

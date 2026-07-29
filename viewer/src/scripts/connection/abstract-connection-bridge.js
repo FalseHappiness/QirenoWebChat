@@ -49,6 +49,7 @@ export class AbstractConnectionBridge {
     this.shouldSync = ref(false)
     this.reconnectTimer = null
     this.isClosed = false
+    this.selfId = ref(null)
 
     // 存储正在等待响应的 send_action / req_backend 回调
     this.pendingActions = new Map()

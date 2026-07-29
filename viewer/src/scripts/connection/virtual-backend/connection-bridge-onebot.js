@@ -104,6 +104,14 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
   // ========== OneBot 事件处理 ==========
 
   async _onOneBotEvent(event) {
+    // 首次收到 meta_event 且提取到 self_id
+    if (event.post_type === 'meta_event' && event.self_id && !this.selfId.value) {
+      this.selfId.value = event.self_id
+      console.log('[ConnectionBridgeOnebot] Receive self_id:', event.self_id);
+      // meta_event 无需后续处理
+      return;
+    }
+
     const frontendMessage = await processAndStoreEvent(event, virtualDB);
     if (!frontendMessage) return;
 
@@ -123,7 +131,7 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
 
   _commonWebSocketRequest(options, signal, timeout, pendingMap) {
     return new Promise((resolve, reject) => {
-      if (!navigator.onLine){
+      if (!navigator.onLine) {
         reject(new Error("Network Error: Unable to connect to the internet."))
         return;
       }

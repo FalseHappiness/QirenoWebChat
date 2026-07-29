@@ -735,6 +735,10 @@ async function fetchRecordToText(message_id) {
   ).text
 }
 
+async function fetchSetFriendRemark(user_id, remark) {
+  return await fetchAction('set_friend_remark', { user_id, remark })
+}
+
 const isObjectProp = (obj, key, elseSetEmptyObj = false, returnObj = false) => {
   if (!isObject(obj)) {
     return returnObj ? obj : false;
@@ -1177,4 +1181,5 @@ export {
   fetchCategorizedContacts,
   fetchTranslateEnglish,
   fetchRecordToText,
+  fetchSetFriendRemark,
 }

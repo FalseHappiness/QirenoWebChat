@@ -133,16 +133,16 @@ export class OneBotWSConnection {
         return;
       }
 
-      // 如果是元事件（心跳等），忽略
+      // 处理元事件（心跳等）：提取 self_id，同时转发给上层事件处理器
       if (data.post_type === 'meta_event') {
         // 从元事件中获取 self_id
         if (data.self_id && !this.selfId) {
           this.selfId = data.self_id;
         }
-        return;
+        // 不提前 return，继续转发给事件处理器，让上层可以感知连接就绪
       }
 
-      // 分发事件给所有处理器
+      // 分发事件给所有处理器（含 meta_event）
       for (const handler of this.eventHandlers) {
         try {
           handler(data);
