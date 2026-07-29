@@ -25,7 +25,7 @@ import { Emitter } from "../../composables/useEventBus.js";
 import { qqAppImg } from "../../composables/useBase.js";
 import LoadingSpinner from "../Common/LoadingSpinner.vue";
 import QIcon from "../Utils/QIcon.vue";
-import { isString } from "../../scripts/types-util.js";
+import { isFunction, isString } from "../../scripts/types-util.js";
 
 const props = defineProps({
   message: {
@@ -448,13 +448,24 @@ const handleMessageExecuteCommand = e => {
 }
 
 const openImageViewer = inject("open-image-viewer")
+const openVideoPlayer = inject("open-video-player")
 
 const handleMessageDoubleClick = e => {
-  const element = e.target?.closest('.message-image')
-  if (element) {
-    const src = element.querySelector('img')?.src
-    if (src) {
-      openImageViewer(src)
+  const target = e?.target
+  if (isFunction(target?.closest)) {
+    const img = target.closest('.message-image')
+    if (img) {
+      const src = img.dataset.src
+      if (src) {
+        openImageViewer(src)
+      }
+    }
+    const video = target.closest('.message-video')
+    if (video) {
+      const src = video.dataset.src
+      if (src) {
+        openVideoPlayer(src)
+      }
     }
   }
 }
@@ -806,12 +817,12 @@ onUnmounted(() => {
 .message:deep(.message-image), .message:deep(.message-video) {
   max-height: 324px;
   border-radius: 5px;
-  width: 100%;
+  width: 100% !important;
   height: auto;
   object-fit: contain;
   display: block;
   margin: 4px 0;
-  max-width: 324px;
+  max-width: 324px !important;
 }
 
 .message:has(.message-emoji-picture) {

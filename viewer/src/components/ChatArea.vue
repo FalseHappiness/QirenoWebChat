@@ -25,6 +25,7 @@ import { qqAppImg, qqIconSvg } from "../composables/useBase.js";
 import CustomScrollBar from "./Utils/CustomScrollBar.vue";
 import ImageViewer from "./Utils/ImageViewer.vue";
 import { isEmptyObject, isObject, isString } from "../scripts/types-util.js";
+import VideoPlayer from "./Utils/VideoPlayer.vue";
 
 const props = defineProps({
   activeContact: Object,
@@ -528,9 +529,13 @@ const clearPeerStatus = () => {
 }
 
 const imageViewer = ref(null)
-
 provide("open-image-viewer", src => {
   imageViewer.value?.open?.(src)
+})
+
+const videoPlayer = ref(null)
+provide("open-video-player", src => {
+  videoPlayer.value?.open?.(src)
 })
 
 // 联系人更改时获取名称
@@ -579,6 +584,7 @@ defineExpose({
       :on-close="() => changeShowGroupAlbum(false)"
     />
     <ImageViewer ref="imageViewer"/>
+    <VideoPlayer ref="videoPlayer"/>
 
     <div v-if="activeContact" class="border-bottom chat-area-head">
       <span class="chat-area-head-name" :class="{'text-error': isError}">

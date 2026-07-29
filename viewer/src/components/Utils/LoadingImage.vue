@@ -89,19 +89,27 @@ export default defineComponent({
       this.loadedOriginal = false
 
       imageContainer.innerHTML = ''
-      const image = this.image = document.createElement(this.videoMode ? "video" : "img")
-      if (this.videoMode) {
+      const isVideo = this.videoMode
+      const image = this.image = document.createElement(isVideo ? "video" : "img")
+
+      if (isVideo) {
         image.controls = this.controls
+        // 适配iOS播放必备属性
+        image.setAttribute('playsinline', '')
+        image.setAttribute('webkit-playsinline', '')
+        // 预加载元数据，不自动播放
+        image.preload = 'metadata'
       }
       image.src = src
       image.style.maxHeight = this.maxHeight
 
-      image.onload = () => {
+      // 区分图片/视频加载完成事件
+      const onMediaLoaded = () => {
         imageContainer.innerHTML = ''
         if (this.getDecideMaxWidthElement()) {
           const imageSize = this.getRealSize({
-            width: image.width,
-            height: image.height
+            width: image.videoWidth ?? image.width,
+            height: image.videoHeight ?? image.height
           })
           const placeholderSize = this.getRealSize({
             width: parseInt(this.placeholderWidth),
@@ -120,6 +128,17 @@ export default defineComponent({
         This.loading = This.failed = false
       }
 
+      // 图片用 onload
+      if (!isVideo) {
+        image.onload = onMediaLoaded
+      } else {
+        // 视频使用 canplay 事件（可播放即视为加载完成）
+        image.oncanplay = onMediaLoaded
+        // 额外兜底：元数据加载完成
+        image.onloadedmetadata = onMediaLoaded
+      }
+
+      // 加载失败共用
       image.onerror = () => {
         imageContainer.innerHTML = ''
         if (this.loadedOriginal || !this.fallbackSrc) {
@@ -257,8 +276,8 @@ export default defineComponent({
 }
 
 .loading-image-placeholder, .failed-image-placeholder {
-  width: 400px;
-  height: 250px;
+  width: 324px;
+  height: 324px;
   display: flex;
   justify-content: center;
   align-items: center;

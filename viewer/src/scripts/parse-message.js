@@ -522,7 +522,7 @@ const parseMessage = (wrappedMsg) => {
             h(LoadingImage, {
               src: item.data.url,
               class: 'message-video' + ((message.length === 1) ? " message-box-less" : ""),
-              controls: true,
+              controls: false,
               fallbackSrc: getStreamFileDataUrl(item),
               videoMode: true,
               decideMaxWidth: '.message-container'

@@ -19,6 +19,7 @@
     "@lottiefiles/lottie-player": "^2.0.12",
     "@tenrok/vue3-device-detect": "^1.0.2",
     "ant-design-vue": "^4.2.6",
+    "artplayer": "^5.4.0",
     "axios": "1.18.1",
     "clipboardy": "^5.3.1",
     "dexie": "^4.4.4",
