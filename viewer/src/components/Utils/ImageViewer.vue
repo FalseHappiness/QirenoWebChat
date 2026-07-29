@@ -6,6 +6,13 @@ import Tooltip from './Tooltip.vue'
 export default defineComponent({
   name: "ImageViewer",
   components: { QIcon, Tooltip },
+  props: {
+    imageUrl: { type: String, default: '' },
+    showLeftArrow: { type: Boolean, default: false },
+    showRightArrow: { type: Boolean, default: false },
+    counterText: { type: String, default: '' }
+  },
+  emits: ['click-left', 'click-right', 'close'],
   data() {
     return {
       closed: false,
@@ -52,6 +59,22 @@ export default defineComponent({
       // 实际显示比例 = baseFitScale * userScale，相对于图片原始大小
       const percent = Math.round(this.baseFitScale * this.userScale * 100)
       return `${Math.max(1, Math.min(9999, percent))}%`
+    },
+    hasNavArrows() {
+      return this.showLeftArrow || this.showRightArrow
+    }
+  },
+  watch: {
+    imageUrl: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.currentImageUrl = val
+          this.$nextTick(() => {
+            this.open(val)
+          })
+        }
+      }
     }
   },
   methods: {
@@ -81,6 +104,7 @@ export default defineComponent({
       if (this.closing) return
       this.closing = true
       this.closed = true
+      this.$emit('close')
       const mask = this.$refs.imageViewerMask
       if (mask) {
         this.restartAnimation(mask)
@@ -354,22 +378,40 @@ export default defineComponent({
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
     >
-      <!-- 关闭按钮 -->
-      <div class="image-viewer-close-btn" @click="close">
-        <QIcon name="close_fill_24"/>
+      <!-- 顶部栏：计数器 + 关闭按钮 -->
+      <div class="image-viewer-top-bar">
+        <span v-if="counterText" class="image-viewer-counter">{{ counterText }}</span>
+        <div class="image-viewer-close-btn" @click="close">
+          <QIcon name="close_fill_24"/>
+        </div>
       </div>
 
       <!-- 图片显示区域 -->
       <div
         class="image-viewer-image-area"
+        :class="{ 'has-nav-arrows': hasNavArrows }"
         ref="imageContainer"
         @mousedown="onMouseDown"
       >
+        <div
+          v-if="showLeftArrow"
+          class="image-viewer-nav-arrow image-viewer-nav-arrow-left no-user-select"
+          @click.stop="$emit('click-left')"
+        >
+          <QIcon name="arrow_left_24"/>
+        </div>
+        <div
+          v-if="showRightArrow"
+          class="image-viewer-nav-arrow image-viewer-nav-arrow-right no-user-select"
+          @click.stop="$emit('click-right')"
+        >
+          <QIcon name="arrow_right_24"/>
+        </div>
         <img
           v-if="!imageError"
           :src="currentImageUrl"
           ref="imageElement"
-          class="image-viewer-image"
+          class="image-viewer-image no-user-select"
           :class="{ dragging: isDragging, pinching: isPinching }"
           :style="{ transform: displayTransform }"
           @load="onImageLoad"
@@ -507,6 +549,37 @@ export default defineComponent({
   }
 }
 
+/* 顶部栏 */
+.image-viewer-top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 12px 0;
+  z-index: 889;
+  pointer-events: none;
+}
+
+.image-viewer-top-bar .image-viewer-close-btn {
+  position: absolute;
+  right: 12px;
+  pointer-events: auto;
+}
+
+.image-viewer-counter {
+  color: #fff;
+  font-size: 14px;
+  user-select: none;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 14px;
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+
 /* 关闭按钮 - 右上角 */
 .image-viewer-close-btn {
   position: fixed;
@@ -546,6 +619,11 @@ export default defineComponent({
   box-sizing: border-box;
 }
 
+.image-viewer-image-area.has-nav-arrows {
+  padding-left: 60px;
+  padding-right: 60px;
+}
+
 .image-viewer-image {
   transform-origin: center center;
   user-select: none;
@@ -569,6 +647,52 @@ export default defineComponent({
   color: rgba(255, 255, 255, 0.7);
   font-size: 15px;
   user-select: none;
+}
+
+/* 左右导航箭头 */
+.image-viewer-nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.55);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 890;
+  color: #fff;
+  opacity: 0.75;
+  transition: opacity 0.2s, background-color 0.2s;
+  backdrop-filter: blur(6px);
+}
+
+.image-viewer-nav-arrow:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+.image-viewer-nav-arrow-left {
+  left: 10px;
+}
+
+.image-viewer-nav-arrow-right {
+  right: 10px;
+}
+
+.image-viewer-nav-arrow svg {
+  width: 24px;
+  height: 24px;
+}
+
+.image-viewer-nav-arrow-left svg {
+  margin-right: 4px;
+}
+
+.image-viewer-nav-arrow-right svg {
+  margin-left: 4px;
 }
 
 /* 底部功能栏 */
@@ -644,11 +768,18 @@ export default defineComponent({
   .image-viewer-image-area {
     padding: 40px 0 0;
   }
-}
-</style>
 
-<!-- 工具提示样式 - 全局生效，因 Tooltip 使用 teleport 到 body -->
-<style>
+  .image-viewer-image-area.has-nav-arrows {
+    padding-left: 50px;
+    padding-right: 50px;
+  }
+
+  .image-viewer-nav-arrow {
+    width: 30px;
+    height: 30px;
+  }
+}
+
 .image-viewer-tooltip {
   background-color: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);

@@ -7,10 +7,11 @@ import SimplePopUp from "../Utils/SimplePopUp.vue"
 import { qqIconSvg } from "../../composables/useBase.js";
 import ColorSvg from "../Utils/ColorSvg.vue";
 import { showInfoToast } from "../../scripts/toast.js";
+import ImageViewer from "../Utils/ImageViewer.vue";
 
 export default defineComponent({
   name: "GroupAlbumViewer",
-  components: { ColorSvg, CustomScrollBar, SimplePopUp },
+  components: { ColorSvg, CustomScrollBar, SimplePopUp, ImageViewer },
   props: {
     group_id: { type: [Number, String], required: true },
     onClose: {
@@ -68,6 +69,10 @@ export default defineComponent({
     /** 当前查看的媒体 */
     currentMedia() {
       return this.mediaList[this.currentMediaIndex] || null
+    },
+    // 媒体计数器文本
+    counterText() {
+      return `${(this.currentMediaIndex || 0) + 1} / ${this.currentAlbum?.upload_number || this.mediaList?.length}`
     }
   },
   methods: {
@@ -477,8 +482,8 @@ export default defineComponent({
           </CustomScrollBar>
         </template>
 
-        <!-- ===== 媒体列表视图 ===== -->
-        <template v-if="view === 'media'">
+        <!-- ===== 媒体列表视图（详情视图时保持显示作为背景） ===== -->
+        <template v-if="view === 'media' || view === 'detail'">
           <div class="gav-title">
             <img alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
                  @click="goBackToAlbums">
@@ -512,24 +517,30 @@ export default defineComponent({
           </CustomScrollBar>
         </template>
 
-        <!-- ===== 媒体详情视图 ===== -->
-        <div v-if="view === 'detail' && currentMedia" class="gav-detail-overlay"
+        <!-- ===== 媒体详情视图 - 图片使用 ImageViewer ===== -->
+        <ImageViewer v-if="view === 'detail' && currentMedia && currentMedia.type === 0"
+                     :imageUrl="getHighestQualityUrl(currentMedia) || ''"
+                     :showLeftArrow="currentMediaIndex > 0"
+                     :showRightArrow="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
+                     :counterText="counterText"
+                     @click-left="prevMedia"
+                     @click-right="nextMedia"
+                     @close="goBackToMedia"/>
+
+        <!-- ===== 媒体详情视图 - 视频保持原有布局 ===== -->
+        <div v-if="view === 'detail' && currentMedia && currentMedia.type === 1"
+             class="gav-detail-overlay"
              @click.self="goBackToMedia">
           <div class="gav-detail-header">
             <ColorSvg alt="" :src="qqIconSvg('arrow_left_24')" class="gav-back-btn cannot-drag"
                       @click="goBackToMedia"/>
-            <span class="gav-detail-counter">{{
-                currentMediaIndex + 1
-              }} / {{ currentAlbum.upload_number || mediaList.length }}</span>
+            <span class="gav-detail-counter">{{ counterText }}</span>
             <ColorSvg alt="" :src="qqIconSvg('close_fill_24')" class="gav-close-btn cannot-drag"
                       @click="close"/>
           </div>
 
           <div class="gav-detail-body" @click.self="goBackToMedia">
-            <img v-if="currentMedia.type === 0 && getHighestQualityUrl(currentMedia)"
-                 :src="getHighestQualityUrl(currentMedia)" alt="" class="gav-detail-media"
-                 @click.self="goBackToMedia">
-            <video v-else-if="currentMedia.type === 1 && getVideoUrl(currentMedia)"
+            <video v-if="getVideoUrl(currentMedia)"
                    :src="getVideoUrl(currentMedia)" controls class="gav-detail-media"
                    @click.self="goBackToMedia"></video>
             <div v-else class="gav-detail-error">无法加载此媒体</div>
@@ -544,7 +555,8 @@ export default defineComponent({
                   @click="prevMedia">
             <img :src="qqIconSvg('arrow_left_24')" alt="">
           </button>
-          <button v-if="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1" class="gav-nav-btn gav-nav-next"
+          <button v-if="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
+                  class="gav-nav-btn gav-nav-next"
                   @click="nextMedia">
             <img :src="qqIconSvg('arrow_right_24')" alt="">
           </button>
