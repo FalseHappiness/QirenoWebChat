@@ -136,7 +136,11 @@ export default defineComponent({
             </div>
             <div class="row" v-if="group_user?.card">
               <div class="label">群昵称</div>
-              <div class="value overflow-ellipsis">{{ group_user.card }}</div>
+              <div class="value overflow-ellipsis" :title="group_user.card">{{ group_user.card }}</div>
+            </div>
+            <div class="row" v-if="user?.long_nick">
+              <div class="label">签名</div>
+              <div class="value overflow-ellipsis" :title="user.long_nick">{{ user.long_nick }}</div>
             </div>
             <div class="row">
               <div class="label">QQ 空间</div>
