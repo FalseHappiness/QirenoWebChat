@@ -122,7 +122,7 @@ export default defineComponent({
             class="essence-msg-viewer-item"
           >
             <div class="essence-msg-viewer-item-header">
-              <div>
+              <div class="flex-1">
                 <img
                   :src="getAvatarUrl(msg.sender_id)"
                   alt=""

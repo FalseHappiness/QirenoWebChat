@@ -270,8 +270,13 @@ export default defineComponent({
 </template>
 
 <style scoped>
-.loading-image-container, .loading-image-placeholder, .failed-image-placeholder, .image-container, .image-container:deep(img) {
-  max-height: 500px;
+.loading-image-container,
+.loading-image-placeholder,
+.failed-image-placeholder,
+.image-container,
+.image-container:deep(img),
+.image-container:deep(video) {
+  max-height: 324px;
   max-width: 100%;
 }
 

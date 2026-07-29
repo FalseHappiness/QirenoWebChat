@@ -201,7 +201,7 @@ const convertEssenceMsgListSL = list => {
         operator_id: "add_digest_uin",
         operator_nick: "add_digest_nick",
         operator_time: "add_digest_time",
-        sender_id: "sender_id"
+        sender_id: "sender_uin"
       })
 
       if (!objectHasKey(msg, "content") && Array.isArray(msg.msg_content)) {

@@ -3,10 +3,11 @@ import { defineComponent, h } from 'vue'
 import { parseMessagePreview } from "../../scripts/parse-message.js";
 import { fetchDisplayName } from "../../scripts/backend-api.js";
 import ColorSvg from "../Utils/ColorSvg.vue";
+import QIcon from "../Utils/QIcon.vue";
 
 export default defineComponent({
   name: "InputQuote",
-  components: { ColorSvg },
+  components: { QIcon, ColorSvg },
   props: {
     msg: {
       type: Object,
@@ -71,9 +72,9 @@ export default defineComponent({
       <div class="quote-name">{{ name }}:</div>
       <div class="quoted-msg-content-container">
         <component :is="content" v-if="msg"></component>
-        <color-svg src="/static/assets/gg--close-o.svg"
-                   class="remove-quote-btn"
-                   @click="$emit('cancel-quote-message')"></color-svg>
+        <QIcon name="close_circle_24"
+               class="remove-quote-btn"
+               @click="$emit('cancel-quote-message')"/>
       </div>
     </div>
   </div>
@@ -95,7 +96,7 @@ export default defineComponent({
 }
 
 .remove-quote-btn {
-  background-color: gray;
+  color: gray;
   width: 15px;
   height: 15px;
   margin: 0 0 2px 10px;
