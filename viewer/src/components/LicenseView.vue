@@ -92,7 +92,7 @@ export default defineComponent({
         <p class="license-error-text">{{ error }}</p>
       </div>
     </div>
-    <CustomScrollBar class="flex-1" v-else>
+    <CustomScrollBar class="flex-1 overflow-auto" v-else>
       <div class="license-view-container">
         <!-- 项目自身信息 -->
         <LicenseItemCard

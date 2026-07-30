@@ -21,7 +21,6 @@ export default defineComponent({
 <style>
 .custom-scroll-bar {
   height: 100%;
-  overflow: auto;
 }
 </style>
 
