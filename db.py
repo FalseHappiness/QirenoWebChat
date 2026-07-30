@@ -428,7 +428,8 @@ class Database:
                           , 'approve'
                           , 'invite'
                           , 'kick_me'
-                          , 'remove')
+                          , 'remove'
+                          , 'kick')
                         AND notice_type IN ('notify'
                           , 'essence'
                           , 'group_ban'

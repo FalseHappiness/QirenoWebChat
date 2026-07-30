@@ -676,8 +676,27 @@ const parseNoticePreview = (notice, returnPromise = false) => {
         ),
         '加入了群聊'
       )
-    } else if (event.notice_type === 'group_decrease' && event.sub_type === 'kick_me') {
-      children.push('你已被移出群聊')
+    } else if (event.notice_type === 'group_decrease') {
+      if (event.sub_type === 'kick_me') {
+        children.push('你已被移出群聊')
+      } else if (event.sub_type === 'kick') {
+        children.push(
+          createDisplayNameSpan(
+            true,
+            event.group_id,
+            event.user_id,
+            promises,
+          ),
+          '已被',
+          event.operator_id === event.self_id ? '你' : createDisplayNameSpan(
+            true,
+            event.group_id,
+            event.operator_id,
+            promises,
+          ),
+          '移出'
+        )
+      }
     } else if (event.notice_type === 'group_msg_emoji_like') {
       const face_id = event?.likes?.[0]?.emoji_id
       children.push(
@@ -865,8 +884,29 @@ const parseNotice = notice => {
         ], 'view-user-info-' + event.user_id),
         '加入了群聊'
       )
-    } else if (event.notice_type === 'group_decrease' && event.sub_type === 'kick_me') {
-      children.push('你已被移出群聊')
+    } else if (event.notice_type === 'group_decrease') {
+      if (event.sub_type === 'kick_me') {
+        children.push('你已被移出群聊')
+      } else if (event.sub_type === 'kick') {
+        children.push(
+          createNoticeExecuteCommand('span', [
+            createDisplayNameSpan(
+              true,
+              event.group_id,
+              event.user_id,
+            ),
+          ], 'view-user-info-' + event.user_id),
+          '已被',
+          createNoticeExecuteCommand('span', [
+            event.operator_id === event.self_id ? '你' : createDisplayNameSpan(
+              true,
+              event.group_id,
+              event.operator_id,
+            ),
+          ], 'view-user-info-' + event.operator_id),
+          '移出'
+        )
+      }
     } else if (event.notice_type === 'group_msg_emoji_like') {
       const face_id = event?.likes?.[0]?.emoji_id
       children.push(
@@ -909,7 +949,7 @@ const isSupportedNoticeMessage = notice => {
     (notice.notice_type === 'essence' && notice.sub_type === 'add') ||
     (notice.notice_type === 'group_ban' && ['ban', 'lift_ban'].includes(notice.sub_type)) ||
     (notice.notice_type === 'group_increase' && ['approve', 'invite'].includes(notice.sub_type)) ||
-    (notice.notice_type === 'group_decrease' && notice.sub_type === 'kick_me') ||
+    (notice.notice_type === 'group_decrease' && ['kick_me', 'kick'].includes(notice.sub_type)) ||
     (notice.notice_type === 'group_msg_emoji_like' && ['add', 'remove'].includes(notice.sub_type))
   )
 }
