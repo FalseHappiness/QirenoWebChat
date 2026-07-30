@@ -4,6 +4,7 @@ import vitePluginClean from 'vite-plugin-clean';
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import * as path from "node:path";
 import iconifyOffline from "vite-plugin-iconify-offline"
+import license from './plugins/license.js'
 
 function isRelativePath(path) {
   if (!path) return false;
@@ -41,6 +42,7 @@ function upOneLevelRelative(path) {
 }
 
 // https://vite.dev/config/
+// noinspection JSCheckFunctionSignatures
 export default defineConfig(({ mode }) => {
   // 加载对应环境文件
   const env = loadEnv(mode, process.cwd(), 'VITE_')
@@ -53,6 +55,49 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
+      license({
+        // 打包产物头部版权注释
+        banner: {
+          commentStyle: 'regular',
+          content: {
+            file: path.join(__dirname, 'BANNER.ejs'),
+            encoding: 'utf-8',
+          },
+        },
+        thirdParty: {
+          // 包含私有依赖
+          includePrivate: true,
+          // 把当前项目自身写入导出文件
+          includeSelf: true,
+          // 指定项目根LICENSE文件
+          licenseFilePath: path.resolve(__dirname, '../LICENSE'),
+          // 同一包多版本分开展示（重要，多版本协议不同时开启）
+          multipleVersions: true,
+          // 协议白名单校验，不符合直接阻断构建
+          allow: {
+            test: '(MIT OR Apache-2.0 OR ISC OR BSD-3-Clause)',
+            failOnViolation: true,    // 违规直接打包失败
+            failOnUnlicensed: true    // 无协议包打包失败
+          },
+          output: {
+            // 输出JSON到dist目录
+            file: path.resolve(__dirname, 'dist/licenses.json'),
+            encoding: 'utf-8',
+            // 模板：直接输出标准JSON数组（不格式化）
+            template(deps) {
+              return JSON.stringify(deps)
+            }
+          },
+          includeDev: true,
+          devOutput: {
+            file: path.resolve(__dirname, 'dist/licenses-dev.json'),
+            encoding: 'utf-8',
+            template(deps) {
+              return JSON.stringify(deps)
+            }
+          }
+        }
+      }),
       vue(),
       vitePluginClean({
         targetFiles: ['dist'] // 要删除的目录/文件
@@ -78,6 +123,8 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       emptyOutDir: true, // 构建前自动清空 dist 目录（没用？）
+      // 消除大块警告，阈值调到3M
+      chunkSizeWarningLimit: 3000,
     },
     server: {
       // allowedHosts: true

@@ -35,3 +35,5 @@ venv
 *TEST*
 viewer/src/components/MessageItem/MessageTypes/MessageJSON/json
 .githooks
+/viewer/public/licenses.json
+/viewer/public/licenses-dev.json

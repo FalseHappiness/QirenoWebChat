@@ -21,6 +21,7 @@ export default defineComponent({
 <style>
 .custom-scroll-bar {
   height: 100%;
+  overflow: auto;
 }
 </style>
 
@@ -39,7 +40,9 @@ export default defineComponent({
   left: 3.5px;
 }
 
-.custom-scroll-bar:hover .simplebar-scrollbar, .custom-scroll-bar.simplebar-dragging .simplebar-scrollbar {
+/* 只让当前组件的滚动条在 hover / 拖拽时显示 */
+.custom-scroll-bar:hover > .simplebar-track > .simplebar-scrollbar,
+.custom-scroll-bar.simplebar-dragging > .simplebar-track > .simplebar-scrollbar {
   visibility: visible;
 }
 </style>

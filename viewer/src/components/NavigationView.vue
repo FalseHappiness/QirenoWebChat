@@ -5,9 +5,10 @@ import ContactsViewCategories from './ContactsViewCategories.vue'
 import SettingsView from './SettingsView.vue'
 import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
 import VirtualScroller from "./Utils/VirtualScroller.vue";
-import { fetchSetLongNick, getUserLogo } from "../scripts/backend-api.js";
+import { getUserLogo } from "../scripts/backend-api.js";
 import { Emitter } from "../composables/useEventBus.js";
 import QMaskIcon from "./Utils/QMaskIcon.vue";
+import { navKey } from "../scripts/view-keys.js";
 
 const props = defineProps({
   categorizedContacts: Array,
@@ -73,11 +74,6 @@ const handleShowSelfInfo = e => {
   })
 }
 
-const navKey = {
-  MESSAGE: "message",
-  CONTACT: "contact",
-  SETTINGS: "settings"
-}
 const currentNavView = ref(navKey.MESSAGE); // 'messages' 'contacts' 'settings'
 
 const isNavView = key => currentNavView.value === key

@@ -1,5 +1,8 @@
 <script setup>
 import { getUserLogo } from "../scripts/backend-api.js"
+import EnterArrow from "./Common/EnterArrow.vue";
+import { inject } from "vue";
+import { destKey } from "../scripts/view-keys.js";
 
 const props = defineProps({
   selfInfo: Object
@@ -9,6 +12,12 @@ const emit = defineEmits(['disconnect'])
 
 const handleDisconnect = () => {
   emit('disconnect')
+}
+
+const changeDestView = inject("changeDestView")
+
+const handleEnterLicense = () => {
+  changeDestView(destKey.LICENSE)
 }
 </script>
 
@@ -28,6 +37,11 @@ const handleDisconnect = () => {
             selfInfo?.long_nick || selfInfo?.longNick || '暂无个性签名'
           }}</span>
       </div>
+    </div>
+
+    <div class="settings-actions-area enter-view" @click="handleEnterLicense">
+      <span class="overflow-ellipsis">开放源代码许可证</span>
+      <EnterArrow/>
     </div>
 
     <!-- 断开连接按钮 -->
@@ -94,6 +108,18 @@ const handleDisconnect = () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.settings-actions-area.enter-view {
+  flex-direction: row;
+  padding: 8px 6px 8px 12px;
+  align-items: center;
+  gap: 0;
+  cursor: pointer;
+}
+
+.enter-view span {
+  flex: 1;
 }
 
 .settings-actions-button {

@@ -557,12 +557,12 @@ onUnmounted(() => {
 
 // 暴露方法给父组件调用
 defineExpose({
-  refreshPeerStatus
+  refreshPeerStatus,
 })
 </script>
 
 <template>
-  <div class="chat-area" :class="{ 'active-contact': activeContact }" @click="handleChatAreaClick">
+  <div class="chat-area" @click="handleChatAreaClick">
     <GroupAnnounceViewer
       v-if="showGroupAnnounceViewer"
       :group_id="activeContact?.contact_id"
@@ -758,13 +758,8 @@ defineExpose({
 
 <style scoped>
 .chat-area {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background: rgb(245, 245, 245);
-  /*max-width: calc(100% - var(--sidebar-width));*/
-  min-width: 390px;
 }
 
 .chat-area-head-name {
@@ -947,21 +942,6 @@ defineExpose({
 }
 
 @media (max-width: 570px) {
-  .chat-area {
-    position: absolute;
-    right: -100%;
-    width: 100%;
-    opacity: 0;
-    transition: opacity 0.1s ease-out, right 0.1s ease-out;
-    max-width: unset;
-    min-width: unset;
-  }
-
-  .chat-area.active-contact {
-    right: 0;
-    opacity: 1;
-  }
-
   .chat-area-head {
     height: 42px;
     align-items: center;
@@ -980,6 +960,7 @@ defineExpose({
     height: calc(100% - 42px);
     top: 42px;
     box-shadow: none;
+    transition: right ease-out 0.2s;
   }
 }
 </style>

@@ -2,11 +2,10 @@
 import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount, provide } from 'vue'
 import { ConnectionBridge } from '../scripts/connection/connection-bridge.js'
 import { ConnectionBridgeOnebot } from "../scripts/connection/virtual-backend/connection-bridge-onebot.js";
-import LeftView from '../components/LeftView.vue'
-import ChatArea from '../components/ChatArea.vue'
+import NavigationView from '../components/NavigationView.vue'
+import DestinationView from '../components/DestinationView.vue'
 import {
   fetchEssenceMessages,
-  fetchLoginInfo,
   fetchMessages,
   fetchSetGroupRemark,
   fetchSetLongNick,
@@ -26,9 +25,10 @@ import ContactInfoTooltip from "../components/Popups/ContactInfoTooltip.vue";
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
 import DownloadProgressPopup from "../components/Popups/DownloadProgressPopup.vue";
 import LoadingSpinner from "../components/Common/LoadingSpinner.vue";
-import { checkMsgIsContact, flattenCategorizedContacts } from "../scripts/contacts-util.js";
+import { checkMsgIsContact, checkSameContact, flattenCategorizedContacts } from "../scripts/contacts-util.js";
 import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
 import { isNumber } from "../scripts/types-util.js";
+import { destKey } from "../scripts/view-keys.js";
 
 const props = defineProps({
   account: {
@@ -42,8 +42,19 @@ const emit = defineEmits(['disconnect'])
 const categorizedContacts = ref([])
 const loadingContacts = ref(false)
 const activeContact = ref(null)
-const chatArea = ref(null)
+const destinationView = ref(null)
+const chatArea = computed(() => {
+  return destinationView.value.chatArea
+})
 const wsInited = ref(false);
+
+const changeDestView = (key, callback) => {
+  if (![destKey.CHAT_AREA, destKey.BLANK].includes(key)) {
+    activeContact.value = null
+  }
+  destinationView?.value?.changeView(key, callback)
+}
+provide("changeDestView", changeDestView)
 
 const recentContacts = () => {
   return categorizedContacts.value.find?.(c => c.id === -100)?.contacts || []
@@ -69,17 +80,24 @@ watch(() => isConnected.value && selfId.value, val => {
   }
 })
 
+watch(activeContact, val => {
+  if (!val) {
+    groupEssenceMsgList.value = null
+  }
+})
+
 // 选择联系人
 const selectContact = (contact) => {
   // if (chatArea.value?.$refs?.scroller?.initializing) return
   // 如果已经是当前联系人
-  if (activeContact.value?.contact_id === contact?.contact_id &&
-    activeContact.value?.type === contact?.type) {
-    activeContact.value = null;
-    groupEssenceMsgList.value = null
+  if (checkSameContact(activeContact, contact)) {
+    contact = null;
     return;
   }
-  activeContact.value = contact
+  // 切换视图到 Chat Area
+  changeDestView(contact ? destKey.CHAT_AREA : 0, () => {
+    activeContact.value = contact
+  });
 }
 
 const setRealContactName = name => {
@@ -445,7 +463,7 @@ onUnmounted(destroy)
 <template>
   <div class="main-view">
     <div class="chat-container" v-if="wsInited">
-      <LeftView
+      <NavigationView
         :categorizedContacts="categorizedContacts"
         :active-contact="activeContact"
         :loading="loadingContacts"
@@ -454,13 +472,13 @@ onUnmounted(destroy)
         @change-self-long-nick="changeSelfLongNick"
         @disconnect="handleDisconnect"
       />
-      <ChatArea
+      <DestinationView
         :active-contact="activeContact"
         :get-messages="getMessages"
         :select-contact="selectContact"
         :self-info="selfInfo"
         :essence-list="groupEssenceMsgList"
-        ref="chatArea"
+        ref="destinationView"
         @get-essence-msg-real-seq-list="getEssenceMsgRealSeqList"
         @change-essence-msg="changeEssenceMsg"
         @set-real-contact-name="setRealContactName"

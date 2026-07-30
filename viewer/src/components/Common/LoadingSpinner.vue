@@ -38,6 +38,12 @@ export default defineComponent({
 </template>
 
 <style scoped>
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .loading-spinner-icon {
   width: 36px;
   height: 36px;

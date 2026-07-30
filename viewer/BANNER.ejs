@@ -1,0 +1,15 @@
+<%
+const filterDeps = dependencies.filter(dep => dep.name !== pkg.name)
+%>
+Project: <%= pkg.name %>
+Version: v<%= pkg.version %>
+Description: <%= pkg.description %>
+Build Date: <%= moment().format('YYYY-MM-DD HH:mm:ss') %>
+Copyright (c) <%= moment().format('YYYY') %> <%= pkg.author.name %> All Rights Reserved
+Author: <%= pkg.author.name %> <<%= pkg.author.url %>>
+Repository: <%= pkg.repository.url %>
+Issue Tracker: <%= pkg.bugs %>
+Project License: <%= pkg.license %>
+Runtime Dependencies (<%= filterDeps.length %>):
+<% _.forEach(filterDeps, dep => { %> - <%= dep.name %>@<%= dep.version %> [<%= dep.license %>]
+<% }); %>
