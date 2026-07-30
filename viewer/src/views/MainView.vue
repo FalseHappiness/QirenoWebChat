@@ -26,7 +26,7 @@ import ContactInfoTooltip from "../components/Popups/ContactInfoTooltip.vue";
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
 import DownloadProgressPopup from "../components/Popups/DownloadProgressPopup.vue";
 import LoadingSpinner from "../components/Common/LoadingSpinner.vue";
-import { checkMsgIsCurrentContact } from "../scripts/contacts-util.js";
+import { checkMsgIsContact, flattenCategorizedContacts } from "../scripts/contacts-util.js";
 import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
 import { isNumber } from "../scripts/types-util.js";
 
@@ -49,7 +49,12 @@ const recentContacts = () => {
   return categorizedContacts.value.find?.(c => c.id === -100)?.contacts || []
 }
 
+const flattenContacts = computed(() => {
+  return flattenCategorizedContacts(categorizedContacts.value)
+})
+
 provide("categorizedContacts", categorizedContacts)
+provide("flattenContacts", flattenContacts)
 
 // bridge实例，onMounted内部初始化
 let bridge = null
@@ -341,7 +346,7 @@ onMounted(() => {
       }
     },
     onNotice: notice => {
-      const isCurrentContact = checkMsgIsCurrentContact(notice, activeContact.value)
+      const isCurrentContact = checkMsgIsContact(notice, activeContact.value)
       const { notice_type, sub_type } = notice
       if (['group_recall', 'friend_recall'].includes(notice_type)) {
         const is_group = notice_type === 'group_recall'

@@ -120,7 +120,8 @@ const getMessages = async (msg, count, include = false, direction = 'next') => {
     groupUsers.value = sortGroupUsers(
       Object.entries(getGroupUsers(props.activeContact.contact_id)).map(([key, value]) => ({
         ...value,
-        qq: key
+        qq: key,
+        user_id: Number(key)
       }))
     );
   }
@@ -719,12 +720,14 @@ defineExpose({
           :message="message"
           :active-contact="activeContact"
           :show-time-notice="isShowTimeTip(messages?.[index - 1], message)"
+          :group-users="groupUsers"
           @get-essence-msg-real-seq-list="() => {emit('get-essence-msg-real-seq-list')}"
           @change-essence-msg="(real_seq, set) => {emit('change-essence-msg', real_seq, set)}"
           @quote-message="(msg, user) => {quoteMessage(msg, user)}"
           @click-show-contacts-info="handleClickShowContactInfo"
           @change-show-group-notice="changeShowGroupAnnounce"
           @change-show-essence-list="changeShowGroupEssenceList"
+          @select-contact="selectContact"
         />
       </template>
       <template #empty="{ initializing }">

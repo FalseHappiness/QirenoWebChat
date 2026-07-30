@@ -1,31 +1,33 @@
 <script setup>
 import { ref, onUnmounted, computed, h, onMounted, inject, toRaw } from 'vue'
-import { formatTime, parseMessage, parseNotice } from "../../scripts/parse-message.js";
+import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
   fetchChangeEssenceMsg,
-  fetchDisplayName,
+  fetchDisplayName, fetchKickGroupUser,
   fetchRecallMessage, fetchRecordToText,
   fetchSendMessage, fetchTranslateEnglish,
   getCacheGroupLevelTitle,
   getCacheName, getUserLogo
-} from "../../scripts/backend-api.js";
-import { useGlobalStore } from "../../store/global.js";
+} from "@/scripts/backend-api.js";
+import { useGlobalStore } from "@/store/global.js";
 import GroupLevelTitle from "./GroupLevelTitle.vue";
 import {
   basicContextItem,
   contextDividedItem,
   formatBasicContextItems,
   vCustomMenu
-} from "../../directives/context-menu.js";
-import { vDoubleClick } from '../../directives/double-click-directive.js';
-import { formatRelativeTime, hasEnglish, parseJSON } from "../../scripts/util.js";
-import { showToast } from "../../scripts/toast.js";
-import { Emitter } from "../../composables/useEventBus.js";
-import { qqAppImg } from "../../composables/useBase.js";
+} from "@/directives/context-menu.js";
+import { vDoubleClick } from '@/directives/double-click-directive.js';
+import { formatRelativeTime, hasEnglish, parseJSON } from "@/scripts/util.js";
+import { showErrorToast, showSuccessToast, showToast } from "@/scripts/toast.js";
+import { Emitter } from "@/composables/useEventBus.js";
+import { qqAppImg } from "@/composables/useBase.js";
 import LoadingSpinner from "../Common/LoadingSpinner.vue";
 import QIcon from "../Utils/QIcon.vue";
-import { isFunction, isString } from "../../scripts/types-util.js";
+import { isFunction, isString } from "@/scripts/types-util.js";
+import { checkSameContact } from "@/scripts/contacts-util.js";
+import { showConfirmBox } from "@/scripts/confirm-box-api.js";
 
 const props = defineProps({
   message: {
@@ -40,6 +42,10 @@ const props = defineProps({
   showTimeNotice: {
     type: Boolean,
     default: false
+  },
+  groupUsers: {
+    type: Array,
+    default: []
   }
 })
 
@@ -51,7 +57,8 @@ const emit = defineEmits([
   'quote-message',
   'click-show-contacts-info',
   'change-show-group-notice',
-  'change-show-essence-list'
+  'change-show-essence-list',
+  'select-contact'
 ])
 
 const noticeContainer = ref(null)
@@ -101,6 +108,9 @@ const handleCopy = (e) => {
   // e.preventDefault();
 }
 
+const isGroup = computed(() => {
+  return props.message?.message_type === 'group'
+})
 
 const messageHtml = computed(() => {
   return () => h(
@@ -120,7 +130,7 @@ const displayName = ref('');
 
 const getDisplayName = () => {
   const message = props.message;
-  if (message.message_type !== 'group') {
+  if (!isGroup.value) {
     return
   }
   const id = [message.group_id, message.user_id];
@@ -203,28 +213,30 @@ const handleDocumentClick = (e) => {
   }
 }
 
+const handleNoticePoke = () => {
+  const user_id = props.message.user_id
+  const group_id = props.message.group_id
+  const target_id = props.message.target_id
+  const message_type = props.message.message_type
+  const is_group = isGroup.value
+  const data = {
+    user_id: is_group ? user_id : target_id,
+    target_id: user_id
+  }
+  if (is_group) {
+    data.group_id = group_id
+  }
+  fetchSendMessage({
+    type: message_type,
+    contact_id: is_group ? group_id : user_id
+  }, [{
+    type: 'poke',
+    data: data
+  }])
+}
+
 const handleAvatarDoubleClick = {
-  doubleClick: () => {
-    const user_id = props.message.user_id
-    const group_id = props.message.group_id
-    const target_id = props.message.target_id
-    const message_type = props.message.message_type
-    const is_group = message_type === 'group'
-    const data = {
-      user_id: is_group ? user_id : target_id,
-      target_id: user_id
-    }
-    if (is_group) {
-      data.group_id = group_id
-    }
-    fetchSendMessage({
-      type: message_type,
-      contact_id: is_group ? group_id : user_id
-    }, [{
-      type: 'poke',
-      data: data
-    }])
-  },
+  doubleClick: handleNoticePoke,
   singleClick: e => {
     const event = JSON.parse(props.message.event)
     emit("click-show-contacts-info", e, { user_id: event.user_id, nickname: event.sender.nickname })
@@ -257,7 +269,7 @@ const isEnabledPTT = ref(false);
 const pttText = ref(undefined)
 const pttErrorText = ref(null)
 
-const customContextMenu = () => {
+const customMessageContextMenu = () => {
   const self_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
   const sender_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
   return formatBasicContextItems([
@@ -320,7 +332,7 @@ const customContextMenu = () => {
       Emitter.emit('forward-single-msg', event.message_id, event.message)
     }, "one_by_one_forward_24"),
     basicContextItem('引用', () => {
-      emit('quote-message', toRaw(props.message), props.message.message_type === 'group' ? {
+      emit('quote-message', toRaw(props.message), isGroup.value ? {
         name: displayName.value,
         qq: props.message.user_id
       } : null)
@@ -470,6 +482,75 @@ const handleMessageDoubleClick = e => {
   }
 }
 
+const currentGroupUserInfo = computed(() => {
+  return findGroupUser(props.message.user_id)
+})
+
+const findGroupUser = user_id => {
+  return props.groupUsers?.find(user => user.user_id === user_id)
+}
+
+const flattenContacts = inject('flattenContacts')
+
+const customAvatarContextMenu = () => {
+  const user_id = props.message.user_id
+  const self_id = props.message.self_id
+  const userContact = {
+    contact_id: user_id,
+    type: 'private'
+  }
+  const selfRole = findGroupUser(self_id)?.role
+  const userRole = findGroupUser(user_id)?.role
+  return formatBasicContextItems([
+    basicContextItem(
+      '发送消息',
+      () => {
+        emit('select-contact', userContact)
+      },
+      'message_24',
+      Boolean( // undefined 自动取默认值
+        !checkSameContact(userContact, props.activeContact) &&
+        flattenContacts.value?.find?.(
+          contact => checkSameContact(contact, userContact
+          ))
+      )
+    ),
+    basicContextItem(
+      'TA',
+      () => {
+        Emitter.emit("input-at-somebody", user_id, displayName.value)
+      },
+      'at_24',
+      isGroup.value
+    ),
+    basicContextItem(
+      '戳一戳',
+      handleNoticePoke,
+      'poke_24'
+    ),
+    contextDividedItem(),
+    basicContextItem(
+      '移出本群',
+      async () => {
+        if (await showConfirmBox('温馨提醒', '确定将该成员从本群聊中移除吗？')) {
+          if ((await fetchKickGroupUser(props.message.group_id, user_id))?.status === 'ok') {
+            showSuccessToast('已移出本群')
+          } else {
+            showErrorToast('移出本群失败')
+          }
+        }
+      },
+      'remove_user_24',
+      isGroup.value && (
+        selfRole === 'owner' || (
+          selfRole === 'admin' &&
+          !['admin', 'owner'].includes(userRole)
+        )
+      )
+    ),
+  ])
+}
+
 // 组件加载时
 onMounted(() => {
   document.addEventListener('mouseenter', handleMouseEnter, { capture: true })
@@ -530,7 +611,7 @@ onUnmounted(() => {
     class="message-container"
     :class="[
       message.self_id === message.user_id ? 'message-out' : 'message-in' ,
-      message.message_type === 'group' ? 'group' : 'private',
+      isGroup ? 'group' : 'private',
       { recalled: isRecalled }
     ]"
   >
@@ -539,10 +620,11 @@ onUnmounted(() => {
       alt=""
       :src="getUserLogo(message.user_id)"
       v-double-click="handleAvatarDoubleClick"
+      v-custom-menu="customAvatarContextMenu"
     />
     <div class="message-msg-side">
       <div class="message-before">
-        <div class="message-name-title" v-if="message.message_type === 'group'">
+        <div class="message-name-title" v-if="isGroup">
           <span class="message-name-title-display-name">{{ displayName }}</span>
           <GroupLevelTitle :group_id="message.group_id" :user_id="message.user_id"/>
         </div>
@@ -550,7 +632,7 @@ onUnmounted(() => {
       </div>
       <div
         class="message"
-        v-custom-menu="customContextMenu"
+        v-custom-menu="customMessageContextMenu"
         @copy="handleCopy"
         ref="messageContent"
         @click="handleMessageExecuteCommand"

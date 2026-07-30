@@ -111,15 +111,15 @@ const filterSearchContacts = (searchText, flattenContacts) => {
   return [...directMatches, ...pinyinMatches, ...shortMatches, ...idMatches];
 };
 
-const checkSameContact = (newContact, activeContact) => {
-  if (!newContact || !activeContact) {
+const checkSameContact = (contact1, contact2) => {
+  if (!contact1 || !contact2) {
     return false
   }
-  return newContact.contact_id === activeContact.contact_id && newContact.type === activeContact.type;
+  return contact1.contact_id === contact2.contact_id && contact1.type === contact2.type;
 }
 
-const checkMsgIsCurrentContact = (event, activeContact) => {
-  if (!activeContact || !isObject(event)) {
+const checkMsgIsContact = (event, contact) => {
+  if (!contact || !isObject(event)) {
     return false
   }
   const { group_id, target_id, user_id, post_type, message_type, notice_type, sub_type } = event;
@@ -128,7 +128,7 @@ const checkMsgIsCurrentContact = (event, activeContact) => {
     return checkSameContact({
       type: message_type,
       contact_id: isGroup ? group_id : target_id
-    }, activeContact)
+    }, contact)
   } else if (post_type === 'notice') {
     const isGroup = !!group_id
     if (
@@ -139,7 +139,7 @@ const checkMsgIsCurrentContact = (event, activeContact) => {
       return checkSameContact({
         type: isGroup ? 'group' : 'private',
         contact_id: isGroup ? group_id : user_id
-      }, activeContact)
+      }, contact)
     }
   }
   return false
@@ -148,5 +148,6 @@ const checkMsgIsCurrentContact = (event, activeContact) => {
 export {
   flattenCategorizedContacts,
   filterSearchContacts,
-  checkMsgIsCurrentContact,
+  checkMsgIsContact,
+  checkSameContact,
 }

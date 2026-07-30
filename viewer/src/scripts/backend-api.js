@@ -739,6 +739,10 @@ async function fetchSetFriendRemark(user_id, remark) {
   return await fetchAction('set_friend_remark', { user_id, remark })
 }
 
+async function fetchKickGroupUser(group_id, user_id, reject_add_request = false) {
+  return await fetchAction('set_group_kick', { group_id, user_id, reject_add_request })
+}
+
 const isObjectProp = (obj, key, elseSetEmptyObj = false, returnObj = false) => {
   if (!isObject(obj)) {
     return returnObj ? obj : false;
@@ -1182,4 +1186,5 @@ export {
   fetchTranslateEnglish,
   fetchRecordToText,
   fetchSetFriendRemark,
+  fetchKickGroupUser,
 }
