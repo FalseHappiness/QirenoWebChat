@@ -33,7 +33,6 @@ venv
 *Test*
 # 全大写
 *TEST*
-viewer/src/components/MessageItem/MessageTypes/MessageJSON/json
 .githooks
 /viewer/public/licenses.json
 /viewer/public/licenses-dev.json

@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import { fetchBackendHealth, fetchBackendBots, getUserLogo } from "../scripts/backend-api.js";
 import { renderPolar } from "../QQ/app/scripts/polar.modify.ai-anti-obf.js";
-import CustomScrollBar from "../components/Utils/CustomScrollBar.vue";
+import CustomScrollBar from "../components/Common/Scrolling/CustomScrollBar.vue";
 import { Checkbox as ACheckbox } from 'ant-design-vue'
 import { strToBool } from "../scripts/types-util.js";
 

@@ -1,0 +1,1003 @@
+<script setup>
+import { computed, inject, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import MessageItem from './Message/MessageItem.vue'
+import {
+  fetchGroupMemberInfo,
+  fetchGroupNotice,
+  fetchMsg,
+  fetchSetGroupMemberRemark
+} from "../../../scripts/backend-api.js";
+import PageScroller from "../../Common/Scrolling/PageScroller.vue";
+import SimpleBarCore from "simplebar";
+import 'simplebar/dist/simplebar.min.css';
+import MessageInputBox from "./Input/MessageInputBox.vue";
+import { useGlobalStore } from "../../../store/global.js";
+import { parseJSON } from "../../../scripts/util.js";
+import Tooltip from "../../Common/Overlay/Tooltip.vue";
+import { Emitter } from "../../../composables/useEventBus.js";
+import GroupAnnounceViewer from "./Group/GroupAnnounceViewer.vue";
+import EnterArrow from "../../Common/Widgets/EnterArrow.vue";
+import GroupEssenceMsgViewer from "./Group/GroupEssenceMsgViewer.vue";
+import GroupFilesViewer from "./Group/GroupFilesViewer.vue";
+import GroupAlbumViewer from "./Group/GroupAlbumViewer.vue";
+import { qqAppImg } from "../../../composables/useBase.js";
+import CustomScrollBar from "../../Common/Scrolling/CustomScrollBar.vue";
+import ImageViewer from "../../Common/Media/ImageViewer.vue";
+import { isEmptyObject, isObject, isString } from "../../../scripts/types-util.js";
+import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
+import QIcon from "../../Common/Icons/QIcon.vue";
+import { getContactNameRef } from "../../../scripts/user-info-util.js";
+
+const activeContact = inject("activeContact")
+const selfInfo = inject("selfInfo")
+const selectContact = inject("selectContact")
+
+const scroller = ref(null)
+const inputer = ref(null)
+
+const displayName = ref('') // 使用ref来管理名称状态
+const isError = ref(false) // 错误状态
+// const isTempSession = ref(false)
+const showContactMore = ref(false)
+const chatAreaContactMore = ref(null)
+
+const handleChatAreaClick = e => {
+  const target = e?.target
+  if (target) {
+    if (!chatAreaContactMore.value?.$el?.contains(target) && !target.closest?.('.chat-area-ctrl-show-more')) {
+      showContactMore.value = false;
+    }
+  }
+}
+
+const getName = async () => {
+  await getContactNameRef(activeContact.value, displayName, isError)
+}
+
+const tempSession = computed(() => {
+  if (activeContact.value) {
+    if (activeContact.value.latest_msg) {
+      let event = activeContact.value.latest_msg;
+      event = parseJSON(event);
+      return event.message_type === 'private' && event.sub_type === 'group' ? "临时会话" : ""
+    }
+  }
+})
+
+const groupUsers = inject("groupUsers")
+const getMessages = inject("getMessages")
+
+const getMessagesWrapped = async (msg, count, include = false, direction = 'next') => {
+  const post_type = msg?.post_type || 'message'
+  const notice_message = post_type === 'notice'
+  const cursor_time = msg?.time || null
+  const cursor = notice_message ? msg.id : msg?.real_seq
+  return await getMessages(
+    msg?.message_id || (notice_message ? null : 0),
+    cursor,
+    count,
+    include,
+    direction,
+    cursor_time,
+    msg?.notice_before_cursor,
+    msg?.notice_after_cursor,
+    notice_message
+  )
+}
+
+const getNewerMessages = async (msg, _, count, include) => {
+  return await getMessagesWrapped(msg, count, include, 'next')
+}
+
+const getOlderMessages = async (msg, _, count, include) => {
+  return await getMessagesWrapped(msg, count, include, 'prev')
+}
+
+const getMsgId = msg => {
+  return `${msg?.id}_${msg?.real_seq}_${msg?.time}`
+}
+
+const detectMsgCursor = (msg, key) => {
+  const cursor = activeContact.value[key]
+  if (cursor) {
+    if (msg[cursor.type] === cursor.value) {
+      return true
+    }
+  }
+  return false
+}
+
+const detectIsLatestMsg = msg => {
+  return detectMsgCursor(msg, 'max_cursor')
+}
+
+const detectIsOldestMsg = msg => {
+  return detectMsgCursor(msg, 'min_cursor')
+}
+
+// 防止通过 NapCat 接口获取的 message 没有存到数据库所以设置 current.notice_before_message current.notice_before_message
+const handleVisibleMessagesLoadMore = visibleMessages => {
+  const max_cursor = activeContact.value.max_cursor
+  const min_cursor = activeContact.value.min_cursor
+  const check_max_cursor = max_cursor && max_cursor.type === 'id'
+  const check_min_cursor = min_cursor && min_cursor.type === 'id'
+  // 遍历所有消息
+  for (let i = 0; i < visibleMessages.length; i++) {
+    const current = visibleMessages[i];
+
+    // 只处理 post_type 为 notice 的项
+    if (current.post_type === 'notice') {
+      // 如果 notice_before_message 未设置或为 -1，查找前面的最近 real_seq
+      if ([null, undefined].includes(current.notice_before_message) || current.notice_before_message === -1) {
+        // 向前查找最近的 real_seq
+        for (let j = i - 1; j >= 0; j--) {
+          const prevItem = visibleMessages[j];
+          if (prevItem.real_seq !== undefined) {
+            current.notice_before_message = prevItem.real_seq;
+            break;
+          } else if (check_min_cursor && prevItem.id === min_cursor.value) {
+            // 最旧
+            current.notice_before_message = 0
+            break;
+          }
+        }
+      }
+
+      // 如果 notice_after_message 未设置或为 -1（之后消息可能更新，所以始终查找），查找后面的最近 real_seq
+      // if ([null, undefined].includes(current.notice_after_message) || current.notice_after_message === -1) {
+      // 向后查找最近的 real_seq
+      for (let j = i + 1; j < visibleMessages.length; j++) {
+        const nextItem = visibleMessages[j];
+        if (nextItem.real_seq !== undefined) {
+          current.notice_after_message = nextItem.real_seq;
+          break;
+        } else if (check_max_cursor && nextItem.id === max_cursor.value) {
+          // 最新
+          current.notice_after_message = 0
+          break;
+        }
+      }
+      // }
+    }
+  }
+
+  return visibleMessages;
+}
+
+const handleScrollerMounted = async () => {
+  // 等待组件完全渲染
+  await nextTick();
+
+  // 获取内部元素
+  const chatWrapper = scroller?.value?.$refs?.chatWrapper
+
+  if (chatWrapper) {
+    new SimpleBarCore(chatWrapper, { autoHide: false })
+
+    scroller.value.changeWrapperElement(chatWrapper.querySelector('.simplebar-content-wrapper'))
+
+    /*
+
+    // 处理图片加载时高度变化导致布局抖动
+    // 创建MutationObserver来监听新增的图片
+    const mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        // 遍历所有新增的节点（包括嵌套的）
+        mutation.addedNodes.forEach((node) => {
+          // 如果节点是元素（而非纯文本等），检查它及其子节点是否有图片
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // 检查当前节点是否是图片
+            if (node.classList.contains('message-image') || node.classList.contains('message-video')) {
+              observeImageResize(node);
+            }
+            // 检查所有子节点中的图片（递归或querySelectorAll）
+            const images = node.querySelectorAll('.message-image, .message-video');
+            images.forEach(img => observeImageResize(img));
+          }
+        });
+      });
+    });
+
+    const saveImageSize = (img, currentSize) => {
+      if (currentSize === undefined) {
+        const rect = img.getBoundingClientRect()
+        img.beforeSize = img.currentSize = {
+          width: rect.width,
+          height: rect.height
+        }
+        img.heightDifference = 0
+      } else {
+        const beforeSize = img.beforeSize = img.currentSize
+        img.currentSize = {
+          width: currentSize.width,
+          height: currentSize.height
+        }
+        let scalingRate = currentSize.width / beforeSize.width
+        if (scalingRate === Infinity) {
+          scalingRate = 1
+        }
+        img.heightDifference = currentSize.height - beforeSize.height * scalingRate
+      }
+    }
+
+    const handleImageResize = async (img) => {
+      const difference = img?.heightDifference | 0
+      // console.log(scroller?.value?.wrapperScrollOffset().bottom, difference)
+      // if (scroller?.value?.wrapperScrollOffset().bottom - difference < 10) {
+      //   await nextTick()
+      //   scroller?.value?.scrollToVisibleBottom()
+      // }
+      if (scroller?.value?.wrapper) {
+        scroller.value.wrapper.scrollTop += difference
+      }
+    }
+
+    // 创建ResizeObserver来监听图片尺寸变化
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        // console.log('图片高度变化:', entry.target.src, entry.contentRect.height, entry.target.beforeHeight);
+        const img = entry.target
+        saveImageSize(img, entry.contentRect)
+        handleImageResize(img)
+      }
+    });
+
+    // 观察图片尺寸变化
+    function observeImageResize(img) {
+      if (!img.complete) {
+        saveImageSize(img)
+        resizeObserver.observe(img);
+        img.addEventListener('load', function () {
+          handleImageResize(img)
+          resizeObserver.unobserve(img)
+        })
+        img.addEventListener('error', () => {
+          handleImageResize(img)
+          console.log('图片加载失败:', img.src);
+          // resizeObserver.unobserve(img);
+          const fallbackLink = img.dataset.fallbackLink
+          const originalLink = img.dataset.originalLink
+          if (originalLink || !fallbackLink) {
+            console.log('图片彻底加载失败:', originalLink || img.src, fallbackLink)
+          } else if (fallbackLink) {
+            img.dataset.originalLink = img.src
+            img.src = fallbackLink
+          }
+        })
+      }
+    }
+
+    // 开始观察容器内的子节点变化
+    mutationObserver.observe(chatWrapper, {
+      childList: true,
+      subtree: true
+    });
+
+    // 观察已存在的图片
+    chatWrapper.querySelectorAll('.message-image, .message-video').forEach(img => {
+      observeImageResize(img);
+    });
+
+     */
+  }
+}
+
+// 消息间隔超过5分钟显示时间提示
+const isShowTimeTip = (old_msg, new_msg) => {
+  const old_time = old_msg?.time || 0;
+  const new_time = new_msg?.time || 0;
+  return new_time - old_time > 300
+}
+
+provide("visibleMessages", () => {
+  return scroller?.value?.visibleMessages
+})
+
+provide("scrollToMidwayMsg", (info) => {
+  scroller?.value?.scrollToMidwayButton(info, true)
+})
+
+const quoteMessage = (msg, user) => {
+  inputer?.value?.handleQuoteMessage(msg)
+  if (user) {
+    inputer?.value?.insertAtUserAtCursor(user)
+  }
+}
+
+const findMessage = async (message_id) => {
+  const vm = scroller?.value?.visibleMessages
+  let msg;
+  if (vm && Array.isArray(vm)) {
+    msg = vm.find(
+      item => item.message_id === parseInt(message_id) && ['message', 'message_sent'].includes(item.post_type)
+    )
+  }
+  if (!msg || isEmptyObject(msg)) {
+    msg = await fetchMsg(message_id)
+  }
+  return msg
+}
+
+useGlobalStore().findMessage = msg_id => findMessage(msg_id)
+
+provide("findMessage", msg_id => findMessage(msg_id))
+
+
+const isGroup = computed(() => {
+  return activeContact.value?.type === 'group';
+})
+
+const groupNotifications = ref(null);
+
+const latestGroupNoticeMsg = computed(() => {
+  return groupNotifications.value?.[0]?.message;
+})
+
+const getGroupNotice = async () => {
+  groupNotifications.value = await fetchGroupNotice(activeContact.value.contact_id);
+}
+
+const groupSelfInfo = ref(null);
+
+watch(() => selfInfo.value, (newVal, oldVal) => {
+  if (oldVal == null && newVal != null) {
+    getGroupSelfInfo()
+  }
+})
+
+const getGroupSelfInfo = async () => {
+  if (isGroup.value) {
+    if (selfInfo.value?.user_id) {
+      groupSelfInfo.value = await fetchGroupMemberInfo(activeContact.value.contact_id, selfInfo.value.user_id);
+      groupSelfRemarkModel.value = groupSelfInfo?.value?.card;
+    }
+  }
+}
+
+const groupSelfRemarkModel = ref("");
+const groupRemarkModel = ref("");
+
+const handleGroupSelfRemarkChange = async () => {
+  if (groupSelfRemarkModel.value !== groupSelfInfo?.value?.card) {
+    await fetchSetGroupMemberRemark(activeContact.value.contact_id, selfInfo.value.user_id, groupSelfRemarkModel.value)
+  }
+}
+
+const changeGroupContactRemark = inject("changeGroupContactRemark")
+
+const handleGroupRemarkChange = () => {
+  if (groupRemarkModel.value !== activeContact.value?.remark) {
+    changeGroupContactRemark(activeContact.value.contact_id, groupRemarkModel.value)
+  }
+}
+
+const handleEnterBlur = (e) => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault()
+    e.target.blur()
+  }
+}
+
+const showContactInfo = inject("showContactInfo")
+
+const handleClickShowContactInfo = (e, user_id) => {
+  let group_user, user, group;
+  if (user_id) {
+    let nickname;
+    if (isObject(user_id)) {
+      ({
+        nickname, user_id
+      } = user_id)
+    }
+    if (isString(user_id)) {
+      user_id = Number.parseInt(user_id)
+    }
+    if (isGroup?.value) {
+      group_user = {
+        nickname,
+        ...groupUsers.value?.find(user => user.user_id === user_id),
+        user_id,
+        group_id: activeContact.value.contact_id
+      }
+    } else {
+      user = {
+        user_id,
+        nickname
+      }
+      if (user.user_id === activeContact.value.contact_id) {
+        ({
+          real_name: user.nickname,
+          remark: user.remark
+        } = activeContact.value)
+      }
+    }
+  } else {
+    if (isGroup?.value) {
+      group = {
+        group_id: activeContact.value?.contact_id,
+        group_name: activeContact.value?.real_name,
+        group_remark: activeContact.value?.remark
+      }
+    } else {
+      user = {
+        user_id: activeContact.value?.contact_id,
+        nickname: activeContact.value?.real_name,
+        remark: activeContact.value?.remark
+      }
+    }
+  }
+  showContactInfo({
+    group_user, user, group,
+    position: { x: e.clientX, y: e.clientY },
+  })
+}
+
+const createChangeView = refVar => {
+  return (isShow = true) => {
+    refVar.value = isShow;
+  }
+}
+
+const showGroupAnnounceViewer = ref(false);
+const changeShowGroupAnnounce = createChangeView(showGroupAnnounceViewer)
+
+const showGroupEssenceListViewer = ref(false);
+const changeShowGroupEssenceList = createChangeView(showGroupEssenceListViewer)
+
+const showGroupFilesViewer = ref(false)
+const changeShowGroupFiles = createChangeView(showGroupFilesViewer)
+
+const showGroupAlbumViewer = ref(false)
+const changeShowGroupAlbum = createChangeView(showGroupAlbumViewer)
+
+const initContactInfo = () => {
+  // 组件挂载时获取名称
+  getName()
+  if (isGroup.value) {
+    groupRemarkModel.value = activeContact.value?.remark;
+    getGroupNotice()
+    getGroupSelfInfo()
+    Emitter.on("show-group-notices", changeShowGroupAnnounce)
+  }
+}
+
+// 内部状态
+const visibleStatusText = ref(false)
+const peerStatusText = ref('')
+let peerStatusTimer = null
+const SHOW_DURATION = 3000 // 默认3秒消失
+
+// 核心方法：供父组件调用，刷新提示+重置倒计时
+const refreshPeerStatus = (text) => {
+  clearPeerStatus()
+  peerStatusText.value = text
+  visibleStatusText.value = true
+
+  // 重新计时3秒，超时隐藏
+  peerStatusTimer = setTimeout(() => {
+    visibleStatusText.value = false
+  }, SHOW_DURATION)
+}
+
+const clearPeerStatus = () => {
+  // 清除上一次倒计时
+  clearTimeout(peerStatusTimer)
+  visibleStatusText.value = false
+}
+
+const imageViewer = ref(null)
+provide("openImageViewer", src => {
+  imageViewer.value?.open?.(src)
+})
+
+const videoPlayer = ref(null)
+provide("openVideoPlayer", src => {
+  videoPlayer.value?.open?.(src)
+})
+
+// 联系人更改时获取名称
+watch(() => activeContact.value, (newVal, oldVal) => {
+  if (newVal?.contact_id !== oldVal?.contact_id || newVal?.type !== oldVal?.type) {
+    showGroupAnnounceViewer.value = false
+    showContactMore.value = false
+    clearPeerStatus()
+    initContactInfo();
+  }
+}, { deep: true })
+
+onMounted(initContactInfo)
+onUnmounted(() => {
+  Emitter.off("show-group-notices")
+})
+
+// 暴露方法给父组件调用
+defineExpose({
+  refreshPeerStatus,
+})
+</script>
+
+<template>
+  <div class="chat-area" @click="handleChatAreaClick">
+    <GroupAnnounceViewer
+      v-if="showGroupAnnounceViewer"
+      :group_id="activeContact?.contact_id"
+      :notices="groupNotifications || []"
+      :onClose="() => changeShowGroupAnnounce(false)"
+    />
+    <GroupEssenceMsgViewer
+      v-if="showGroupEssenceListViewer"
+      :on-close="() => changeShowGroupEssenceList(false)"
+    />
+    <GroupFilesViewer
+      v-if="showGroupFilesViewer"
+      :group_id="activeContact?.contact_id"
+      :on-close="() => changeShowGroupFiles(false)"
+    />
+    <GroupAlbumViewer
+      v-if="showGroupAlbumViewer"
+      :group_id="activeContact?.contact_id"
+      :on-close="() => changeShowGroupAlbum(false)"
+    />
+    <ImageViewer ref="imageViewer"/>
+    <VideoPlayer ref="videoPlayer"/>
+
+    <div v-if="activeContact" class="border-bottom chat-area-head">
+      <span class="chat-area-head-name" :class="{'text-error': isError}">
+        <QIcon class="chat-area-go-back-btn" name="arrow_left_24"
+               @click="() => { showContactMore ? showContactMore = false : selectContact(null) }"/>
+        <span class="chat-area-head-display-name" @click="handleClickShowContactInfo">{{ displayName }}</span>
+        <template> v-if="tempSession"
+          <span>&nbsp;</span>
+          <small class="text-muted font-size-100">
+            {{ tempSession }}
+          </small>
+        </template>
+        <template v-if="visibleStatusText">
+          <span class="text-muted font-size-100">&nbsp;{{ peerStatusText }}</span>
+        </template>
+      </span>
+      <span class="chat-area-head-control" v-if="isGroup">
+        <Tooltip
+          content="更多"
+          use-target-slot
+          placement="bottom"
+        >
+          <template #target>
+            <QIcon
+              name="more_24"
+              class="chat-area-head-control-btn chat-area-ctrl-show-more"
+              @click="showContactMore = !showContactMore"/>
+          </template>
+        </Tooltip>
+      </span>
+    </div>
+
+    <CustomScrollBar v-if="isGroup" class="chat-area-contact-more" ref="chatAreaContactMore"
+                     :style="{ right: showContactMore ? '0' : '-100%' }">
+      <div class="chat-area-contact-more-area chat-area-contact-info">
+        <img
+          :src="`https://p.qlogo.cn/gh/${activeContact.contact_id}/${activeContact.contact_id}/100`"
+          alt=""
+          class="chat-area-contact-logo">
+        <div>
+          {{ displayName }}
+          <br>
+          <small style="color: gray;display: block;margin-top: -4px;">{{ activeContact.contact_id }}</small>
+        </div>
+      </div>
+
+      <div class="chat-area-contact-more-area">
+        群聊成员
+      </div>
+
+      <div class="chat-area-contact-more-area">
+        群应用
+        <div class="group-applications-list">
+          <div @click="changeShowGroupFiles()" class="group-app-list-app-container">
+            <QIcon name="filelook_folder_16" class="group-app-icon"/>
+            群文件
+          </div>
+          <div @click="changeShowGroupAlbum()" class="group-app-list-app-container">
+            <QIcon name="image_24" class="group-app-icon" style="color: #0099ff;"/>
+            群相册
+          </div>
+          <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">
+            <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')" class="group-app-icon"/>
+            群精华
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-area-contact-more-area with-title display-flex" data-title="群公告"
+           @click="changeShowGroupAnnounce()">
+        <span v-if="groupNotifications == null" style="color: #999;">内容获取中</span>
+        <span v-else-if="!groupNotifications?.length" style="color: #999;">未设置</span>
+        <span v-else class="overflow-ellipsis">
+          <span v-if="latestGroupNoticeMsg?.image?.length">【图片】</span>
+          <span v-html="latestGroupNoticeMsg.text"></span>
+        </span>
+        <EnterArrow/>
+      </div>
+
+      <label
+        v-if="groupSelfInfo"
+        class="chat-area-contact-more-area with-title input-content"
+        data-title="我的本群昵称">
+        <input v-model="groupSelfRemarkModel"
+               @blur="handleGroupSelfRemarkChange"
+               @keydown="handleEnterBlur"
+               type="text"
+               class="overflow-ellipsis"
+               placeholder="填写我的本群昵称">
+      </label>
+
+      <label
+        class="chat-area-contact-more-area with-title input-content"
+        data-title="群聊备注">
+        <input v-model="groupRemarkModel"
+               @blur="handleGroupRemarkChange"
+               @keydown="handleEnterBlur"
+               type="text"
+               placeholder="填写备注">
+      </label>
+    </CustomScrollBar>
+
+    <div v-if="!activeContact" class="display-flex justify-content-center align-items-center height-100">
+      <div class="text-center text-muted">
+        <h2>选择联系人以开始聊天</h2>
+      </div>
+    </div>
+
+    <page-scroller
+      v-else-if="activeContact"
+      class="messages-container"
+      ref="scroller"
+      :get-id-function="getMsgId"
+      :detect-is-latest-msg-function="detectIsLatestMsg"
+      :detect-is-oldest-msg-function="detectIsOldestMsg"
+      :page-size="30"
+      :at-bottom-distance="100"
+      :get-newer-messages="getNewerMessages"
+      :get-older-messages="getOlderMessages"
+      :container-class="$style['chat-container']"
+      :wrapper-class="[
+        $style['chat-wrapper'],
+        activeContact.type === 'group' ? $style['chat-wrapper-group'] : $style['chat-wrapper-private']
+        ]"
+      :key="activeContact.contact_id"
+      :colors="{ loadingSpinner: '#0099ff' }"
+      @mounted="handleScrollerMounted"
+      @load-messages="handleVisibleMessagesLoadMore"
+    >
+      <template #message="{ message, index, messages }">
+        <MessageItem
+          :message="message"
+          :show-time-notice="isShowTimeTip(messages?.[index - 1], message)"
+          @quote-message="(msg, user) => {quoteMessage(msg, user)}"
+          @click-show-contact-info="handleClickShowContactInfo"
+          @change-show-group-notice="changeShowGroupAnnounce"
+          @change-show-essence-list="changeShowGroupEssenceList"
+        />
+      </template>
+      <template #empty="{ initializing }">
+        <div v-if="initializing" class="text-center text-muted loading-messages">
+          加载消息...
+        </div>
+        <div v-else class="text-center text-muted no-messages">
+          暂无消息
+        </div>
+      </template>
+      <template #scroll-to-bottom-btn="{ scrollToBottom }">
+        <div class="scroll-to-bottom-btn" @click="scrollToBottom">
+          <QIcon name="arrow_down_mini_16" style="transform: translateY(-8%); color: #58bafb;"/>
+          <QIcon name="arrow_down_mini_16" style="transform: translateY(-80%); color: #0099ff;"/>
+        </div>
+      </template>
+    </page-scroller>
+
+    <message-input-box
+      class="message-input-box"
+      :class="{ display: activeContact }"
+      ref="inputer"
+    ></message-input-box>
+  </div>
+</template>
+
+<style scoped>
+.chat-area {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-area-head-name {
+  font-weight: bold;
+  display: flex;
+  margin: 0 0 0 15px;
+  align-items: center;
+}
+
+.chat-area-head-name .text-muted {
+  font-weight: normal;
+}
+
+.chat-area-head {
+  height: 52px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.messages-container {
+  flex: 1;
+  /*height: calc(100% - 60px); !* 减去标题栏高度 *!*/
+}
+
+.loading-messages, .no-messages {
+  padding: 20px;
+  text-align: center;
+  font-size: 100%;
+}
+
+.margin-br {
+  display: block;
+  line-height: 15px;
+  opacity: 0;
+}
+
+.text-error {
+  color: #dc3545 !important;
+}
+
+.chat-area-go-back-btn {
+  display: none;
+  width: 20px;
+  height: 20px;
+  margin: 0 8px 0 0;
+}
+
+.message-input-box {
+  display: none;
+}
+
+.message-input-box.display {
+  display: block;
+}
+
+.chat-area-head-control {
+  margin: 0 5px 0 0;
+  display: flex;
+  align-items: center;
+}
+
+.chat-area-head-control-btn {
+  margin: 0 5px;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.chat-area-head-control-btn:hover {
+  background-color: rgb(200 200 200 / 25%);
+}
+
+.chat-area-head-control-btn:active {
+  background-color: rgb(200 200 200 / 50%);
+}
+
+.chat-area-contact-more {
+  position: absolute;
+  height: calc(100% - 52px);
+  top: 52px;
+  width: 350px;
+  background-color: #f2f2f2;
+  border: 1px solid #dee2e6;
+  right: -100%;
+  z-index: 5;
+  box-shadow: 0 3px 6px 0 #b6b6b68f;
+  transition: right ease-out 0.3s;
+  padding: 0 18px;
+}
+
+.chat-area-contact-more:deep(.simplebar-content) {
+  font-size: 15px;
+  gap: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-area-contact-more-area {
+  border-radius: 8px;
+  background-color: white;
+  padding: 8px 12px;
+  display: block;
+  margin: 0;
+}
+
+.chat-area-contact-more-area.display-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+.chat-area-contact-more-area.with-title {
+  margin-top: 18px;
+}
+
+.chat-area-contact-more-area.with-title:before {
+  content: attr(data-title);
+  display: block;
+  position: absolute;
+  margin-top: -32px;
+  color: gray;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.chat-area-contact-more-area.display-flex.with-title:before {
+  margin-top: -64px;
+}
+
+.chat-area-contact-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin: 5px 10px 5px 5px;
+}
+
+.chat-area-contact-info {
+  display: flex;
+  align-items: center;
+}
+
+.chat-area-contact-more-area.input-content {
+  outline: 1px solid transparent;
+  width: 100%;
+}
+
+.chat-area-contact-more-area.input-content input {
+  outline: none;
+  border: none;
+  width: 100%;
+}
+
+.chat-area-contact-more-area.input-content:has(input:focus) {
+  outline: 1px solid #0099ff;
+}
+
+.group-applications-list {
+  padding: 8px 10px 0 10px;
+  display: flex;
+  gap: 15px;
+}
+
+.group-app-list-app-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.group-app-icon {
+  width: 30px;
+  height: 30px;
+}
+
+@media (max-width: 570px) {
+  .chat-area-head {
+    height: 42px;
+    align-items: center;
+  }
+
+  .chat-area-head-name {
+    margin: 8px;
+  }
+
+  .chat-area-go-back-btn {
+    display: block;
+  }
+
+  .chat-area-contact-more {
+    width: 100%;
+    height: calc(100% - 42px);
+    top: 42px;
+    box-shadow: none;
+    transition: right ease-out 0.2s;
+  }
+}
+</style>
+
+<style module>
+.chat-container {
+  width: 100%;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.chat-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /*content-visibility: auto;*/
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 5px;
+  padding-top: 0;
+}
+
+.chat-wrapper-group {
+  gap: 5px;
+}
+
+.chat-wrapper-private {
+  gap: 0;
+}
+</style>
+
+<style scoped>
+.scroll-to-bottom-btn {
+  height: 28px;
+  border: 1px solid white;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 10%);
+  width: 50px;
+  border-radius: 114514px;
+  background-color: white;
+  position: absolute;
+  right: 20px;
+  bottom: 10px;
+}
+
+.scroll-to-bottom-btn svg {
+  width: 25px;
+  height: 25px;
+  display: block;
+  margin: auto;
+}
+
+.scroll-to-bottom-btn:hover {
+  border: 1px solid #ececec;
+  background-color: #f5f5f5;
+}
+
+.scroll-to-bottom-btn:active {
+  border: 1px solid #dddddd;
+  background-color: #e6e6e6;
+}
+
+.chat-area-head-display-name {
+  cursor: default;
+  padding: 0 3px;
+  border-radius: 5px;
+}
+
+.chat-area-head-display-name:hover {
+  background-color: #EBEBEB;
+}
+
+.chat-area-head-display-name:active {
+  background-color: #e0e0e0;
+}
+</style>
+
+<style>
+.messages-container .chat-wrapper .simplebar-scrollbar {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.messages-container .chat-wrapper .simplebar-scrollbar:before {
+  width: 7px;
+  left: 3px;
+}
+
+.messages-container:hover .chat-wrapper .simplebar-scrollbar, .messages-container .chat-wrapper.simplebar-dragging .simplebar-scrollbar {
+  opacity: 0.3;
+}
+</style>

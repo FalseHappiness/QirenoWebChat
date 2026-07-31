@@ -118,7 +118,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       dedupe: ['vue'],
       alias: {
-        '@': path.resolve(__dirname, 'src')
+        '@': path.resolve(process.cwd(), 'src')
       }
     },
     build: {

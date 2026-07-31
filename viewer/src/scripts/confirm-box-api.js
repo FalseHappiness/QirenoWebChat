@@ -1,5 +1,5 @@
 import { createApp, h, defineComponent } from 'vue'
-import ConfirmBox from '../components/Utils/ConfirmBox.vue'
+import ConfirmBox from '../components/Common/Overlay/ConfirmBox.vue'
 
 /**
  * 展示确认框

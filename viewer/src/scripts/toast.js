@@ -1,7 +1,7 @@
 import "../styles/toast-scss.scss"
 import "../styles/toast.css"
 import { useToast } from "vue-toastification";
-import ToastIcon from "../components/Common/ToastIcon.vue";
+import ToastIcon from "../components/Common/Widgets/ToastIcon.vue";
 
 const toast = useToast({
   transition: "Vue-Toastification__fade",

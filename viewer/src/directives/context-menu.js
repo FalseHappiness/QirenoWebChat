@@ -4,7 +4,7 @@ import "../styles/content-menu.css"
 import { h } from "vue";
 
 import { isFunction } from "../scripts/types-util.js";
-import QIcon from "../components/Utils/QIcon.vue";
+import QIcon from "../components/Common/Icons/QIcon.vue";
 
 let last_open_time = 0
 const detect_fn_name = 'custom-context-menu-should-show-detect'

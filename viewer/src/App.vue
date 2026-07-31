@@ -1,9 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, provide } from 'vue';
 import './App.css';
 import AccountsView from "./views/AccountsView.vue";
 import MainView from "./views/MainView.vue";
-import LoadingSpinner from "./components/Common/LoadingSpinner.vue";
+import LoadingSpinner from "./components/Common/Widgets/LoadingSpinner.vue";
 
 const currentView = ref('loading') // 'loading' | 'accounts' | 'main'
 const selectedAccount = ref(null)
@@ -45,7 +45,7 @@ const onMainViewDisconnect = () => {
   currentView.value = 'accounts'
   forceShowWelcome.value = true
 }
-
+provide("disconnect", onMainViewDisconnect)
 </script>
 
 <template>
@@ -59,7 +59,6 @@ const onMainViewDisconnect = () => {
   <MainView
     v-else-if="currentView === 'main' && selectedAccount"
     :account="selectedAccount"
-    @disconnect="onMainViewDisconnect"
   />
 </template>
 

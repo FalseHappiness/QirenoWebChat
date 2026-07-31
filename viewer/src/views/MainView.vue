@@ -2,8 +2,8 @@
 import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount, provide } from 'vue'
 import { ConnectionBridge } from '../scripts/connection/connection-bridge.js'
 import { ConnectionBridgeOnebot } from "../scripts/connection/virtual-backend/connection-bridge-onebot.js";
-import NavigationView from '../components/NavigationView.vue'
-import DestinationView from '../components/DestinationView.vue'
+import NavigationView from '../components/Navigation/NavigationView.vue'
+import DestinationView from '../components/Destination/DestinationView.vue'
 import {
   fetchEssenceMessages,
   fetchMessages,
@@ -18,10 +18,10 @@ import {
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
 import { CalledEmitter } from "../composables/useEventBus.js";
-import ContactInfoTooltip from "../components/Popups/ContactInfoTooltip.vue";
+import ContactInfoTooltip from "../components/Common/Overlay/ContactInfoTooltip.vue";
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
-import DownloadProgressPopup from "../components/Popups/DownloadProgressPopup.vue";
-import LoadingSpinner from "../components/Common/LoadingSpinner.vue";
+import DownloadProgressPopup from "../components/Common/Overlay/DownloadProgressPopup.vue";
+import LoadingSpinner from "../components/Common/Widgets/LoadingSpinner.vue";
 import { checkMsgIsContact, checkSameContact, flattenCategorizedContacts } from "../scripts/contacts-util.js";
 import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
 import { isNumber } from "../scripts/types-util.js";
@@ -34,11 +34,11 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['disconnect'])
-
 const categorizedContacts = ref([])
 const loadingContacts = ref(false)
+provide("isLoadingContacts", loadingContacts)
 const activeContact = ref(null)
+provide("activeContact", activeContact)
 const destinationView = ref(null)
 const chatArea = computed(() => {
   return destinationView.value.chatArea
@@ -79,15 +79,18 @@ watch(() => isConnected.value && selfId.value, val => {
   }
 })
 
-watch(activeContact, val => {
-  if (!val) {
+watch(activeContact, (newContact, oldContact) => {
+  if (!newContact) {
     groupEssenceMsgList.value = null
     groupUsers.value = null
+  }
+  if (!checkSameContact(newContact, oldContact) && newContact) {
+    getEssenceMsgRealSeqList()
   }
 })
 
 // 选择联系人
-const selectContact = (contact) => {
+const selectContact = contact => {
   // if (chatArea.value?.$refs?.scroller?.initializing) return
   // 如果已经是当前联系人
   if (checkSameContact(activeContact.value, contact)) {
@@ -98,6 +101,7 @@ const selectContact = (contact) => {
     activeContact.value = contact
   });
 }
+provide("selectContact", selectContact)
 
 const changeGroupContactRemark = async (contact_id, remark) => {
   const result = await fetchSetGroupRemark(
@@ -116,6 +120,7 @@ const changeGroupContactRemark = async (contact_id, remark) => {
     showErrorToast(`改变群 ${contact_id} 备注为 ${remark} 失败`)
   }
 }
+provide("changeGroupContactRemark", changeGroupContactRemark)
 
 const selfInfo = ref(null)
 
@@ -130,8 +135,8 @@ const changeSelfLongNick = async longNick => {
     console.log("Change self long nick error: ", longNick, result)
     showErrorToast(`改变个性签名为 ${longNick} 失败`)
   }
-
 }
+provide("changeSelfLongNick", changeSelfLongNick)
 
 const initAppData = () => {
   fetchFriendList()
@@ -173,6 +178,7 @@ const fetchEssenceMessagesWrapper = async (group_id, only_real_seq) => {
 }
 
 const groupEssenceMsgList = ref(null)
+provide("groupEssenceMsgList", groupEssenceMsgList)
 
 const getEssenceMsgRealSeqList = async () => {
   if (activeContact.value?.type === 'group') {
@@ -184,14 +190,6 @@ const getEssenceMsgRealSeqList = async () => {
     }
   }
   return []
-}
-
-const changeEssenceMsg = (real_seq, set) => {
-  if (set) {
-    activeContact.value.essence_real_seq_list.push(real_seq)
-  } else {
-    activeContact.value.essence_real_seq_list = activeContact.value.essence_real_seq_list.filter(item => item !== real_seq)
-  }
 }
 
 // 获取消息历史
@@ -289,6 +287,7 @@ const getMessages = async (
   }
   return messages
 }
+provide("getMessages", getMessages)
 
 // 销毁逻辑
 const destroy = () => {
@@ -311,9 +310,8 @@ function handleDownload(info) {
   showDownloadPopup.value = true;
 }
 
-const handleDisconnect = () => {
-  emit('disconnect')
-}
+const contactInfoTooltip = ref(null)
+provide("showContactInfo", options => contactInfoTooltip.value?.showContactInfo(options))
 
 // 从 account prop 决定是否是直连模式
 const effectiveIsDirect = computed(() => {
@@ -450,27 +448,9 @@ onUnmounted(destroy)
 <template>
   <div class="main-view">
     <div class="chat-container" v-if="wsInited">
-      <NavigationView
-        :categorizedContacts="categorizedContacts"
-        :active-contact="activeContact"
-        :loading="loadingContacts"
-        @select="selectContact"
-        :self-info="selfInfo"
-        @change-self-long-nick="changeSelfLongNick"
-        @disconnect="handleDisconnect"
-      />
-      <DestinationView
-        :active-contact="activeContact"
-        :get-messages="getMessages"
-        :select-contact="selectContact"
-        :self-info="selfInfo"
-        :essence-list="groupEssenceMsgList"
-        ref="destinationView"
-        @get-essence-msg-real-seq-list="getEssenceMsgRealSeqList"
-        @change-essence-msg="changeEssenceMsg"
-        @change-group-contact-remark="changeGroupContactRemark"
-      />
-      <ContactInfoTooltip/>
+      <NavigationView/>
+      <DestinationView ref="destinationView"/>
+      <ContactInfoTooltip ref="contactInfoTooltip"/>
       <!-- 下载进度弹窗 -->
       <DownloadProgressPopup
         v-if="showDownloadPopup && downloadInfo"
