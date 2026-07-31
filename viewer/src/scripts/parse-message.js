@@ -1,7 +1,6 @@
 import { h } from "vue";
 import {
-  fetchDisplayName, fetchMsg,
-  getCacheName,
+  fetchMsg,
   getFileDataUrl, getGroupFileProxyUrl,
   getMultimediaProxyUrl, getPrivateFileProxyUrl,
   getStreamFileDataUrl, isSnowLuma
@@ -30,6 +29,7 @@ import UnparsedMessage from "../components/MessageItem/MessageTypes/UnparsedMess
 import { getPokeDescription } from "./faces-config.js";
 import { qqFileIcon, qqSystemEmoji } from "../composables/useBase.js";
 import { isObject, objectHasKey } from "./types-util.js";
+import { CacheNameKey, fetchDisplayName, getCacheName } from "./user-info-util.js";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -104,7 +104,7 @@ const messagePreviewDirectConversionTypes = {
 }
 
 const createDisplayNameSpan = (is_group, group_id, user_id, promises) => {
-  const type = is_group ? "group_user" : "private";
+  const type = is_group ? CacheNameKey.GROUP_USER : CacheNameKey.PRIVATE;
   const id_list = [group_id, user_id];
 
   let name
@@ -483,7 +483,7 @@ const parseMessage = (wrappedMsg) => {
         } else if (item.type === 'at') {
           const id = item.data.qq;
 
-          const type = isGroup ? "group_user" : "nickname"
+          const type = isGroup ? CacheNameKey.GROUP_USER : CacheNameKey.NICKNAME
           const id_list = [event.group_id, id];
 
           children.push(

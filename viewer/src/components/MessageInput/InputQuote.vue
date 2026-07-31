@@ -1,8 +1,8 @@
 <script>
 import { defineComponent, h } from 'vue'
 import { parseMessagePreview } from "../../scripts/parse-message.js";
-import { fetchDisplayName } from "../../scripts/backend-api.js";
 import QIcon from "../Utils/QIcon.vue";
+import { CacheNameKey, fetchDisplayName } from "../../scripts/user-info-util.js";
 
 export default defineComponent({
   name: "InputQuote",
@@ -48,7 +48,7 @@ export default defineComponent({
 
       const result = await fetchDisplayName(
         [msg.group_id, msg.user_id],
-        (this.msg.message_type === 'group') ? "group_user" : "private",
+        (this.msg.message_type === 'group') ? CacheNameKey.GROUP_USER : CacheNameKey.PRIVATE,
         (newName) => {
           This.name = newName
         }

@@ -2333,7 +2333,7 @@ export default defineComponent({
       const atGroupUsers = [...this.atGroupUsers]
 
       if (this.remainGroupAtAll?.can_at_all) {
-        atGroupUsers.unshift({ qq: 'all', name: '全体成员' })
+        atGroupUsers.unshift({ user_id: 'all', name: '全体成员' })
       }
 
       if (!this.atMentionText) {
@@ -2362,7 +2362,7 @@ export default defineComponent({
         }
 
         // QQ号匹配
-        if (user.qq.includes(searchText)) {
+        if (String(user.user_id).includes(searchText)) {
           qqMatches.push(user);
         }
       });
@@ -2456,7 +2456,7 @@ export default defineComponent({
                 @mouseenter="handleMouseEnterAtUser(index)"
                 @click="handleSelectAtUser(item)"
               >
-                <div class="at-group-user" v-if="item.qq === 'all'">
+                <div class="at-group-user" v-if="item.user_id === 'all'">
                   <div class="at-group-user-name">
                     <QIcon class="at-group-all-members-icon" name="at_24"></QIcon>
                     <span class="text-truncate">全体成员</span>
@@ -2467,10 +2467,10 @@ export default defineComponent({
                 </div>
                 <div class="at-group-user" v-else>
                   <div class="at-group-user-name">
-                    <img alt="" :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.qq}&s=40`">
+                    <img alt="" :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.user_id}&s=40`">
                     <span class="text-truncate">{{ item.name }}</span>
                   </div>
-                  <span class="at-group-user-qq">{{ item.qq }}</span>
+                  <span class="at-group-user-qq">{{ item.user_id }}</span>
                 </div>
               </div>
             </template>

@@ -145,7 +145,7 @@ export const useGlobalStore = defineStore(
       emojiFaceConfig
     )
 
-    const nameCaches = reactive({});
+    const responseCacheMap = reactive(new Map());
 
     return {
       normalEmojiids,
@@ -155,16 +155,10 @@ export const useGlobalStore = defineStore(
       emojiFiles,
       emojiDescribes,
       allEmojiids,
-      nameCaches,
+      responseCacheMap,
       apiVersionInfo: {
         app_name: "NapCat.Onebot"
       },
     };
   },
-  // {
-  //   persist: {
-  //     storage: localStorage,
-  //     pick: ['nameCaches'],
-  //   }
-  // }
 );

@@ -2,10 +2,11 @@
 <script setup>
 import { computed, ref, onMounted, h, watch } from "vue";
 import { parseMessagePreview, parseNoticePreview } from "../scripts/parse-message.js";
-import { fetchDisplayName, getGroupLogo, getUserLogo } from "../scripts/backend-api.js";
+import { getGroupLogo, getUserLogo } from "../scripts/backend-api.js";
 import { basicContextItem, vCustomMenu } from "../directives/context-menu.js";
 import { copy } from "../scripts/clipboard.js";
 import { formatRelativeTime, parseJSON } from "../scripts/util.js";
+import { CacheNameKey, fetchDisplayName, getContactNameRef } from "../scripts/user-info-util.js";
 
 const props = defineProps({
   contact: {
@@ -21,7 +22,6 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 const displayName = ref('') // 使用ref来管理名称状态
-const isLoading = ref(false) // 加载状态
 const isError = ref(false) // 错误状态
 
 const isGroup = computed(() => {
@@ -34,41 +34,7 @@ const handleClick = () => {
 
 // 获取显示名称的函数
 const getName = async () => {
-  try {
-    if ([
-      2747277822 // QQ 游戏中心
-    ].includes(props.contact.contact_id)) {
-      return
-    }
-    isLoading.value = true;
-    let event = props.contact.latest_msg;
-    event = parseJSON(event);
-    let id = props.contact.contact_id;
-    let type = props.contact.type;
-    if (type === 'private' && event?.group_id) {
-      id = [event.group_id, id]
-      type = 'group_user'
-    }
-    const result = await fetchDisplayName(
-      id,
-      type,
-      (newName) => {
-        if (displayName.value !== newName) {
-          displayName.value = newName;
-        }
-      }
-    );
-
-    if (result.name !== displayName.value) {
-      displayName.value = result.name;
-    }
-    isError.value = result.error;
-  } catch (error) {
-    console.error('Error in getName:', error);
-    isError.value = true;
-  } finally {
-    isLoading.value = false;
-  }
+  await getContactNameRef(props.contact, displayName, isError)
 };
 
 // 点击名称重新获取
@@ -96,7 +62,7 @@ const getPreviewText = async () => {
      */
     if (isMessage && isGroup.value) {
       const id = [event.group_id, event.user_id];
-      const type = "group_user";
+      const type = CacheNameKey.GROUP_USER;
       const fetchResult = await fetchDisplayName(id, type);
       display_name = fetchResult.error ? display_name : fetchResult.name;
     }
@@ -197,9 +163,7 @@ onMounted(async () => {
           @click="handleNameClick"
           class="contact-name overflow-ellipsis"
           :class="{
-            'text-muted': isLoading,
             'text-error': isError,
-            'cursor-pointer': true
           }"
         >
           {{ displayName }}
@@ -274,10 +238,6 @@ onMounted(async () => {
 
 .recent-contact-item.active .contact-name.text-muted {
   opacity: 0.5;
-}
-
-.cursor-pointer {
-  cursor: pointer;
 }
 
 .recent-contact-item:deep(.msg-preview-emoji) {

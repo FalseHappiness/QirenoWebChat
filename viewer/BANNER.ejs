@@ -10,6 +10,7 @@ Author: <%= pkg.author.name %> <<%= pkg.author.url %>>
 Repository: <%= pkg.repository.url %>
 Issue Tracker: <%= pkg.bugs %>
 Project License: <%= pkg.license %>
+QQ Assets Notice: All QQ emoji, emoticon, picture and icon resources integrated within this software are provided solely for non-commercial learning and academic communication. All intellectual property rights, copyright and brand rights of the aforesaid QQ graphic resources are exclusively owned by Tencent QQ. Any commercial utilization, secondary distribution, reproduction or alteration without official authorization is strictly forbidden.
 Runtime Dependencies (<%= filterDeps.length %>):
 <% _.forEach(filterDeps, dep => { %> - <%= dep.name %>@<%= dep.version %> [<%= dep.license %>]
 <% }); %>

@@ -66,6 +66,43 @@ function isUndefined(variable) {
   return isType(variable, 'undefined')
 }
 
+function isArray(variable) {
+  return Array.isArray(variable)
+}
+
+/**
+ * 合并对象，仅将第二个对象 非null、非undefined 的键覆盖到第一个对象
+ * @param {Object} target - 目标对象（会被原地修改）
+ * @param {Object} source - 源对象
+ * @returns {Object} target 原对象
+ */
+function mergeNotEmpty(target, source) {
+  if (!isObject(target) || !isObject(source)) {
+    return
+  }
+  // 遍历源对象所有自身属性
+  for (const key in source) {
+    // 只处理自身属性，排除原型链
+    if (!objectHasKey(source, key)) continue;
+
+    const value = source[key];
+    // 判断：不为 undefined、null串
+    if (value !== undefined && value !== null) {
+      target[key] = value;
+    }
+  }
+  return target;
+}
+
+/**
+ * 仅判断未定义、空null
+ * @param {*} val
+ * @returns {boolean}
+ */
+function isNil(val) {
+  return val === undefined || val === null;
+}
+
 export {
   isNumber,
   isFunction,
@@ -77,4 +114,7 @@ export {
   strToBool,
   isString,
   isUndefined,
+  isArray,
+  mergeNotEmpty,
+  isNil,
 };

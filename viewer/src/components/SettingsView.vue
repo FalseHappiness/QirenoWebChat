@@ -2,7 +2,7 @@
 import { getUserLogo } from "../scripts/backend-api.js"
 import EnterArrow from "./Common/EnterArrow.vue";
 import { inject } from "vue";
-import { destKey } from "../scripts/view-keys.js";
+import { DestKey } from "../scripts/view-keys.js";
 
 const props = defineProps({
   selfInfo: Object
@@ -17,7 +17,7 @@ const handleDisconnect = () => {
 const changeDestView = inject("changeDestView")
 
 const handleEnterLicense = () => {
-  changeDestView(destKey.LICENSE)
+  changeDestView(DestKey.LICENSE)
 }
 </script>
 

@@ -1,21 +1,13 @@
 <script setup>
 import { computed } from "vue";
-import { getCacheGroupLevelTitle } from "../../scripts/backend-api.js";
 import QIcon from "../Utils/QIcon.vue";
 
 const props = defineProps({
-  group_id: {
-    type: Number,
-    required: true,
-  },
-  user_id: {
-    type: Number,
-    required: true,
-  },
+  userInfo: { type: Object, default: null }
 })
 
 const info = computed(() => {
-  return getCacheGroupLevelTitle(props.group_id, props.user_id);
+  return props.userInfo
 })
 
 const title = computed(() => {
@@ -50,7 +42,7 @@ const colorClass = computed(() => {
 </script>
 
 <template>
-  <div class="message-group-level-title-container">
+  <div class="message-group-level-title-container" v-if="info">
     &nbsp;<span v-if="!info.is_robot" class="message-group-level-title" :class="colorClass">LV{{
       info.level || 0
     }}{{ title }}</span>

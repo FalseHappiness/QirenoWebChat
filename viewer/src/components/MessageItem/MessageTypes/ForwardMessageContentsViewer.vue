@@ -1,6 +1,6 @@
 <script>
 import { defineComponent, h } from 'vue'
-import { fetchForwardMessage, getCacheName, getUserLogo } from "../../../scripts/backend-api.js";
+import { fetchForwardMessage, getUserLogo } from "../../../scripts/backend-api.js";
 import { parseMessage } from "../../../scripts/parse-message.js";
 import { formatTimeOptions } from "../../../scripts/util.js";
 import SimplePopUp from "../../Utils/SimplePopUp.vue";
@@ -85,12 +85,8 @@ export default defineComponent({
       })
     },
     getDisplayName(message) {
-      if (message.message_type === 'group') {
-        const id = [message.group_id, message.user_id]
-        const type = "group_user"
-        return getCacheName(id, type) || message?.sender?.card || message?.sender?.nickname || message.user_id
-      }
-      return message?.sender?.nickname || message.user_id
+      const sender = message?.sender
+      return sender?.card || sender?.remark || sender?.nickname || message.user_id
     },
     getMessageContent(msg) {
       try {
@@ -187,7 +183,7 @@ export default defineComponent({
               <div class="fv-message-msg-side">
                 <!-- 上方信息：群聊显示名称 + 时间 -->
                 <div class="fv-message-before">
-                  <div class="fv-message-name-title" v-if="msg.message_type === 'group'">
+                  <div class="fv-message-name-title">
                     <span class="fv-message-name-title-display-name">{{ getDisplayName(msg) }}</span>
                   </div>
                   <span class="fv-message-send-time">{{ formatTime(msg.time) }}</span>

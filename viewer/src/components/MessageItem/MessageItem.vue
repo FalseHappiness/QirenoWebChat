@@ -4,11 +4,10 @@ import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.j
 import '@lottiefiles/lottie-player';
 import {
   fetchChangeEssenceMsg,
-  fetchDisplayName, fetchKickGroupUser,
+  fetchKickGroupUser,
   fetchRecallMessage, fetchRecordToText,
   fetchSendMessage, fetchTranslateEnglish,
-  getCacheGroupLevelTitle,
-  getCacheName, getUserLogo
+  getUserLogo
 } from "@/scripts/backend-api.js";
 import { useGlobalStore } from "@/store/global.js";
 import GroupLevelTitle from "./GroupLevelTitle.vue";
@@ -28,6 +27,7 @@ import QIcon from "../Utils/QIcon.vue";
 import { isFunction, isString } from "@/scripts/types-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import { showConfirmBox } from "@/scripts/confirm-box-api.js";
+import { CacheNameKey, fetchDisplayName, getCacheName } from "../../scripts/user-info-util.js";
 
 const props = defineProps({
   message: {
@@ -134,11 +134,13 @@ const getDisplayName = () => {
     return
   }
   const id = [message.group_id, message.user_id];
-  const type = "group_user";
+  const type = CacheNameKey.GROUP_USER;
   const event = parseJSON(message.event);
 
+  const sender = event?.sender
+
   // 初始值
-  displayName.value = getCacheName(id, type) || event?.sender.nickname || props.message.user_id
+  displayName.value = getCacheName(id, type) || sender?.nickname || sender?.remark || sender?.card || props.message.user_id
 
   // 异步更新
   fetchDisplayName(id, type, (newName) => {
@@ -270,8 +272,8 @@ const pttText = ref(undefined)
 const pttErrorText = ref(null)
 
 const customMessageContextMenu = () => {
-  const self_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
-  const sender_info = getCacheGroupLevelTitle(props.message.group_id, props.message.self_id)
+  const self_info = findGroupUser(props.message.self_id)
+  const sender_info = currentGroupUserInfo.value
   return formatBasicContextItems([
     basicContextItem(
       '英译中',
@@ -500,7 +502,7 @@ const customAvatarContextMenu = () => {
     type: 'private'
   }
   const selfRole = findGroupUser(self_id)?.role
-  const userRole = findGroupUser(user_id)?.role
+  const userRole = currentGroupUserInfo.value?.role
   return formatBasicContextItems([
     basicContextItem(
       '发送消息',
@@ -626,7 +628,7 @@ onUnmounted(() => {
       <div class="message-before">
         <div class="message-name-title" v-if="isGroup">
           <span class="message-name-title-display-name">{{ displayName }}</span>
-          <GroupLevelTitle :group_id="message.group_id" :user_id="message.user_id"/>
+          <GroupLevelTitle :userInfo="currentGroupUserInfo"/>
         </div>
         <span class="message-send-time">{{ formatTime(message) }}</span>
       </div>

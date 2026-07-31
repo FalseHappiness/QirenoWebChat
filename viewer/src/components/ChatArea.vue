@@ -1,18 +1,13 @@
 <script setup>
-import { ref, computed, nextTick, watch, onMounted, provide, onUnmounted } from 'vue'
+import { computed, inject, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import MessageItem from './MessageItem/MessageItem.vue'
-import {
-  fetchDisplayName,
-  fetchGroupMemberInfo,
-  fetchGroupNotice,
-  fetchMsg, fetchSetGroupMemberRemark, getGroupUsers, setGroupUserNameCache
-} from "../scripts/backend-api.js";
+import { fetchGroupMemberInfo, fetchGroupNotice, fetchMsg, fetchSetGroupMemberRemark } from "../scripts/backend-api.js";
 import PageScroller from "./Utils/PageScroller.vue";
 import SimpleBarCore from "simplebar";
 import 'simplebar/dist/simplebar.min.css';
 import MessageInputBox from "./MessageInput/MessageInputBox.vue";
 import { useGlobalStore } from "../store/global.js";
-import { parseJSON, sortGroupUsers } from "../scripts/util.js";
+import { parseJSON } from "../scripts/util.js";
 import Tooltip from "./Utils/Tooltip.vue";
 import { Emitter } from "../composables/useEventBus.js";
 import GroupAnnounceViewer from "./GroupViews/GroupAnnounceViewer.vue";
@@ -26,6 +21,7 @@ import ImageViewer from "./Utils/ImageViewer.vue";
 import { isEmptyObject, isObject, isString } from "../scripts/types-util.js";
 import VideoPlayer from "./Utils/VideoPlayer.vue";
 import QIcon from "./Utils/QIcon.vue";
+import { getContactNameRef } from "../scripts/user-info-util.js";
 
 const props = defineProps({
   activeContact: Object,
@@ -39,14 +35,12 @@ const props = defineProps({
 const emit = defineEmits([
   'get-essence-msg-real-seq-list',
   'change-essence-msg',
-  'set-real-contact-name',
   'change-group-contact-remark'])
 
 const scroller = ref(null)
 const inputer = ref(null)
 
 const displayName = ref('') // 使用ref来管理名称状态
-const isLoading = ref(false) // 加载状态
 const isError = ref(false) // 错误状态
 // const isTempSession = ref(false)
 const showContactMore = ref(false)
@@ -62,30 +56,7 @@ const handleChatAreaClick = e => {
 }
 
 const getName = async () => {
-  if (props.activeContact) {
-    let id = props.activeContact.contact_id;
-    let type = props.activeContact.type;
-    if (tempSession.value) {
-      let event = props.activeContact.latest_msg;
-      event = parseJSON(event);
-      id = [event.group_id, id]
-      type = 'group_user'
-    }
-    const result = await fetchDisplayName(
-      id,
-      type,
-      newName => {
-        displayName.value = newName;
-      }
-    );
-
-    emit('set-real-contact-name', result.name)
-
-    // 更新本地状态
-    displayName.value = result.name;
-    isLoading.value = false;
-    isError.value = result.error;
-  }
+  await getContactNameRef(props.activeContact, displayName, isError)
 }
 
 const tempSession = computed(() => {
@@ -98,14 +69,14 @@ const tempSession = computed(() => {
   }
 })
 
-const groupUsers = ref(null)
+const groupUsers = inject("groupUsers")
 
 const getMessages = async (msg, count, include = false, direction = 'next') => {
   const post_type = msg?.post_type || 'message'
   const notice_message = post_type === 'notice'
   const cursor_time = msg?.time || null
   const cursor = notice_message ? msg.id : msg?.real_seq
-  const messages = await props.getMessages(
+  return await props.getMessages(
     msg?.message_id || (notice_message ? null : 0),
     cursor,
     count,
@@ -116,16 +87,6 @@ const getMessages = async (msg, count, include = false, direction = 'next') => {
     msg?.notice_after_cursor,
     notice_message
   )
-  if (props.activeContact.type === 'group') {
-    groupUsers.value = sortGroupUsers(
-      Object.entries(getGroupUsers(props.activeContact.contact_id)).map(([key, value]) => ({
-        ...value,
-        qq: key,
-        user_id: Number(key)
-      }))
-    );
-  }
-  return messages
 }
 
 const getNewerMessages = async (msg, _, count, include) => {
@@ -402,11 +363,7 @@ const groupRemarkModel = ref("");
 
 const handleGroupSelfRemarkChange = async () => {
   if (groupSelfRemarkModel.value !== groupSelfInfo?.value?.card) {
-    const params = [props.activeContact.contact_id, props.selfInfo.user_id, groupSelfRemarkModel.value];
-    const result = await fetchSetGroupMemberRemark(...params)
-    if (result.status === 'ok') {
-      setGroupUserNameCache(...params)
-    }
+    await fetchSetGroupMemberRemark(props.activeContact.contact_id, props.selfInfo.user_id, groupSelfRemarkModel.value)
   }
 }
 
@@ -438,7 +395,7 @@ const handleClickShowContactInfo = (e, user_id) => {
     if (isGroup?.value) {
       group_user = {
         nickname,
-        ...groupUsers.value?.find(user => user.qq === user_id),
+        ...groupUsers.value?.find(user => user.user_id === user_id),
         user_id,
         group_id: props.activeContact.contact_id
       }
@@ -542,7 +499,6 @@ provide("openVideoPlayer", src => {
 // 联系人更改时获取名称
 watch(() => props.activeContact, (newVal, oldVal) => {
   if (newVal?.contact_id !== oldVal?.contact_id || newVal?.type !== oldVal?.type) {
-    groupUsers.value = null
     showGroupAnnounceViewer.value = false
     showContactMore.value = false
     clearPeerStatus()

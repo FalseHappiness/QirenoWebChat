@@ -1,9 +1,9 @@
 <script>
 import { h } from 'vue'
-import { fetchDisplayName } from "../../../scripts/backend-api.js";
 import { parseMessagePreview } from "../../../scripts/parse-message.js";
 
 import { isEmptyObject } from "../../../scripts/types-util.js";
+import { CacheNameKey, fetchDisplayName } from "../../../scripts/user-info-util.js";
 
 export default {
   name: "ReplyMessage",
@@ -57,7 +57,7 @@ export default {
 
       const result = await fetchDisplayName(
         [msg.group_id, msg.user_id],
-        this.is_group ? "group_user" : "private",
+        this.is_group ? CacheNameKey.GROUP_USER : CacheNameKey.PRIVATE,
         (newName) => {
           This.name = newName
         }

@@ -44,7 +44,6 @@
     "marked": "^18.0.6",
     "nanoid": "^6.0.0",
     "pinia": "^4.0.2",
-    "pinia-plugin-persistedstate": "^4.7.1",
     "pinyin-pro": "^3.28.1",
     "simplebar": "^6.3.3",
     "simplebar-vue": "^2.4.2",

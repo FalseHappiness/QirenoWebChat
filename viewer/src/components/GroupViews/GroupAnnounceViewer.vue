@@ -1,11 +1,12 @@
 <script>
 import { defineComponent } from 'vue'
-import { fetchDisplayName, getGroupNoticePicUrl } from "../../scripts/backend-api.js";
+import { getGroupNoticePicUrl } from "../../scripts/backend-api.js";
 import { convertMessageTextHTMLSyntax } from "../../scripts/parse-message.js";
 import SimplePopUp from "../Utils/SimplePopUp.vue";
 import CustomScrollBar from "../Utils/CustomScrollBar.vue";
 import { formatTimeOptions } from "../../scripts/util.js";
 import QIcon from "../Utils/QIcon.vue";
+import { CacheNameKey, fetchDisplayName } from "../../scripts/user-info-util.js";
 
 export default defineComponent({
   name: "GroupAnnounceViewer",
@@ -36,7 +37,7 @@ export default defineComponent({
         newVal.forEach(async notice => {
           if (!this.userNameMap[notice.sender_id]) {
             this.userNameMap[notice.sender_id] =
-              (await fetchDisplayName([this.group_id, notice.sender_id], 'group_user'))?.name
+              (await fetchDisplayName([this.group_id, notice.sender_id], CacheNameKey.GROUP_USER))?.name
           }
         })
       },

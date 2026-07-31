@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import ChatArea from './ChatArea.vue'
 import LicenseView from "./LicenseView.vue";
-import { destKey } from "../scripts/view-keys.js";
+import { DestKey } from "../scripts/view-keys.js";
 import { isFunction } from "../scripts/types-util.js";
 
 const props = defineProps({
@@ -17,36 +17,41 @@ const props = defineProps({
 const emit = defineEmits([
   'get-essence-msg-real-seq-list',
   'change-essence-msg',
-  'set-real-contact-name',
   'change-group-contact-remark'
 ])
 
 const viewActive = ref(false);
-const currentView = ref(destKey.CHAT_AREA)
+const currentView = ref(DestKey.CHAT_AREA)
 const chatArea = ref(null)
 const isView = key => currentView.value === key
-const isChatAreaView = computed(() => isView(destKey.CHAT_AREA))
-const isLicenseView = computed(() => isView(destKey.LICENSE))
+const isChatAreaView = computed(() => isView(DestKey.CHAT_AREA))
+const isLicenseView = computed(() => isView(DestKey.LICENSE))
 let changeTimer = null;
 const changeView = (key, callback) => {
   clearTimeout(changeTimer)
+  changeTimer = null
   if (!key) {
-    key = destKey.BLANK
+    key = DestKey.BLANK
   }
-  changeTimer = setTimeout(() => {
+  const change = () => {
     currentView.value = key
     if (isFunction(callback)) {
       callback(key)
     }
-  }, (!isView(destKey.BLANK) && key === destKey.BLANK) ? 200 : 0)
-  viewActive.value = key !== destKey.BLANK
+  }
+  if (!isView(DestKey.BLANK) && key === DestKey.BLANK) {
+    changeTimer = setTimeout(change, 200)
+  } else {
+    change()
+  }
+  viewActive.value = key !== DestKey.BLANK
 }
 
 defineExpose({
   chatArea,
   currentView,
   changeView,
-  destKey,
+  destKey: DestKey,
   viewActive,
 })
 </script>
@@ -64,7 +69,6 @@ defineExpose({
       :essence-list="essenceList"
       @get-essence-msg-real-seq-list="emit('get-essence-msg-real-seq-list')"
       @change-essence-msg="(real_seq, set) => emit('change-essence-msg', real_seq, set)"
-      @set-real-contact-name="(name) => emit('set-real-contact-name', name)"
       @change-group-contact-remark="(contact_id, remark) => emit('change-group-contact-remark', contact_id, remark)"
     />
     <LicenseView

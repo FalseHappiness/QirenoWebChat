@@ -9,6 +9,7 @@ import {
 import CustomScrollBar from "./Utils/CustomScrollBar.vue"
 import { filterSearchContacts, flattenCategorizedContacts } from "../scripts/contacts-util.js";
 import QIcon from "./Utils/QIcon.vue";
+import LoadingSpinner from "./Common/LoadingSpinner.vue";
 
 const emit = defineEmits(['select'])
 
@@ -50,9 +51,7 @@ const handleSelectContact = (contact) => {
         class="contacts-view-search-input"
       >
     </div>
-    <div v-if="loading" class="text-center">
-      加载中...
-    </div>
+    <LoadingSpinner v-if="loading" no-text class="flex-1"/>
     <CustomScrollBar class="contacts-view-scroll" v-else>
       <a-collapse
         v-if="filteredContacts === undefined"

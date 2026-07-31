@@ -10,13 +10,10 @@ import {
   fetchSetGroupRemark,
   fetchSetLongNick,
   fetchStrangerInfo,
-  getFriendsDisplayName,
-  getGroupUsersDisplayName,
   getOnebotWsToken,
   getOnebotWsUri,
-  setGroupNameCache,
   wsUri,
-  fetchCategorizedContacts
+  fetchCategorizedContacts, fetchGroupMemberList, fetchFriendList
 } from "../scripts/backend-api.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
@@ -28,7 +25,7 @@ import LoadingSpinner from "../components/Common/LoadingSpinner.vue";
 import { checkMsgIsContact, checkSameContact, flattenCategorizedContacts } from "../scripts/contacts-util.js";
 import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
 import { isNumber } from "../scripts/types-util.js";
-import { destKey } from "../scripts/view-keys.js";
+import { DestKey } from "../scripts/view-keys.js";
 
 const props = defineProps({
   account: {
@@ -47,9 +44,11 @@ const chatArea = computed(() => {
   return destinationView.value.chatArea
 })
 const wsInited = ref(false);
+const groupUsers = ref(null)
+provide("groupUsers", groupUsers)
 
 const changeDestView = (key, callback) => {
-  if (![destKey.CHAT_AREA, destKey.BLANK].includes(key)) {
+  if (![DestKey.CHAT_AREA, DestKey.BLANK].includes(key)) {
     activeContact.value = null
   }
   destinationView?.value?.changeView(key, callback)
@@ -83,6 +82,7 @@ watch(() => isConnected.value && selfId.value, val => {
 watch(activeContact, val => {
   if (!val) {
     groupEssenceMsgList.value = null
+    groupUsers.value = null
   }
 })
 
@@ -90,18 +90,13 @@ watch(activeContact, val => {
 const selectContact = (contact) => {
   // if (chatArea.value?.$refs?.scroller?.initializing) return
   // 如果已经是当前联系人
-  if (checkSameContact(activeContact, contact)) {
+  if (checkSameContact(activeContact.value, contact)) {
     contact = null;
-    return;
   }
   // 切换视图到 Chat Area
-  changeDestView(contact ? destKey.CHAT_AREA : 0, () => {
+  changeDestView(DestKey.CHAT_AREA, () => {
     activeContact.value = contact
   });
-}
-
-const setRealContactName = name => {
-  activeContact.value.name = name
 }
 
 const changeGroupContactRemark = async (contact_id, remark) => {
@@ -114,7 +109,6 @@ const changeGroupContactRemark = async (contact_id, remark) => {
       if (contact.contact_id === contact_id) {
         contact.remark = remark;
         contact.name = remark || contact.real_name
-        setGroupNameCache(contact_id, contact.name)
       }
     }
   } else {
@@ -140,7 +134,7 @@ const changeSelfLongNick = async longNick => {
 }
 
 const initAppData = () => {
-  getFriendsDisplayName()
+  fetchFriendList()
   getContacts()
   selfInfo.value = { user_id: selfId.value }
   fetchStrangerInfo(selfId.value).then(
@@ -181,11 +175,13 @@ const fetchEssenceMessagesWrapper = async (group_id, only_real_seq) => {
 const groupEssenceMsgList = ref(null)
 
 const getEssenceMsgRealSeqList = async () => {
-  if (activeContact.value.type === 'group') {
+  if (activeContact.value?.type === 'group') {
     const list = await fetchEssenceMessagesWrapper(activeContact.value.contact_id, false)
-    activeContact.value.essence_real_seq_list = list.map(i => i.msg_seq)
-    groupEssenceMsgList.value = list
-    return list
+    if (activeContact.value) {
+      activeContact.value.essence_real_seq_list = list.map(i => i.msg_seq)
+      groupEssenceMsgList.value = list
+      return list
+    }
   }
   return []
 }
@@ -236,10 +232,10 @@ const getMessages = async (
     let response, essence_real_seq_list;
 
     if (params.message_type === 'group') {
-      [response, essence_real_seq_list] = await Promise.all([
+      [response, essence_real_seq_list, groupUsers.value] = await Promise.all([
         fetchMessages(params),
         fetchEssenceMessagesWrapper(params.group_id, true),
-        getGroupUsersDisplayName(params.group_id),
+        fetchGroupMemberList(params.group_id),
       ])
       activeContact.value.essence_real_seq_list = essence_real_seq_list
     } else {
@@ -350,16 +346,7 @@ onMounted(() => {
   bridge = new Bridge(url, {
     onMessage: (message) => {
       // 检查消息是否属于当前活跃的联系人
-      const isCurrentContact = activeContact.value && (
-        (message.message_type === 'group' &&
-          activeContact.value.type === 'group' &&
-          message.group_id === activeContact.value.contact_id) ||
-        (message.message_type === 'private' &&
-          activeContact.value.type === 'private' &&
-          message.target_id === activeContact.value.contact_id)
-      )
-
-      if (isCurrentContact) {
+      if (checkMsgIsContact(message, activeContact.value)) {
         chatArea.value?.$refs?.scroller?.addMessage(message)
       }
     },
@@ -481,7 +468,6 @@ onUnmounted(destroy)
         ref="destinationView"
         @get-essence-msg-real-seq-list="getEssenceMsgRealSeqList"
         @change-essence-msg="changeEssenceMsg"
-        @set-real-contact-name="setRealContactName"
         @change-group-contact-remark="changeGroupContactRemark"
       />
       <ContactInfoTooltip/>

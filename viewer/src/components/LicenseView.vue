@@ -4,7 +4,7 @@ import LoadingSpinner from './Common/LoadingSpinner.vue'
 import CustomScrollBar from './Utils/CustomScrollBar.vue'
 import LicenseItemCard from './LicenseItemCard.vue'
 import QIcon from "./Utils/QIcon.vue";
-import { destKey } from "../scripts/view-keys.js";  // 新增子组件
+import { DestKey } from "../scripts/view-keys.js";  // 新增子组件
 
 export default defineComponent({
   name: "LicenseView",
@@ -69,7 +69,7 @@ export default defineComponent({
       return null
     },
     goBack() {
-      this.changeDestView(destKey.BLANK)
+      this.changeDestView(DestKey.BLANK)
     }
   }
 })

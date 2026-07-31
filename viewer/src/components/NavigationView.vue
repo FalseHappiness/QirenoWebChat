@@ -8,7 +8,8 @@ import VirtualScroller from "./Utils/VirtualScroller.vue";
 import { getUserLogo } from "../scripts/backend-api.js";
 import { Emitter } from "../composables/useEventBus.js";
 import QMaskIcon from "./Utils/QMaskIcon.vue";
-import { navKey } from "../scripts/view-keys.js";
+import { NavKey } from "../scripts/view-keys.js";
+import LoadingSpinner from "./Common/LoadingSpinner.vue";
 
 const props = defineProps({
   categorizedContacts: Array,
@@ -74,12 +75,12 @@ const handleShowSelfInfo = e => {
   })
 }
 
-const currentNavView = ref(navKey.MESSAGE); // 'messages' 'contacts' 'settings'
+const currentNavView = ref(NavKey.MESSAGE); // 'messages' 'contacts' 'settings'
 
 const isNavView = key => currentNavView.value === key
-const isMessageNavView = computed(() => isNavView(navKey.MESSAGE))
-const isContactNavView = computed(() => isNavView(navKey.CONTACT))
-const isSettingsNavView = computed(() => isNavView(navKey.SETTINGS))
+const isMessageNavView = computed(() => isNavView(NavKey.MESSAGE))
+const isContactNavView = computed(() => isNavView(NavKey.CONTACT))
+const isSettingsNavView = computed(() => isNavView(NavKey.SETTINGS))
 const changeNavView = key => currentNavView.value = key
 
 onMounted(() => {
@@ -109,7 +110,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div v-if="loading" class="text-center flex-1">加载中...</div>
+      <LoadingSpinner v-if="loading" no-text class="flex-1"/>
       <VirtualScroller :item-height="60"
                        :items="sortedRecentContacts"
                        v-else-if="sortedRecentContacts?.length"
@@ -145,19 +146,19 @@ onMounted(() => {
     </template>
     <div class="navigation-bar">
       <div class="nav-function-button nav-function-message flex-center-children"
-           @click="changeNavView(navKey.MESSAGE)"
+           @click="changeNavView(NavKey.MESSAGE)"
            :class="{ active: isMessageNavView }">
         <QMaskIcon :name="`nav_message_${ isMessageNavView ? 'active' : 'normal' }_24`"
                    animate-target="nav_message_active_24"/>
       </div>
       <div class="nav-function-button nav-function-contact flex-center-children"
-           @click="changeNavView(navKey.CONTACT)"
+           @click="changeNavView(NavKey.CONTACT)"
            :class="{ active: isContactNavView }">
         <QMaskIcon :name="`nav_contact_${ isContactNavView ? 'active' : 'normal' }_24`"
                    animate-target="nav_contact_active_24"/>
       </div>
       <div class="nav-function-button nav-function-settings flex-center-children"
-           @click="changeNavView(navKey.SETTINGS)"
+           @click="changeNavView(NavKey.SETTINGS)"
            :class="{ active: isSettingsNavView }">
         <QMaskIcon :name="`nav_setting_normal_16${ isSettingsNavView ? '.modify.fill' : '' }`"
                    animate-target="nav_setting_normal_16.modify.fill"/>
