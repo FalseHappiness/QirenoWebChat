@@ -13,7 +13,7 @@ import {
   getOnebotWsToken,
   getOnebotWsUri,
   wsUri,
-  fetchCategorizedContacts, fetchGroupMemberList, fetchFriendList
+  fetchCategorizedContacts, fetchGroupMemberList, fetchFriendList, fetchSetFriendRemark, checkResponseOK
 } from "../scripts/backend-api.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
@@ -22,7 +22,12 @@ import ContactInfoTooltip from "../components/Common/Overlay/ContactInfoTooltip.
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
 import DownloadProgressPopup from "../components/Common/Overlay/DownloadProgressPopup.vue";
 import LoadingSpinner from "../components/Common/Widgets/LoadingSpinner.vue";
-import { checkMsgIsContact, checkSameContact, flattenCategorizedContacts } from "../scripts/contacts-util.js";
+import {
+  checkMsgIsContact,
+  checkSameContact,
+  createGroupContact, createPrivateContact,
+  flattenCategorizedContacts
+} from "../scripts/contacts-util.js";
 import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
 import { isNumber } from "../scripts/types-util.js";
 import { DestKey } from "../scripts/view-keys.js";
@@ -103,18 +108,29 @@ const selectContact = contact => {
 }
 provide("selectContact", selectContact)
 
+
+const updateContactRemark = (contact, remark) => {
+  if (!remark) return
+  for (const category of (categorizedContacts.value || [])) {
+    for (const c of (category.contacts || [])) {
+      if (checkSameContact(c, contact)) {
+        c.remark = remark
+        c.name = remark || c.real_name || c.name
+      }
+    }
+  }
+}
+
 const changeGroupContactRemark = async (contact_id, remark) => {
   const result = await fetchSetGroupRemark(
     contact_id,
     remark
   );
-  if (result.status === 'ok') {
-    for (const contact of recentContacts()) {
-      if (contact.contact_id === contact_id) {
-        contact.remark = remark;
-        contact.name = remark || contact.real_name
-      }
-    }
+  if (checkResponseOK(result)) {
+    updateContactRemark(
+      createGroupContact(contact_id),
+      remark
+    )
   } else {
     console.log("Change group contact remark error: ", contact_id, remark, result)
     showErrorToast(`改变群 ${contact_id} 备注为 ${remark} 失败`)
@@ -129,7 +145,7 @@ provide("selfInfo", selfInfo)
 
 const changeSelfLongNick = async longNick => {
   const result = await fetchSetLongNick(longNick)
-  if (result?.status === 'ok') {
+  if (checkResponseOK(result)) {
     selfInfo.value.long_nick = selfInfo.value.longNick = longNick;
   } else {
     console.log("Change self long nick error: ", longNick, result)
@@ -137,6 +153,20 @@ const changeSelfLongNick = async longNick => {
   }
 }
 provide("changeSelfLongNick", changeSelfLongNick)
+
+const changeFriendContactRemark = async (user_id, remark) => {
+  const result = await fetchSetFriendRemark(user_id, remark)
+  if (checkResponseOK(result)) {
+    updateContactRemark(
+      createPrivateContact(user_id),
+      remark
+    )
+  } else {
+    console.log("Change private contact remark error: ", user_id, remark, result)
+    showErrorToast(`改变好友 ${user_id} 备注为 ${remark} 失败`)
+  }
+}
+provide("changeFriendContactRemark", changeFriendContactRemark)
 
 const initAppData = () => {
   fetchFriendList()
@@ -427,7 +457,7 @@ onMounted(() => {
   })
 
   if (!isDirect) {
-    bridge.selfId.value = props.account.self_id
+    bridge.selfId.value = Number(props.account.self_id)
   }
 
   // 提供 sendAction 和 reqBackend 给子组件

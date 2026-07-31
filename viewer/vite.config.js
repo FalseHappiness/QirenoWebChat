@@ -104,7 +104,7 @@ export default defineConfig(({ mode }) => {
       }),
       createSvgIconsPlugin({
         // 扫描根目录下 src/QQ/icons
-        iconDirs: [path.resolve(process.cwd(), 'src/QQ/icons')],
+        iconDirs: [path.resolve(__dirname, 'src/QQ/icons')],
         symbolId: 'qq-icon-[name]',
       }),
       iconifyOffline({
@@ -118,7 +118,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       dedupe: ['vue'],
       alias: {
-        '@': path.resolve(process.cwd(), 'src')
+        '@': path.resolve(__dirname, 'src')
       }
     },
     build: {

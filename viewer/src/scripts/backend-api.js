@@ -939,4 +939,5 @@ export {
   fetchGroupMemberList,
   fetchFriendList,
   fetchUserInfo,
+  checkResponseOK,
 }

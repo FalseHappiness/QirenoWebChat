@@ -145,9 +145,24 @@ const checkMsgIsContact = (event, contact) => {
   return false
 }
 
+const createGroupContact = contact_id => {
+  return {
+    type: "group",
+    contact_id
+  }
+}
+const createPrivateContact = contact_id => {
+  return {
+    type: "private",
+    contact_id
+  }
+}
+
 export {
   flattenCategorizedContacts,
   filterSearchContacts,
   checkMsgIsContact,
   checkSameContact,
+  createGroupContact,
+  createPrivateContact
 }

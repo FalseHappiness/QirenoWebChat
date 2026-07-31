@@ -4,7 +4,8 @@ import Tooltip from "./Tooltip.vue";
 import { Emitter } from "@/composables/useEventBus.js";
 import {
   fetchGroupInfo,
-  fetchGroupMemberInfo, fetchGroupNotice, fetchSetFriendRemark, fetchSetGroupRemark,
+  fetchGroupMemberInfo,
+  fetchGroupNotice,
   fetchStrangerInfo,
   getGroupLogo,
   getUserLogo
@@ -30,7 +31,7 @@ export default defineComponent({
       remarkModel: null
     }
   },
-  inject: ['selfId'],
+  inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark"],
   methods: {
     isString,
     getGroupLogo,
@@ -86,7 +87,7 @@ export default defineComponent({
         })
       }
       this.group_id = group_id
-      this.user_id = user_id
+      this.user_id = Number(user_id) || user_id
       this.position = position
     },
     documentClick(e) {
@@ -101,11 +102,11 @@ export default defineComponent({
     handleRemarkBlur() {
       if (this.isGroupContact && this.group_id) {
         if (this.remarkModel !== this.group?.group_remark) {
-          fetchSetGroupRemark(this.group_id, this.remarkModel)
+          this.changeGroupContactRemark(this.group_id, this.remarkModel)
         }
       } else if (this.user_id) {
         if (this.remarkModel !== this.userRemark) {
-          fetchSetFriendRemark(this.user_id, this.remarkModel)
+          this.changeFriendContactRemark(this.user_id, this.remarkModel)
         }
       }
     },
@@ -121,10 +122,10 @@ export default defineComponent({
       return !this.user_id && this.group_id
     },
     userRemark() {
-      return this.user?.remark || this.group_user?.remark
+      return this.user?.remark ?? this.group_user?.remark
     },
     userNickname() {
-      return this.group_user?.nickname || this.user?.nickname
+      return this.group_user?.nickname ?? this.user?.nickname
     }
   },
   watch: {
@@ -277,6 +278,7 @@ export default defineComponent({
   display: flex;
   margin-bottom: 10px;
   cursor: default;
+  align-items: center;
 }
 
 .contact-info-details .label {
@@ -306,5 +308,16 @@ export default defineComponent({
 
 .contact-info-details .value.clickable:active {
   background-color: #e0e0e0;
+}
+
+.contact-info-details input.value {
+  outline: none;
+  border: 1px solid transparent;
+  padding: 2px 5px;
+}
+
+.contact-info-details input.value:focus {
+  background-color: transparent !important;
+  border-color: #0099ff;
 }
 </style>
