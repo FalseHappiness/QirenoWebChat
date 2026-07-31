@@ -453,7 +453,7 @@ export default defineComponent({
           <div class="gav-title">
             群相册
             <QIcon name="close_fill_24" class="gav-close-btn cannot-drag"
-                 @click="close"/>
+                   @click="close"/>
           </div>
           <CustomScrollBar ref="albumScroller" class="gav-scroll" @scroll="onAlbumScroll">
             <div v-if="loadingAlbums && !albums.length" class="gav-loading">加载中...</div>
@@ -490,10 +490,10 @@ export default defineComponent({
         <template v-if="view === 'media' || view === 'detail'">
           <div class="gav-title">
             <QIcon name="arrow_left_24" class="gav-back-btn cannot-drag"
-                 @click="goBackToAlbums"/>
+                   @click="goBackToAlbums"/>
             {{ (currentAlbum && currentAlbum.name) || '相册' }}
             <QIcon name="close_fill_24" class="gav-close-btn cannot-drag"
-                 @click="close"/>
+                   @click="close"/>
           </div>
           <CustomScrollBar ref="mediaScroller" class="gav-scroll" @scroll="onMediaScroll">
             <div v-if="loadingMedia && !mediaList.length" class="gav-loading">加载中...</div>
@@ -510,7 +510,7 @@ export default defineComponent({
                            @error="handleImgError">
                       <div v-else class="gav-no-cover">加载失败</div>
                       <div v-if="media.type === 1" class="gav-video-badge">
-                        <img :src="qqIconSvg('play_fill_24')" alt="" class="gav-play-icon">
+                        <QIcon name="play_fill_24" class="gav-play-icon"/>
                       </div>
                     </div>
                   </div>
@@ -678,7 +678,8 @@ export default defineComponent({
 .gav-play-icon {
   width: 18px;
   height: 18px;
-  filter: brightness(0) invert(1);
+  color: white;
+  margin-left: 2px;
 }
 
 .gav-grid-item-info {
