@@ -3,7 +3,7 @@ import { defineComponent } from 'vue'
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import { fetchAiRecordCharacters, fetchSendGroupAiRecord } from "../../../../scripts/backend-api.js";
-import { showToast } from "../../../../scripts/toast.js";
+import { showToast } from "@/scripts/toast.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 
 export default defineComponent({
@@ -223,13 +223,13 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .group-ai-record-editor-title {
   text-align: center;
   font-weight: bold;
   font-size: 16px;
   padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid $color-border-faint;
   user-select: none;
   position: relative;
 }
@@ -260,7 +260,7 @@ export default defineComponent({
 
 .group-ai-record-editor-section-label {
   font-size: 13px;
-  color: #666;
+  color: $color-text-secondary;
   padding: 8px 0 4px 0;
   font-weight: 500;
   flex-shrink: 0;
@@ -269,16 +269,16 @@ export default defineComponent({
 .group-ai-record-editor-characters-list {
   flex: 1;
   overflow: auto;
-  border: 1px solid #eee;
+  border: 1px solid $color-border-faint;
   border-radius: 4px;
   padding: 4px 6px;
-  background-color: #FAFAFA;
+  background-color: $color-bg-section;
 }
 
 .group-ai-record-editor-loading,
 .group-ai-record-editor-empty {
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   padding: 30px 0;
   font-size: 13px;
 }
@@ -289,7 +289,7 @@ export default defineComponent({
 
 .group-ai-record-editor-category-title {
   font-size: 12px;
-  color: #999;
+  color: $color-text-light;
   padding: 4px 2px;
   font-weight: 500;
 }
@@ -305,7 +305,7 @@ export default defineComponent({
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  background-color: white;
+  background-color: $color-bg-card;
   border: 1px solid #e8e8e8;
   border-radius: 6px;
   cursor: pointer;
@@ -315,14 +315,14 @@ export default defineComponent({
 }
 
 .group-ai-record-editor-character-card:hover {
-  border-color: #0099ff;
+  border-color: $color-primary;
   background-color: #f0f8ff;
 }
 
 .group-ai-record-editor-character-card.selected {
-  border-color: #0099ff;
+  border-color: $color-primary;
   background-color: #e6f4ff;
-  box-shadow: 0 0 0 1px #0099ff;
+  box-shadow: 0 0 0 1px $color-primary;
 }
 
 .group-ai-record-editor-character-avatar {
@@ -340,7 +340,7 @@ export default defineComponent({
 
 .group-ai-record-editor-character-name {
   font-size: 13px;
-  color: #333;
+  color: $color-text-regular;
   flex: 1;
   min-width: 0;
 }
@@ -358,7 +358,7 @@ export default defineComponent({
 }
 
 .group-ai-record-editor-character-preview:hover {
-  background-color: rgba(0, 153, 255, 0.1);
+  background-color: $color-primary-light;
 }
 
 .group-ai-record-editor-preview-icon {
@@ -387,11 +387,11 @@ export default defineComponent({
 }
 
 .group-ai-record-editor-textarea:focus {
-  border-color: #0099ff;
+  border-color: $color-primary;
 }
 
 .group-ai-record-editor-textarea:disabled {
-  background-color: #f5f5f5;
+  background-color: $color-bg-page;
   cursor: not-allowed;
 }
 
@@ -400,26 +400,26 @@ export default defineComponent({
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid $color-border-faint;
   flex-shrink: 0;
 }
 
 .group-ai-record-editor-selected-info {
   font-size: 13px;
-  color: #666;
+  color: $color-text-secondary;
 }
 
 .group-ai-record-editor-selected-label {
-  color: #999;
+  color: $color-text-light;
 }
 
 .group-ai-record-editor-selected-name {
-  color: #0099ff;
+  color: $color-primary;
   font-weight: 500;
 }
 
 .group-ai-record-editor-send-btn {
-  background-color: #0099ff;
+  background-color: $color-primary;
   color: white;
   border: none;
   border-radius: 4px;
@@ -430,7 +430,7 @@ export default defineComponent({
 }
 
 .group-ai-record-editor-send-btn:hover:not(:disabled) {
-  background-color: #007acc;
+  background-color: $color-bg-primary-hover;
 }
 
 .group-ai-record-editor-send-btn:disabled {
@@ -446,6 +446,6 @@ export default defineComponent({
   padding: 4px 2px;
   max-width: calc(100% - 20px);
   max-height: calc(100% - 20px);
-  background-color: #F5F5F5;
+  background-color: $color-bg-page;
 }
 </style>

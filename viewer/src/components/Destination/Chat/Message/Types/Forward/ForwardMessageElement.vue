@@ -37,15 +37,14 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-forward-message {
   width: 220px;
   max-width: 100%;
   display: flex;
-  background-color: white;
+  @include card($radius-card);
   color: black;
   text-decoration: none !important;
-  border-radius: 8px;
   padding: 10px;
   flex-direction: column;
   justify-content: space-between;
@@ -56,7 +55,7 @@ hr {
   border: 0;
   margin: 5px 0 0 0;
   width: 100%;
-  background-color: #f2f2f2;
+  background-color: $color-bg-card-alt;
 }
 
 .footer {
@@ -69,7 +68,7 @@ hr {
 }
 
 .forward-message-count {
-  color: gray;
+  color: $color-text-muted;
   font-size: 12px;
 }
 
@@ -77,9 +76,8 @@ hr {
   margin: 0;
   font-size: 12px;
   line-height: 20px;
-  color: #999999 !important;
+  color: $color-text-light !important;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap
+  @include text-ellipsis;
 }
 </style>

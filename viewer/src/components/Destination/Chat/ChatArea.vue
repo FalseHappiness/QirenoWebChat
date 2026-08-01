@@ -582,7 +582,7 @@ defineExpose({
         <div>
           {{ displayName }}
           <br>
-          <small style="color: gray;display: block;margin-top: -4px;">{{ activeContact.contact_id }}</small>
+          <small style="color: var(--color-text-muted);display: block;margin-top: -4px;">{{ activeContact.contact_id }}</small>
         </div>
       </div>
 
@@ -703,10 +703,9 @@ defineExpose({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .chat-area {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
 }
 
 .chat-area-head-name {
@@ -721,21 +720,19 @@ defineExpose({
 }
 
 .chat-area-head {
-  height: 52px;
-  display: flex;
-  flex-direction: row;
+  height: $chat-area-head-height;
+  @extend %flex-row;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #dee2e6;
+  @extend %border-bottom;
 }
 
 .messages-container {
   flex: 1;
-  /*height: calc(100% - 60px); !* 减去标题栏高度 *!*/
 }
 
 .loading-messages, .no-messages {
-  padding: 20px;
+  padding: $spacing-xl;
   text-align: center;
   font-size: 100%;
 }
@@ -747,7 +744,7 @@ defineExpose({
 }
 
 .text-error {
-  color: #dc3545 !important;
+  color: $color-error !important;
 }
 
 .chat-area-go-back-btn {
@@ -776,96 +773,91 @@ defineExpose({
   width: 32px;
   height: 32px;
   padding: 6px;
-  border-radius: 8px;
-}
+  border-radius: $radius-card;
 
-.chat-area-head-control-btn:hover {
-  background-color: rgb(200 200 200 / 25%);
-}
+  &:hover {
+    @include hover-light;
+  }
 
-.chat-area-head-control-btn:active {
-  background-color: rgb(200 200 200 / 50%);
+  &:active {
+    @include active-light;
+  }
 }
 
 .chat-area-contact-more {
   position: absolute;
-  height: calc(100% - 52px);
-  top: 52px;
+  height: calc(100% - $chat-area-head-height);
+  top: $chat-area-head-height;
   width: 350px;
-  background-color: #f2f2f2;
-  border: 1px solid #dee2e6;
+  background-color: $color-bg-card-alt;
+  border: 1px solid $color-border;
   right: -100%;
   z-index: 5;
-  box-shadow: 0 3px 6px 0 #b6b6b68f;
-  transition: right ease-out 0.3s;
+  box-shadow: $shadow-contact-more;
+  transition: right ease-out $transition-slow;
   padding: 0 18px;
-}
 
-.chat-area-contact-more:deep(.simplebar-content) {
-  font-size: 15px;
-  gap: 18px;
-  display: flex;
-  flex-direction: column;
+  &:deep(.simplebar-content) {
+    font-size: 15px;
+    gap: 18px;
+    @extend %flex-column;
+  }
 }
 
 .chat-area-contact-more-area {
-  border-radius: 8px;
-  background-color: white;
+  @include card;
   padding: 8px 12px;
   display: block;
   margin: 0;
-}
 
-.chat-area-contact-more-area.display-flex {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+  &.display-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
+  &.with-title {
+    margin-top: 18px;
 
-.chat-area-contact-more-area.with-title {
-  margin-top: 18px;
-}
+    &:before {
+      content: attr(data-title);
+      display: block;
+      position: absolute;
+      margin-top: -32px;
+      color: $color-text-muted;
+      font-size: 14px;
+      pointer-events: none;
+    }
 
-.chat-area-contact-more-area.with-title:before {
-  content: attr(data-title);
-  display: block;
-  position: absolute;
-  margin-top: -32px;
-  color: gray;
-  font-size: 14px;
-  pointer-events: none;
-}
+    &.display-flex:before {
+      margin-top: -64px;
+    }
+  }
 
-.chat-area-contact-more-area.display-flex.with-title:before {
-  margin-top: -64px;
+  &.input-content {
+    outline: 1px solid transparent;
+    width: 100%;
+
+    input {
+      outline: none;
+      border: none;
+      width: 100%;
+    }
+
+    &:has(input:focus) {
+      outline: 1px solid $color-primary;
+    }
+  }
 }
 
 .chat-area-contact-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  @include avatar(40px);
   margin: 5px 10px 5px 5px;
 }
 
 .chat-area-contact-info {
   display: flex;
   align-items: center;
-}
-
-.chat-area-contact-more-area.input-content {
-  outline: 1px solid transparent;
-  width: 100%;
-}
-
-.chat-area-contact-more-area.input-content input {
-  outline: none;
-  border: none;
-  width: 100%;
-}
-
-.chat-area-contact-more-area.input-content:has(input:focus) {
-  outline: 1px solid #0099ff;
 }
 
 .group-applications-list {
@@ -888,7 +880,7 @@ defineExpose({
   height: 30px;
 }
 
-@media (max-width: 570px) {
+@include mobile {
   .chat-area-head {
     height: 42px;
     align-items: center;
@@ -907,7 +899,7 @@ defineExpose({
     height: calc(100% - 42px);
     top: 42px;
     box-shadow: none;
-    transition: right ease-out 0.2s;
+    transition: right ease-out $transition-normal;
   }
 }
 </style>
@@ -941,48 +933,42 @@ defineExpose({
 }
 </style>
 
-<style scoped>
+<style scoped lang="scss">
 .scroll-to-bottom-btn {
   height: 28px;
   border: 1px solid white;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 10%);
+  box-shadow: $shadow-scroll-btn;
   width: 50px;
-  border-radius: 114514px;
+  border-radius: $radius-round;
   background-color: white;
   position: absolute;
   right: 20px;
   bottom: 10px;
-}
 
-.scroll-to-bottom-btn svg {
-  width: 25px;
-  height: 25px;
-  display: block;
-  margin: auto;
-}
+  svg {
+    width: 25px;
+    height: 25px;
+    display: block;
+    margin: auto;
+  }
 
-.scroll-to-bottom-btn:hover {
-  border: 1px solid #ececec;
-  background-color: #f5f5f5;
-}
+  &:hover {
+    border: 1px solid $color-bg-scroll-btn-hover;
+    background-color: $color-bg-page;
+  }
 
-.scroll-to-bottom-btn:active {
-  border: 1px solid #dddddd;
-  background-color: #e6e6e6;
+  &:active {
+    border: 1px solid $color-bg-scroll-btn-active;
+    background-color: $color-bg-active-alt;
+  }
 }
 
 .chat-area-head-display-name {
   cursor: default;
   padding: 0 3px;
   border-radius: 5px;
-}
 
-.chat-area-head-display-name:hover {
-  background-color: #EBEBEB;
-}
-
-.chat-area-head-display-name:active {
-  background-color: #e0e0e0;
+  @include hover-active-bg;
 }
 </style>
 

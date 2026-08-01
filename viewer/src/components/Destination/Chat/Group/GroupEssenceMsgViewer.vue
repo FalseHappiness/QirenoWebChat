@@ -1,8 +1,8 @@
 <script>
 import { defineComponent } from 'vue'
-import { fetchMsg, getUserLogo } from "../../../../scripts/backend-api.js";
-import { formatTimeOptions } from "../../../../scripts/util.js";
-import { parseMessage } from "../../../../scripts/parse-message.js";
+import { fetchMsg, getUserLogo } from "@/scripts/backend-api.js";
+import { formatTimeOptions } from "@/scripts/util.js";
+import { parseMessage } from "@/scripts/parse-message.js";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
@@ -160,13 +160,13 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .essence-msg-viewer-title {
   text-align: center;
   font-weight: bold;
   font-size: 16px;
   padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid $color-border-faint;
   user-select: none;
   position: relative;
 }
@@ -190,9 +190,9 @@ export default defineComponent({
 .essence-msg-viewer-item {
   padding: 12px 12px 6px 12px;
   margin-bottom: 10px;
-  background-color: white;
+  background-color: $color-bg-card;
   border-radius: 4px;
-  border: 1px solid #eee;
+  border: 1px solid $color-border-faint;
   transition: background-color 0.2s;
 }
 
@@ -200,7 +200,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: #7F7F7F;
+  color: $color-text-gray;
   gap: 8px;
   margin-bottom: 8px;
   justify-content: space-between;
@@ -216,14 +216,14 @@ export default defineComponent({
 
 .essence-msg-viewer-sender-name {
   font-size: 14px;
-  color: #333;
+  color: $color-text-regular;
   flex: 1;
   max-width: 50%;
 }
 
 .essence-msg-viewer-time {
   font-size: 11px;
-  color: #999;
+  color: $color-text-light;
   flex-shrink: 0;
   align-self: flex-start;
 }
@@ -237,13 +237,13 @@ export default defineComponent({
 }
 
 .essence-msg-viewer-status {
-  color: #999;
+  color: $color-text-light;
   font-style: italic;
   font-size: 13px;
 }
 
 .essence-msg-viewer-status--error {
-  color: #FF6B6B;
+  color: $color-text-warning;
 }
 
 .essence-msg-viewer-item-footer {
@@ -257,7 +257,7 @@ export default defineComponent({
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #888;
+  color: $color-text-meta;
 }
 
 .essence-msg-viewer-essence-icon {
@@ -278,7 +278,7 @@ export default defineComponent({
 
 .essence-msg-viewer-empty {
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   padding: 40px 0;
   font-size: 14px;
 }
@@ -313,13 +313,13 @@ export default defineComponent({
 }
 </style>
 
-<style module>
+<style module lang="scss">
 .group-essence-msg-viewer-container {
   width: 520px;
   height: 540px;
   padding: 4px 2px;
   max-width: calc(100% - 20px);
   max-height: calc(100% - 20px);
-  background-color: #F5F5F5;
+  background-color: $color-bg-page;
 }
 </style>

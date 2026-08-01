@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import { isNumber, isString } from "../../../scripts/types-util.js";
+import { isNumber, isString } from "@/scripts/types-util.js";
 
 export default {
   name: 'Tooltip',
@@ -476,7 +476,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .tooltip-container {
   position: fixed;
   visibility: visible;
@@ -490,7 +490,7 @@ export default {
 }
 
 .tooltip-container:deep(.tooltip-style) {
-  border: 1px solid #d5d5d5;
+  border: 1px solid $color-border-tooltip;
   background: rgb(255 255 255 / 95%);
   line-height: 14px;
   font-size: 13px;

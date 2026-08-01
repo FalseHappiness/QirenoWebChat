@@ -545,13 +545,13 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 /* ===== 通用 ===== */
 .gav-title {
   text-align: center;
   font-size: 16px;
   padding: 0 0 2px 0;
-  border-bottom: 1px solid #EDEDED;
+  border-bottom: 1px solid $color-border-divider;
   user-select: none;
   position: relative;
   line-height: 36px;
@@ -589,14 +589,14 @@ export default defineComponent({
 .gav-loading,
 .gav-empty {
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   padding: 40px 0;
   font-size: 14px;
 }
 
 .gav-loading-more {
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   padding: 12px 0;
   font-size: 13px;
 }
@@ -612,8 +612,8 @@ export default defineComponent({
   cursor: pointer;
   border-radius: 8px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  background: $color-bg-card;
+  border: 1px solid $color-border-faint;
   transition: box-shadow 0.2s, transform 0.15s;
 }
 
@@ -628,7 +628,7 @@ export default defineComponent({
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: #f5f5f5;
+  background: $color-bg-page;
 }
 
 .gav-grid-item-img {
@@ -644,16 +644,16 @@ export default defineComponent({
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: #bbb;
+  color: $color-text-lighter;
   font-size: 13px;
-  background: #f5f5f5;
+  background: $color-bg-page;
 }
 
 .gav-grid-item-count {
   position: absolute;
   bottom: 4px;
   right: 4px;
-  background: rgba(0, 0, 0, 0.55);
+  background: $color-bg-toolbar;
   color: #fff;
   font-size: 11px;
   padding: 1px 6px;
@@ -688,7 +688,7 @@ export default defineComponent({
 
 .gav-grid-item-name {
   font-size: 13px;
-  color: #333;
+  color: $color-text-regular;
   line-height: 1.4;
   max-height: 2.8em;
   overflow: hidden;
@@ -701,7 +701,7 @@ export default defineComponent({
 
 .gav-grid-item-meta {
   font-size: 11px;
-  color: #999;
+  color: $color-text-light;
   margin-top: 2px;
 }
 
@@ -712,10 +712,10 @@ export default defineComponent({
 
 .gav-media-date-header {
   font-size: 13px;
-  color: #888;
+  color: $color-text-meta;
   padding: 8px 0 6px;
   font-weight: 500;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid $color-border-faint;
   margin-bottom: 8px;
 }
 
@@ -748,7 +748,7 @@ export default defineComponent({
   padding: 4px 2px;
   max-width: calc(100% - 20px);
   max-height: calc(100% - 20px);
-  background-color: #FAFAFA;
+  background-color: $color-bg-section;
   position: relative;
   overflow: hidden;
 }

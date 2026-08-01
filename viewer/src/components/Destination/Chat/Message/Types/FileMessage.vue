@@ -13,8 +13,8 @@
 <script>
 import TruncatedText from "../../../../Common/Widgets/TruncatedText.vue";
 import { defineComponent } from "vue";
-import { qqFileIcon } from "../../../../../composables/useBase.js";
-import { isString } from "../../../../../scripts/types-util.js";
+import { qqFileIcon } from "@/composables/useBase.js";
+import { isString } from "@/scripts/types-util.js";
 
 
 const getFileIcon = (name) => {
@@ -132,31 +132,28 @@ export {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .message-file-message {
   width: 270px;
   max-width: 100%;
   height: 90px;
   display: block;
-  background-color: white;
+  @include card($radius-card);
   color: black;
   text-decoration: none !important;
-  border-radius: 8px;
 }
-
 
 .message-file-message hr {
   height: 1px;
   border: 0;
   margin: 10px 0 0 0;
   width: 100%;
-  background-color: #f2f2f2;
+  background-color: $color-bg-card-alt;
 }
 
 .message-file-message .top-side {
   padding-top: 10px;
-  display: flex;
-  flex-direction: row;
+  @extend %flex-row;
   justify-content: space-between;
   height: 60px;
 }

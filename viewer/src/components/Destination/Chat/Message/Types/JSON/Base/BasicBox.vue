@@ -13,14 +13,13 @@ export default defineComponent({
   </a>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-json-basic-box {
   width: 270px;
   max-width: 100%;
   display: block;
-  background-color: white;
+  @include card($radius-sm);
   color: black;
-  border-radius: 4px;
   padding: 4px 8px;
   height: auto;
 }

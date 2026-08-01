@@ -6,7 +6,7 @@ import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
-import { qqFileIcon } from "../../../../composables/useBase.js";
+import { qqFileIcon } from "@/composables/useBase.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 
 export default defineComponent({
@@ -201,7 +201,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .files-upload-tasks-title {
   text-align: center;
   font-weight: bold;
@@ -230,7 +230,7 @@ export default defineComponent({
   align-items: center;
   flex-direction: row;
   padding: 6px 4px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid $color-border-faint;
 }
 
 .files-upload-tasks-item:last-child {
@@ -258,44 +258,44 @@ export default defineComponent({
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  color: #888;
+  color: $color-text-meta;
   word-break: break-all;
 }
 
 .status-uploading {
-  color: #0099ff;
+  color: $color-primary;
   margin-right: 6px;
 }
 
 .status-completed {
-  color: #52c41a;
+  color: $color-text-success;
 }
 
 .status-cancelled {
-  color: #999;
+  color: $color-text-light;
 }
 
 .status-hashing {
-  color: #999;
+  color: $color-text-light;
 }
 
 .status-speed {
-  color: #666;
+  color: $color-text-secondary;
   margin-right: 6px;
 }
 
 .status-remaining {
-  color: #999;
+  color: $color-text-light;
 }
 
 .status-error {
-  color: #FF4D4F;
+  color: $color-text-error-bright;
 }
 
 .files-upload-tasks-item-progress-bar-container {
   width: 100%;
   height: 4px;
-  background: #e0e0e0;
+  background: $color-bg-active;
   border-radius: 2px;
   margin-top: 3px;
   overflow: hidden;
@@ -315,11 +315,11 @@ export default defineComponent({
 
 .files-upload-tasks-cancel-btn {
   font-size: 12px;
-  color: #ff4d4f;
+  color: $color-danger-bright;
   cursor: pointer;
   padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid #ff4d4f;
+  border: 1px solid $color-danger-bright;
 }
 
 .files-upload-tasks-cancel-btn:hover {

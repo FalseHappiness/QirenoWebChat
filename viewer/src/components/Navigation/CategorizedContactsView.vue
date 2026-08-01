@@ -5,7 +5,7 @@ import 'ant-design-vue/dist/reset.css';
 import {
   getGroupLogo,
   getUserLogo
-} from "../../scripts/backend-api.js"
+} from "@/scripts/backend-api.js"
 import CustomScrollBar from "../Common/Scrolling/CustomScrollBar.vue"
 import { filterSearchContacts, flattenCategorizedContacts } from "../../scripts/contacts-util.js";
 import QIcon from "../Common/Icons/QIcon.vue";
@@ -93,28 +93,27 @@ const handleSelectContact = inject("selectContact")
           >
           <span class="contacts-view-contact-name overflow-ellipsis">{{ contact.name }}</span>
         </div>
-        <p v-else style="color: gray; text-align: center; padding: 20px;">无搜索结果</p>
+        <p v-else style="color: var(--color-text-muted); text-align: center; padding: 20px;">无搜索结果</p>
       </div>
     </CustomScrollBar>
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .categorized-contacts-view {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   overflow: hidden;
 }
 
 .contacts-view-search {
   margin: 8px 12px 4px 12px;
-  background-color: #EBEBEB;
-  border-radius: 6px;
+  background-color: $color-bg-hover;
+  border-radius: $radius-btn;
   display: flex;
   height: 28px;
   align-items: center;
-  border: 1px solid #EBEBEB;
+  border: 1px solid $color-bg-hover;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -123,12 +122,12 @@ const handleSelectContact = inject("selectContact")
   height: 18px;
   width: 18px;
   margin: 0 4px 0 6px;
-  color: gray;
+  color: $color-text-muted;
   flex-shrink: 0;
 }
 
 .contacts-view-search:focus-within {
-  border-color: #0099ff;
+  border-color: $color-primary;
 }
 
 .contacts-view-search-input {
@@ -151,7 +150,7 @@ const handleSelectContact = inject("selectContact")
   width: 16px;
   height: 16px;
   margin-right: 4px;
-  transition: transform 0.2s ease-in-out;
+  transition: transform $transition-normal ease-in-out;
   transform: rotate(0deg);
   flex-shrink: 0;
 }
@@ -165,25 +164,22 @@ const handleSelectContact = inject("selectContact")
   align-items: center;
   padding: 8px 10px;
   margin: 2px 0;
-  border-radius: 6px;
+  border-radius: $radius-btn;
   cursor: pointer;
   font-size: 14px;
 }
 
 .contacts-view-contact-item:hover {
-  background-color: #EBEBEB;
+  background-color: $color-bg-hover;
 }
 
 .contacts-view-contact-item:active {
-  background-color: #e0e0e0;
+  background-color: $color-bg-active;
 }
 
 .contacts-view-contact-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  @extend %avatar-sm;
   margin-right: 10px;
-  flex-shrink: 0;
 }
 
 .contacts-view-contact-name {

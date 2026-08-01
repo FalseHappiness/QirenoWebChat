@@ -27,7 +27,7 @@ import QIcon from "../../../Common/Icons/QIcon.vue";
 import { isFunction, isString } from "@/scripts/types-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import { showConfirmBox } from "@/scripts/confirm-box-api.js";
-import { CacheNameKey, fetchDisplayName, getCacheName } from "../../../../scripts/user-info-util.js";
+import { CacheNameKey, fetchDisplayName, getCacheName } from "@/scripts/user-info-util.js";
 
 const props = defineProps({
   message: {
@@ -672,40 +672,23 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-container {
-  width: 100%;
-  display: flex;
-  position: relative;
-  padding: 10px 0;
+  @extend %message-container;
 }
 
 .message {
-  padding: 7px 14px;
-  border-radius: 10px;
-  display: inline-block;
-  line-height: 23px;
-  font-size: 16px;
-  min-height: 38px;
-  min-width: 30px;
-  direction: ltr;
-  text-align: left;
-  overflow-wrap: break-word;
-  word-break: break-all;
-  max-width: 100%;
-  white-space: pre-wrap;
+  @extend %message-bubble;
 }
 
 .message-extensions {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   margin: 0 8px;
   align-items: flex-start;
 }
 
 .message-ext-content {
-  background-color: white;
-  border-radius: 8px;
+  @include card($radius-card);
   padding: 5px 8px;
   font-size: 85%;
   margin: 5px 0;
@@ -722,37 +705,36 @@ onUnmounted(() => {
 }
 
 .message-tip {
-  background-color: rgba(158, 158, 158, 0.2);
-  border-radius: 4px;
-  color: gray;
+  background-color: $color-bg-tip;
+  border-radius: $radius-sm;
+  color: $color-text-muted;
   font-size: 12px;
   height: 24px;
   margin-top: 4px;
   padding: 0 6px;
   align-items: center;
-  display: flex;
-  justify-content: center;
+  @include flex-center;
   direction: ltr;
-}
 
-.message-tip img, .message-tip:deep(svg) {
-  width: 12px;
-  height: 12px;
-  margin-right: 2px;
+  img, &:deep(svg) {
+    width: 12px;
+    height: 12px;
+    margin-right: 2px;
+  }
 }
 
 .message-red-tip {
-  color: #b90000;
-  background-color: rgb(255 0 0 / 25%);
-}
+  color: $color-text-red-tip;
+  background-color: $color-bg-red-tip;
 
-.message-red-tip:deep(svg) {
-  color: #900000;
+  &:deep(svg) {
+    color: $color-text-red-tip-icon;
+  }
 }
 
 .message-before {
   font-size: 13px;
-  color: #999999 !important;
+  color: $color-text-light !important;
   margin: 0 8px;
   height: 24px;
   white-space: nowrap;
@@ -782,13 +764,11 @@ onUnmounted(() => {
 }
 
 .message-in .message {
-  background-color: white;
-  margin-left: 8px;
+  @include message-bubble-in;
 }
 
 .message-out .message {
-  background-color: #CCEBFF;
-  margin-right: 8px;
+  @include message-bubble-out;
 }
 
 .message-in .message-avatar {
@@ -799,7 +779,7 @@ onUnmounted(() => {
   margin-right: 20px;
 }
 
-@media (max-width: 425px) {
+@include small-mobile {
   .message-in .message-avatar {
     margin-left: 10px;
   }
@@ -818,19 +798,17 @@ onUnmounted(() => {
 }
 
 .message-avatar {
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
+  @extend %avatar-msg;
 }
 
 .message-name-title {
   display: inline-block;
   margin: 0 0 4px 0;
-}
 
-.message-name-title:deep(.message-name-title-display-name) {
-  direction: ltr;
-  display: inline-block;
+  &:deep(.message-name-title-display-name) {
+    direction: ltr;
+    display: inline-block;
+  }
 }
 
 .message-in .message-name-title {
@@ -847,7 +825,7 @@ onUnmounted(() => {
   max-width: calc(100% - 140px);
 }
 
-@media (max-width: 425px) {
+@include small-mobile {
   .message-msg-side {
     max-width: 70%;
   }
@@ -858,7 +836,6 @@ onUnmounted(() => {
 }
 
 .message:deep(.message-super-emoji-lottie) {
-  /*width: 125px;*/
   height: 125px;
   max-width: 200px;
 }
@@ -894,14 +871,7 @@ onUnmounted(() => {
 }
 
 .message:deep(.message-image), .message:deep(.message-video) {
-  max-height: 324px;
-  border-radius: 5px;
-  width: 100% !important;
-  height: auto;
-  object-fit: contain;
-  display: block;
-  margin: 4px 0;
-  max-width: 324px !important;
+  @include media-reset;
 }
 
 .message:has(.message-emoji-picture) {
@@ -911,7 +881,6 @@ onUnmounted(() => {
 .message:deep(.message-box-less.message-image) {
   margin: unset;
 }
-
 </style>
 
 <style>
@@ -928,33 +897,32 @@ onUnmounted(() => {
 }
 </style>
 
-<style scoped>
+<style scoped lang="scss">
 .notice-container {
   height: 50px;
-  display: flex;
-  flex-direction: row;
+  @extend %flex-row;
   justify-content: center;
   align-items: center;
 }
 
 .notice {
   display: inline-block;
-  border-radius: 15px;
-  background-color: rgb(255 255 255 / 50%);
+  border-radius: $radius-notice;
+  background-color: $color-bg-notice;
   padding: 2px 8px;
   font-size: 12px;
-  color: gray;
+  color: $color-text-muted;
   white-space: nowrap;
-}
 
-.notice:deep(.notice-emoji-png) {
-  height: 15px;
-  margin: -2px 1px 0 1px;
-}
+  &:deep(.notice-emoji-png) {
+    height: 15px;
+    margin: -2px 1px 0 1px;
+  }
 
-.notice:deep(.notice-execute-command) {
-  color: #2d77e5;
-  cursor: pointer;
-  text-decoration: none;
+  &:deep(.notice-execute-command) {
+    color: $color-text-record-cancel;
+    cursor: pointer;
+    text-decoration: none;
+  }
 }
 </style>

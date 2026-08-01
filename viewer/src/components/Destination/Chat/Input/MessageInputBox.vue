@@ -2745,10 +2745,10 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-input-box {
-  background: rgb(245, 245, 245);
-  border-top: 1px solid #dee2e6;
+  background: $color-bg-chat;
+  border-top: 1px solid $color-border;
   max-height: 50%;
   width: 100%;
 }
@@ -2785,11 +2785,11 @@ export default defineComponent({
 }
 
 .message-input-ctrl-icon:hover {
-  color: #0099ff;
+  color: $color-primary;
 }
 
 .message-input-send-button {
-  background-color: #0099ff;
+  background-color: $color-primary;
   border-radius: 4px;
   font-size: 13px;
   color: white;
@@ -2840,7 +2840,7 @@ export default defineComponent({
 }
 
 .message-input-expression-category-title {
-  color: gray;
+  color: $color-text-muted;
   font-size: 10px;
   margin: 5px 15px;
 }
@@ -2859,11 +2859,11 @@ export default defineComponent({
 }
 
 .message-input-expression-emoji-box:hover {
-  background-color: #efefef;
+  background-color: $color-bg-hover-alt;
 }
 
 .message-input-expression-emoji-box:active {
-  background-color: #e6e6e6;
+  background-color: $color-bg-active-alt;
 }
 
 .message-input-expression-category {
@@ -2907,7 +2907,7 @@ export default defineComponent({
 }
 
 .message-input-editor:deep(.message-input-editor-at-user) {
-  color: #007bff;
+  color: $color-text-at-link;
   cursor: default;
   display: inline-block;
   -webkit-user-modify: read-only;
@@ -2916,7 +2916,7 @@ export default defineComponent({
 }
 
 .message-input-editor:deep(.message-input-editor-at-user):hover {
-  color: #007bff;
+  color: $color-text-at-link;
 }
 
 .at-group-users-container {
@@ -2967,7 +2967,7 @@ export default defineComponent({
 }
 
 .at-group-user-qq {
-  color: gray;
+  color: $color-text-muted;
   font-size: 12px;
 }
 
@@ -2975,7 +2975,7 @@ export default defineComponent({
   width: 20px;
   height: 20px;
   color: white;
-  background-color: #0099ff;
+  background-color: $color-primary;
   padding: 4px;
 }
 
@@ -3000,7 +3000,7 @@ export default defineComponent({
 
 .message-input-record-timer {
   font-weight: 500;
-  color: #333;
+  color: $color-text-regular;
   font-variant-numeric: tabular-nums;
 }
 
@@ -3021,7 +3021,7 @@ export default defineComponent({
 
 .message-input-record-exit,
 .message-input-record-cancel {
-  color: #2D77E5;
+  color: $color-text-record-cancel;
   cursor: pointer;
 }
 

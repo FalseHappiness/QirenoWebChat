@@ -63,7 +63,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .confirm-box-header {
   padding: 4px 0 6px 0;
 }
@@ -71,7 +71,7 @@ export default defineComponent({
 .confirm-box-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1d1d1d;
+  color: $color-text-primary;
 }
 
 .confirm-box-body {
@@ -113,31 +113,31 @@ export default defineComponent({
 }
 
 .confirm-box-button-confirm {
-  background-color: #0099ff;
+  background-color: $color-primary;
   color: white;
 }
 
 .confirm-box-button-confirm:hover {
-  background-color: #008be6;
+  background-color: $color-bg-primary-hover;
 }
 
 .confirm-box-button-confirm:active {
-  background-color: #0076c5;
+  background-color: $color-bg-primary-active;
   color: rgba(255, 255, 255, 0.4);
 }
 
 .confirm-box-button-cancel {
-  border: 1px solid #c4c4c4;
+  border: 1px solid $color-border-cancel;
   color: black;
 }
 
 .confirm-box-button-cancel:hover {
-  background-color: #efefef;
+  background-color: $color-bg-hover-alt;
 }
 
 .confirm-box-button-cancel:active {
-  background-color: #d8d8d8;
-  color: gray;
+  background-color: $color-bg-active-alt;
+  color: $color-text-muted;
 }
 </style>
 

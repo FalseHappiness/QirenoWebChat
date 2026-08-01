@@ -259,7 +259,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .download-content {
   display: flex;
   flex-direction: column;
@@ -270,14 +270,14 @@ export default defineComponent({
 .download-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: $color-text-regular;
   margin-bottom: 12px;
   text-align: center;
 }
 
 .download-file-name {
   font-size: 13px;
-  color: #666;
+  color: $color-text-secondary;
   margin-bottom: 10px;
   text-align: center;
   overflow: hidden;
@@ -287,10 +287,10 @@ export default defineComponent({
 
 .download-url {
   font-size: 11px;
-  color: #999;
+  color: $color-text-light;
   margin-bottom: 12px;
   padding: 6px 8px;
-  background: #f5f5f5;
+  background: $color-bg-page;
   border-radius: 4px;
   word-break: break-all;
   max-height: 200px;
@@ -298,7 +298,7 @@ export default defineComponent({
 }
 
 .url-label {
-  color: #888;
+  color: $color-text-meta;
   margin-right: 4px;
 }
 
@@ -337,7 +337,7 @@ export default defineComponent({
 
 .download-info {
   font-size: 12px;
-  color: #888;
+  color: $color-text-meta;
   text-align: center;
   margin-bottom: 6px;
 }
@@ -349,7 +349,7 @@ export default defineComponent({
 
 .download-error {
   font-size: 13px;
-  color: #e74c3c;
+  color: $color-text-danger;
   text-align: center;
   margin: 10px 0;
   padding: 8px;

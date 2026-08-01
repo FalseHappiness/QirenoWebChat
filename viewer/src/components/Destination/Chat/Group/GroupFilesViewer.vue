@@ -4,13 +4,13 @@ import {
   fetchGroupFolderFiles,
   fetchGroupFileSysInfo,
   getGroupFileProxyUrl,
-} from "../../../../scripts/backend-api.js";
-import { formatTimeOptions } from "../../../../scripts/util.js";
+} from "@/scripts/backend-api.js";
+import { formatTimeOptions } from "@/scripts/util.js";
 import { getFileIcon, formatFileSize } from "../Message/Types/FileMessage.vue";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import TruncatedText from "../../../Common/Widgets/TruncatedText.vue";
-import { qqFileIcon } from "../../../../composables/useBase.js";
+import { qqFileIcon } from "@/composables/useBase.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 
 export default defineComponent({
@@ -323,12 +323,12 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .gv-title {
   text-align: center;
   font-size: 16px;
   padding: 0 0 2px 0;
-  border-bottom: 1px solid #EDEDED;
+  border-bottom: 1px solid $color-border-divider;
   user-select: none;
   position: relative;
 }
@@ -361,18 +361,18 @@ export default defineComponent({
 }
 
 .gv-breadcrumb-item {
-  color: #4A90D9;
+  color: $color-text-link;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .gv-breadcrumb-item:hover {
-  color: #2A6CB0;
+  color: $color-text-link-hover;
   text-decoration: underline;
 }
 
 .gv-breadcrumb-item:last-child {
-  color: #333;
+  color: $color-text-regular;
   cursor: default;
   max-width: 180px;
 }
@@ -382,7 +382,7 @@ export default defineComponent({
 }
 
 .gv-breadcrumb-sep {
-  color: #999;
+  color: $color-text-light;
   padding: 0 2px;
 }
 
@@ -404,14 +404,14 @@ export default defineComponent({
 }
 
 .gv-select:focus {
-  border-color: #4A90D9;
+  border-color: $color-link-default;
 }
 
 /* 系统信息 */
 .gv-sys-info {
   padding: 6px 20px;
   font-size: 12px;
-  color: #999;
+  color: $color-text-light;
 }
 
 .gv-storage-bar-wrapper {
@@ -423,7 +423,7 @@ export default defineComponent({
 .gv-storage-bar {
   flex: 1;
   height: 6px;
-  background: #E0E0E0;
+  background: $color-bg-active;
   border-radius: 3px;
   overflow: hidden;
   min-width: 100px;
@@ -431,21 +431,21 @@ export default defineComponent({
 
 .gv-storage-bar-used {
   height: 100%;
-  background: #0099ff;
+  background: $color-primary;
   border-radius: 3px;
   transition: width 0.3s ease;
 }
 
 .gv-storage-text {
   font-size: 12px;
-  color: #666;
+  color: $color-text-secondary;
   white-space: nowrap;
 }
 
 /* 加载中 */
 .gv-loading {
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   padding: 40px 0;
   font-size: 14px;
 }
@@ -453,7 +453,7 @@ export default defineComponent({
 /* 错误提示 */
 .gv-error {
   text-align: center;
-  color: #FF6B6B;
+  color: $color-text-warning;
   padding: 40px 0;
   font-size: 14px;
 }
@@ -463,14 +463,14 @@ export default defineComponent({
   flex: 1;
   padding: 4px 0;
   overflow: auto;
-  background: white;
+  background: $color-bg-card;
   margin: 0 20px 20px 20px;
   border-radius: 8px;
 }
 
 .gv-empty {
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   padding: 40px 0;
   font-size: 14px;
 }
@@ -488,7 +488,7 @@ export default defineComponent({
 }
 
 .gv-item:hover {
-  background-color: #F5F5F5;
+  background-color: $color-bg-page;
 }
 
 .gv-item-icon {
@@ -506,7 +506,7 @@ export default defineComponent({
 
 .gv-item-name {
   font-size: 14px;
-  color: #333;
+  color: $color-text-regular;
   height: 20px !important;
 }
 
@@ -560,7 +560,7 @@ export default defineComponent({
   padding: 4px 2px;
   max-width: calc(100% - 20px);
   max-height: calc(100% - 20px);
-  background-color: #FAFAFA;
+  background-color: $color-bg-section;
 }
 
 @media (max-width: 480px) {

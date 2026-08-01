@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import ChatArea from './Chat/ChatArea.vue'
 import LicenseView from "./License/LicenseView.vue";
-import { DestKey } from "../../scripts/view-keys.js";
-import { isFunction } from "../../scripts/types-util.js";
+import { DestKey } from "@/scripts/view-keys.js";
+import { isFunction } from "@/scripts/types-util.js";
 
 const viewActive = ref(false);
 const currentView = ref(DestKey.CHAT_AREA)
@@ -55,12 +55,11 @@ defineExpose({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .destination-view {
   flex: 1;
   height: 100%;
-  background: rgb(245, 245, 245);
-  /*max-width: calc(100% - var(--sidebar-width));*/
+  background: $color-bg-chat;
   min-width: 390px;
 }
 
@@ -69,13 +68,13 @@ defineExpose({
   width: 100%;
 }
 
-@media (max-width: 570px) {
+@include mobile {
   .destination-view {
     position: absolute;
     right: -100%;
     width: 100%;
     opacity: 0;
-    transition: opacity 0.2s ease-out, right 0.2s ease-out;
+    transition: opacity $transition-normal ease-out, right $transition-normal ease-out;
     max-width: unset;
     min-width: unset;
   }

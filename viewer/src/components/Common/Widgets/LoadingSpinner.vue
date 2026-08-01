@@ -37,36 +37,24 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .loading-spinner {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   align-items: center;
   justify-content: center;
 }
 
 .loading-spinner-icon {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba(0, 0, 0, 0.06);
-  border-top-color: #0099ff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  @include loading-spinner;
   margin-bottom: 14px;
-}
 
-.loading-spinner-icon.no-text {
-  margin: 0;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  &.no-text {
+    margin: 0;
   }
 }
 
 .loading-spinner-text {
-  color: #808080;
+  color: $color-text-muted;
   font-size: 14px;
   margin: 0;
 }

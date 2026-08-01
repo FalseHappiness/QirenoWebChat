@@ -5,7 +5,7 @@ import TruncatedText from "../../../Common/Widgets/TruncatedText.vue";
 import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
-import { qqFileIcon } from "../../../../composables/useBase.js";
+import { qqFileIcon } from "@/composables/useBase.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 
 export default defineComponent({
@@ -70,7 +70,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .files-confirm-title {
   text-align: center;
 }
@@ -94,7 +94,7 @@ export default defineComponent({
 .files-confirm-confirm-button {
   height: 45px;
   border-radius: 12px;
-  background-color: #0099ff;
+  background-color: $color-primary;
   color: white;
   display: flex;
   justify-content: center;
@@ -103,11 +103,11 @@ export default defineComponent({
 }
 
 .files-confirm-confirm-button:hover {
-  background-color: #0089df;
+  background-color: $color-bg-primary-hover;
 }
 
 .files-confirm-confirm-button:active {
-  background-color: #0077c3;
+  background-color: $color-bg-primary-active;
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -133,7 +133,7 @@ export default defineComponent({
 
 .files-confirm-file-size {
   font-size: 12px;
-  color: gray;
+  color: $color-text-muted;
   margin-top: -5px;
 }
 

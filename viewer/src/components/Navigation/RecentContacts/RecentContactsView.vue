@@ -2,9 +2,9 @@
 import { computed, ref, watch, inject } from 'vue'
 import RecentContactItem from './RecentContactItem.vue'
 import VirtualScroller from "../../Common/Scrolling/VirtualScroller.vue";
-import { getUserLogo } from "../../../scripts/backend-api.js";
+import { getUserLogo } from "@/scripts/backend-api.js";
 import LoadingSpinner from "../../Common/Widgets/LoadingSpinner.vue";
-import { checkSameContact } from "../../../scripts/contacts-util.js";
+import { checkSameContact } from "@/scripts/contacts-util.js";
 
 const selfInfo = inject("selfInfo")
 const loading = inject("isLoadingContacts")
@@ -107,7 +107,7 @@ const handleShowSelfInfo = e => {
 }
 </style>
 
-<style scoped>
+<style scoped lang="scss">
 .recent-contacts-list {
   flex: 1;
 }
@@ -118,16 +118,12 @@ const handleShowSelfInfo = e => {
 }
 
 .self-info-logo {
-  width: 40px;
-  height: 40px;
-  border: 2px solid white;
-  border-radius: 50%;
+  @include avatar-with-border(40px);
   margin-right: 10px;
 }
 
 .self-info-card {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   justify-content: center;
   line-height: 16px;
 }
@@ -137,16 +133,16 @@ const handleShowSelfInfo = e => {
 }
 
 .self-info-long-nick {
-  color: #808080 !important;
+  color: $color-text-muted !important;
   background: transparent;
   outline: none;
   border: 1px solid transparent;
   padding: 1px;
-  border-radius: 3px;
+  border-radius: $radius-xs;
   margin-top: 2px;
-}
 
-.self-info-long-nick:focus {
-  border: 1px solid #0099ff;
+  &:focus {
+    border: 1px solid $color-primary;
+  }
 }
 </style>

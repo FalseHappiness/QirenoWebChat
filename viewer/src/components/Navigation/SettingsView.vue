@@ -1,8 +1,8 @@
 <script setup>
-import { getUserLogo } from "../../scripts/backend-api.js"
+import { getUserLogo } from "@/scripts/backend-api.js"
 import EnterArrow from "../Common/Widgets/EnterArrow.vue";
 import { inject } from "vue";
-import { DestKey } from "../../scripts/view-keys.js";
+import { DestKey } from "@/scripts/view-keys.js";
 
 const selfInfo = inject("selfInfo")
 
@@ -45,10 +45,9 @@ const handleEnterLicense = () => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .settings-view-container {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   padding: 12px;
   gap: 18px;
   font-size: 15px;
@@ -59,21 +58,17 @@ const handleEnterLicense = () => {
 .settings-profile-area {
   display: flex;
   align-items: center;
-  border-radius: 8px;
-  background-color: white;
+  @include card;
   padding: 8px 12px;
 }
 
 .settings-profile-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  @include avatar(40px);
   margin: 5px 10px 5px 5px;
 }
 
 .settings-profile-info {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   line-height: 1.4;
   min-width: 0;
 }
@@ -84,32 +79,30 @@ const handleEnterLicense = () => {
 }
 
 .settings-profile-user-id {
-  color: gray;
+  color: $color-text-muted;
   font-size: 13px;
 }
 
 .settings-profile-long-nick {
-  color: #808080;
+  color: $color-text-muted;
   font-size: 13px;
   margin-top: 2px;
 }
 
 /* 操作区域 */
 .settings-actions-area {
-  border-radius: 8px;
-  background-color: white;
+  @include card;
   padding: 12px;
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   gap: 10px;
-}
 
-.settings-actions-area.enter-view {
-  flex-direction: row;
-  padding: 8px 6px 8px 12px;
-  align-items: center;
-  gap: 0;
-  cursor: pointer;
+  &.enter-view {
+    flex-direction: row;
+    padding: 8px 6px 8px 12px;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+  }
 }
 
 .enter-view span {
@@ -117,18 +110,17 @@ const handleEnterLicense = () => {
 }
 
 .settings-actions-button {
-  border-radius: 8px;
-  background-color: white;
+  @include card;
   text-align: center;
   padding: 6px 0;
   width: 100%;
-  transition: background-color 0.2s ease;
+  transition: background-color $transition-normal ease;
   cursor: pointer;
   font-size: 15px;
   color: black;
-}
 
-.settings-actions-button:active {
-  color: #8e8e8e;
+  &:active {
+    color: $color-text-muted;
+  }
 }
 </style>

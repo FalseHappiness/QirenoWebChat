@@ -1,0 +1,309 @@
+// ============================================================
+// 常用 mixin 混入 — 减少重复样式编写
+// ============================================================
+@use "./variables" as *;
+
+// ---- 头像 ----
+@mixin avatar($size: 40px) {
+  width: $size;
+  height: $size;
+  border-radius: $radius-avatar;
+  flex-shrink: 0;
+}
+
+@mixin avatar-with-border($size: 40px) {
+  @include avatar($size);
+  border: 2px solid $color-text-white;
+}
+
+// ---- 卡片 ----
+@mixin card($radius: $radius-card) {
+  background-color: $color-bg-card;
+  border-radius: $radius;
+}
+
+@mixin card-with-shadow($radius: $radius-card) {
+  @include card($radius);
+  box-shadow: $shadow-card;
+}
+
+// ---- 交互反馈 ----
+@mixin hover-bg($bg: $color-bg-hover) {
+  &:hover {
+    background-color: $bg;
+  }
+}
+
+@mixin active-bg($bg: $color-bg-active) {
+  &:active {
+    background-color: $bg;
+  }
+}
+
+@mixin hover-active-bg($hover-bg: $color-bg-hover, $active-bg: $color-bg-active) {
+  @include hover-bg($hover-bg);
+  @include active-bg($active-bg);
+}
+
+// ---- 轻量交互（rgb半透明） ----
+@mixin hover-light($bg: $color-bg-hover-light) {
+  &:hover {
+    background-color: $bg;
+  }
+}
+
+@mixin active-light($bg: $color-bg-active-light) {
+  &:active {
+    background-color: $bg;
+  }
+}
+
+@mixin hover-active-light($hover-bg: $color-bg-hover-light, $active-bg: $color-bg-active-light) {
+  @include hover-light($hover-bg);
+  @include active-light($active-bg);
+}
+
+// ---- 按钮基础 ----
+@mixin btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: $radius-btn;
+  cursor: pointer;
+  transition: background $transition-fast, opacity $transition-fast, transform 0.1s;
+  outline: 0;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@mixin btn-secondary {
+  @include btn-base;
+  background: rgba(0, 0, 0, 0.04);
+  color: $color-text-regular;
+
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+    background: rgba(0, 0, 0, 0.12);
+  }
+}
+
+@mixin btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid $color-border;
+  border-radius: $radius-btn;
+  background: transparent;
+  color: $color-text-muted;
+  cursor: pointer;
+  transition: background $transition-fast, color $transition-fast, border-color $transition-fast;
+  margin: 0;
+  flex-shrink: 0;
+
+  &:hover {
+    background: $color-bg-hover;
+    color: $color-text-regular;
+    border-color: $color-border-hover;
+  }
+
+  &:active {
+    background: $color-bg-active;
+    transform: scale(0.95);
+  }
+}
+
+// ---- 主色按钮（#0099ff 蓝色确认按钮） ----
+@mixin btn-primary {
+  @include btn-base;
+  background-color: $color-primary;
+  color: $color-text-white;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-primary-hover;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $color-bg-primary-active;
+    color: rgba(255, 255, 255, 0.4);
+  }
+}
+
+// ---- 取消/边框按钮 ----
+@mixin btn-cancel {
+  @include btn-base;
+  background-color: $color-bg-card;
+  color: $color-text-regular;
+  border: 1px solid $color-border-cancel;
+
+  &:hover:not(:disabled) {
+    background-color: $color-bg-hover-alt;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $color-bg-active-alt;
+    color: $color-text-muted;
+  }
+}
+
+// ---- 弹窗标题栏 ----
+@mixin dialog-title {
+  text-align: center;
+  font-size: 16px;
+  padding: 0 0 2px 0;
+  border-bottom: 1px solid $color-border-divider;
+  user-select: none;
+  position: relative;
+}
+
+// ---- 弹窗右上角关闭按钮 ----
+@mixin dialog-close-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+// ---- 文本溢出省略 ----
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin multi-line-ellipsis($lines: 2) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+  overflow: hidden;
+}
+
+// ---- flex 居中 ----
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-center-children {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ---- 绝对定位铺满 ----
+@mixin absolute-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// ---- 固定定位铺满 ----
+@mixin fixed-fill {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// ---- 输入框焦点 ----
+@mixin input-focus($color: $color-primary) {
+  &:focus {
+    border-color: $color;
+    box-shadow: 0 0 0 2px rgba($color, 0.1);
+  }
+}
+
+// ---- 加载旋转动画 ----
+@mixin loading-spinner($size: 36px, $border-width: 3px, $speed: 0.7s) {
+  width: $size;
+  height: $size;
+  border: $border-width solid rgba(0, 0, 0, 0.06);
+  border-top-color: $color-primary;
+  border-radius: 50%;
+  animation: spin $speed linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ---- 毛玻璃效果 ----
+@mixin backdrop-blur($blur: 24px, $saturate: 1.4) {
+  backdrop-filter: blur($blur) saturate($saturate);
+  -webkit-backdrop-filter: blur($blur) saturate($saturate);
+}
+
+// ---- 响应式断点 ----
+@mixin mobile {
+  @media (max-width: 570px) {
+    @content;
+  }
+}
+
+@mixin small-mobile {
+  @media (max-width: 425px) {
+    @content;
+  }
+}
+
+// ---- 滚动条隐藏 ----
+@mixin no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// ---- 过渡动画 ----
+@mixin fade-in($duration: $transition-slow) {
+  animation: fadeIn $duration ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ---- 消息气泡通用 ----
+@mixin message-bubble-in {
+  background-color: $color-bg-message-in;
+  margin-left: 8px;
+}
+
+@mixin message-bubble-out {
+  background-color: $color-bg-message-out;
+  margin-right: 8px;
+}
+
+// ---- 图片/视频媒体样式 ----
+@mixin media-reset {
+  max-height: 324px;
+  border-radius: 5px;
+  width: 100% !important;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 4px 0;
+  max-width: 324px !important;
+}

@@ -2,8 +2,8 @@
 import { computed, h, ref } from "vue";
 import { getGroupNoticePicUrl, getMultimediaProxyUrl } from "../../../../../../scripts/backend-api.js";
 import { Base64 } from 'js-base64'
-import { convertMessageTextHTMLSyntax } from "../../../../../../scripts/parse-message.js";
-import { qqAppImg } from "../../../../../../composables/useBase.js";
+import { convertMessageTextHTMLSyntax } from "@/scripts/parse-message.js";
+import { qqAppImg } from "@/composables/useBase.js";
 
 const props = defineProps({
   json: Object
@@ -66,33 +66,31 @@ const images = computed(() => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-mannounce {
   width: 270px;
   max-width: 100%;
   display: block;
-  background-color: white;
+  @include card($radius-sm);
   color: black;
-  border-radius: 4px;
   padding: 14px 20px;
   height: auto;
 }
 
 .header {
   margin-bottom: 10px;
-}
 
-.header img {
-  height: 16px;
-  width: 16px;
-  vertical-align: center;
-}
+  img {
+    height: 16px;
+    width: 16px;
+    vertical-align: center;
+  }
 
-.header span {
-  vertical-align: center;
-  margin-left: 5px;
+  span {
+    vertical-align: center;
+    margin-left: 5px;
+  }
 }
-
 
 .text-muted {
   font-size: 100%;
@@ -108,19 +106,18 @@ const images = computed(() => {
 
 .content {
   margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* 隐藏超出部分 */
+  @extend %flex-column;
+  overflow: hidden;
 }
 
 .text-container {
-  flex: 1; /* 占据剩余空间 */
-  overflow: hidden; /* 隐藏超出文本 */
+  flex: 1;
+  overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   --lines: 6;
   -webkit-line-clamp: var(--lines, 6);
-  line-height: 1.5; /* 行高 */
+  line-height: 1.5;
 }
 
 .picture {

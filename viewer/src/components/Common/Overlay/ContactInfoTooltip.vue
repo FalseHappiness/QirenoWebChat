@@ -222,21 +222,16 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .tooltip-style.contact-info-tooltip {
-  /* 顶部背景图：仅顶部显示、不重复、铺满宽度 */
-  background-image: url("#{$base-url}QQ/app/img/minicard.bg.c44eefb168ed8bd4d8e2.png");
-}
-</style>
-
-<style scoped>
-.tooltip-style.contact-info-tooltip {
   /* 底色：整体白色背景 */
-  background-color: #ffffff;
-  background-repeat: no-repeat; /* 禁止重复平铺 */
-  background-position: top center; /* 对齐顶部 */
-  background-size: 100% auto; /* 宽度铺满，高度自适应原图比例 */
+  background-color: $color-bg-card;
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: 100% auto;
   width: 300px;
   padding-top: 10px;
   max-width: 100%;
+  /* 顶部背景图：仅顶部显示、不重复、铺满宽度 */
+  background-image: url("#{$base-url}QQ/app/img/minicard.bg.c44eefb168ed8bd4d8e2.png");
 }
 
 .contact-info-header {
@@ -247,14 +242,11 @@ export default defineComponent({
 }
 
 .contact-info-logo {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
+  @include avatar(60px);
 }
 
 .contact-info-header-text {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   justify-content: center;
   margin-left: 16px;
   gap: 8px;
@@ -265,59 +257,59 @@ export default defineComponent({
 }
 
 .contact-info-id {
-  color: #999;
+  color: $color-text-light;
 }
 
 .contact-info-details {
   width: 100%;
   padding: 0 12px;
   font-size: 15px;
-}
 
-.contact-info-details .row {
-  display: flex;
-  margin-bottom: 10px;
-  cursor: default;
-  align-items: center;
-}
+  .row {
+    display: flex;
+    margin-bottom: 10px;
+    cursor: default;
+    align-items: center;
+  }
 
-.contact-info-details .label {
-  flex: 0 0 80px; /* ✅ 固定宽度 */
-  white-space: nowrap; /* ✅ 单行显示 */
-  color: #999;
-}
+  .label {
+    flex: 0 0 80px;
+    white-space: nowrap;
+    color: $color-text-light;
+  }
 
-.contact-info-details .label, .contact-info-details .value {
-  padding: 5px;
-}
+  .label, .value {
+    padding: 5px;
+  }
 
-.contact-info-details .value {
-  flex: 1;
-  border-radius: 5px;
-  color: black;
-}
+  .value {
+    flex: 1;
+    border-radius: 5px;
+    color: black;
 
-.contact-info-details .value.with-arrow {
-  display: flex;
-  align-items: center;
-}
+    &.with-arrow {
+      display: flex;
+      align-items: center;
+    }
 
-.contact-info-details .value.clickable:hover {
-  background-color: #f2f2f2;
-}
+    &.clickable:hover {
+      background-color: $color-bg-card-alt;
+    }
 
-.contact-info-details .value.clickable:active {
-  background-color: #e0e0e0;
-}
+    &.clickable:active {
+      background-color: $color-bg-active;
+    }
+  }
 
-.contact-info-details input.value {
-  outline: none;
-  border: 1px solid transparent;
-  padding: 2px 5px;
-}
+  input.value {
+    outline: none;
+    border: 1px solid transparent;
+    padding: 2px 5px;
 
-.contact-info-details input.value:focus {
-  background-color: transparent !important;
-  border-color: #0099ff;
+    &:focus {
+      background-color: transparent !important;
+      border-color: $color-primary;
+    }
+  }
 }
 </style>

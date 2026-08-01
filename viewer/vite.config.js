@@ -25,6 +25,7 @@ function isRelativePath(path) {
 
 /**
  * 相对路径自动向上提升一级（加../）
+ * 解决 css 输出到 assets 目录下，导致相对路径处理不正常
  * @param {string} path
  * @returns {string}
  */
@@ -133,10 +134,12 @@ export default defineConfig(({ mode }) => {
     css: {
       preprocessorOptions: {
         scss: {
-          // css 输出到 assets 目录下，导致相对路径处理不正常
           additionalData: `
-            $base-url: "${upOneLevelRelative(base)}";
-          `
+@use "@/styles/_variables.scss" as *;
+@use "@/styles/_mixins.scss" as *;
+@use "@/styles/_placeholders.scss" as *;
+$base-url: "${upOneLevelRelative(base)}";
+`
         }
       }
     }

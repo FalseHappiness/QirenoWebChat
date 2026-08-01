@@ -202,16 +202,16 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 /* ===== 标题栏 (仿 ChatArea 头部风格) ===== */
 .fv-head {
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid $color-border;
   flex-shrink: 0;
-  background: rgb(245, 245, 245);
+  background: $color-bg-chat;
   padding: 4px 0;
 }
 
@@ -233,11 +233,11 @@ export default defineComponent({
 }
 
 .fv-close-btn:hover {
-  background-color: rgb(200 200 200 / 25%);
+  @include hover-light;
 }
 
 .fv-close-btn:active {
-  background-color: rgb(200 200 200 / 50%);
+  @include active-light;
 }
 
 /* ===== 主体区域 ===== */
@@ -246,7 +246,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: rgb(245, 245, 245);
+  background: $color-bg-chat;
 }
 
 /* ===== 加载/错误/空状态 ===== */
@@ -259,7 +259,7 @@ export default defineComponent({
 
 .fv-error {
   text-align: center;
-  color: #FF6B6B;
+  color: $color-text-warning;
   padding: 40px 0;
   font-size: 14px;
 }
@@ -267,7 +267,7 @@ export default defineComponent({
 /* ===== 消息列表容器 (CustomScrollBar 接管滚动) ===== */
 .fv-messages-wrapper {
   min-height: 0;
-  background: rgb(245, 245, 245);
+  background: $color-bg-chat;
 }
 
 .fv-messages-wrapper:deep(.simplebar-content) {
@@ -337,7 +337,7 @@ export default defineComponent({
 /* ===== 消息上方信息 (仿 MessageItem.message-before) ===== */
 .fv-message-before {
   font-size: 13px;
-  color: #999999 !important;
+  color: $color-text-light !important;
   margin: 0 8px;
   height: 24px;
   white-space: nowrap;
@@ -416,12 +416,12 @@ export default defineComponent({
 
 /* 气泡颜色 */
 .fv-message-in .fv-message {
-  background-color: white;
+  background-color: $color-bg-message-in;
   margin-left: 8px;
 }
 
 .fv-message-out .fv-message {
-  background-color: #CCEBFF;
+  background-color: $color-bg-message-out;
   margin-right: 8px;
 }
 
@@ -490,7 +490,7 @@ export default defineComponent({
 }
 
 .fv-message:deep(.at-somebody-link) {
-  color: #4A90D9;
+  color: $color-link-default;
   cursor: pointer;
 }
 
@@ -518,7 +518,7 @@ export default defineComponent({
   padding: 0;
   max-width: calc(100% - 20px);
   max-height: calc(100% - 20px);
-  background-color: rgb(245, 245, 245);
+  background-color: $color-bg-chat;
   display: flex;
   flex-direction: column;
   border-radius: 8px;

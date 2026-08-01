@@ -394,7 +394,7 @@ const clearAndReselect = () => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 /* 基础布局 */
 .accounts-view {
   height: 100%;
@@ -404,31 +404,23 @@ const clearAndReselect = () => {
 }
 
 .polar {
-  height: 100%;
-  width: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
+  @include absolute-fill;
 }
 
 .accounts-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @extend %absolute-fill;
+  @include flex-center;
 }
 
 .account-panel {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  border-radius: 8px;
+  background: $color-bg-light;
+  @include backdrop-blur;
+  border-radius: $radius-card;
   padding: 18px 26px;
   max-width: 420px;
   width: 90%;
   max-height: 80vh;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: $shadow-card;
   border: 1px solid rgba(255, 255, 255, 0.5);
   height: auto;
 }
@@ -437,21 +429,20 @@ const clearAndReselect = () => {
   margin: 0 0 6px;
   font-size: 22px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: $color-text-primary;
   text-align: center;
 }
 
 .panel-subtitle {
   margin: 0 0 20px;
   font-size: 13px;
-  color: #808080;
+  color: $color-text-muted;
   text-align: center;
 }
 
 /* BOT 列表 */
 .bot-list {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   gap: 4px;
   margin-bottom: 16px;
 }
@@ -461,35 +452,33 @@ const clearAndReselect = () => {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: $radius-card;
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-}
+  transition: background $transition-fast, border-color $transition-fast, transform 0.1s;
 
-.bot-card:hover {
-  background: rgba(235, 235, 235, 0.5);
-  border-color: #dee2e6;
-  transform: translateY(-1px);
-}
+  &:hover {
+    background: rgba(235, 235, 235, 0.5);
+    border-color: $color-border;
+    transform: translateY(-1px);
+  }
 
-.bot-card:active {
-  background: rgba(224, 224, 224, 0.5);
-  transform: translateY(0);
+  &:active {
+    background: rgba(224, 224, 224, 0.5);
+    transform: translateY(0);
+  }
 }
 
 .bot-avatar,
 .saved-account-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: $avatar-lg;
+  height: $avatar-lg;
+  border-radius: $radius-avatar;
   overflow: hidden;
   flex-shrink: 0;
   background: rgba(221, 221, 221, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
   border: 2px solid white;
 }
 
@@ -512,26 +501,24 @@ const clearAndReselect = () => {
 .bot-name {
   font-size: 15px;
   font-weight: 500;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: $color-text-regular;
+  @include text-ellipsis;
 }
 
 .bot-qq {
   font-size: 12px;
-  color: #808080;
+  color: $color-text-muted;
   margin-top: 1px;
 }
 
 .no-bots {
   text-align: center;
-  color: #808080;
+  color: $color-text-muted;
 }
 
 .no-bots .hint {
   font-size: 12px;
-  color: #999;
+  color: $color-text-light;
   margin: 4px 0 0;
 }
 
@@ -541,16 +528,16 @@ const clearAndReselect = () => {
   align-items: center;
   gap: 12px;
   margin: 16px 0;
-  color: #808080;
+  color: $color-text-muted;
   font-size: 12px;
-}
 
-.divider::before,
-.divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: #dee2e6;
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: $color-border;
+  }
 }
 
 .retry-section {
@@ -564,29 +551,29 @@ const clearAndReselect = () => {
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  border-radius: 8px;
+  border-radius: $radius-card;
   background: rgba(240, 246, 255, 0.7);
-  border: 2px solid rgba(0, 153, 255, 0.4);
+  border: 2px solid $color-primary-mid;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+  transition: background $transition-fast, transform 0.1s, border-color $transition-normal, box-shadow $transition-normal;
   margin-bottom: 14px;
-}
 
-.saved-account-card:hover {
-  background: rgba(224, 238, 255, 0.8);
-  border-color: #0099ff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 153, 255, 0.1);
-}
+  &:hover {
+    background: rgba(224, 238, 255, 0.8);
+    border-color: $color-primary;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($color-primary, 0.1);
+  }
 
-.saved-account-card:active {
-  background: rgba(210, 228, 255, 0.85);
-  transform: translateY(0);
+  &:active {
+    background: rgba(210, 228, 255, 0.85);
+    transform: translateY(0);
+  }
 }
 
 .saved-account-avatar {
-  width: 48px;
-  height: 48px;
+  width: $avatar-xl;
+  height: $avatar-xl;
 }
 
 .saved-account-info {
@@ -596,18 +583,18 @@ const clearAndReselect = () => {
 .saved-account-name {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: $color-text-regular;
 }
 
 .saved-account-mode {
   font-size: 12px;
-  color: #0099ff;
+  color: $color-primary;
   margin-top: 2px;
 }
 
 .saved-account-enter {
   font-size: 13px;
-  color: #0099ff;
+  color: $color-primary;
   font-weight: 500;
   white-space: nowrap;
 }
@@ -628,18 +615,18 @@ const clearAndReselect = () => {
   gap: 8px;
   cursor: pointer;
   user-select: none;
-}
 
-.auto-login-toggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #0099ff;
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: $color-primary;
+  }
 }
 
 .toggle-label {
   font-size: 13px;
-  color: #666;
+  color: $color-text-secondary;
 }
 
 /* 加载动画 */
@@ -648,23 +635,12 @@ const clearAndReselect = () => {
 }
 
 .loading-spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid rgba(0, 0, 0, 0.06);
-  border-top-color: #0099ff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  @include loading-spinner;
   margin: 0 auto 14px;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .loading-text {
-  color: #808080;
+  color: $color-text-muted;
   font-size: 14px;
   margin: 0;
 }
@@ -675,41 +651,39 @@ const clearAndReselect = () => {
 }
 
 .direct-connect-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
   gap: 8px;
   margin-bottom: 10px;
-}
 
-.direct-connect-header h3 {
-  margin: 0;
-  font-size: 15px;
-  color: #333;
-  font-weight: 500;
+  h3 {
+    margin: 0;
+    font-size: 15px;
+    color: $color-text-regular;
+    font-weight: 500;
+  }
 }
 
 .direct-connect-empty-hint {
   text-align: center;
-  color: #808080;
+  color: $color-text-muted;
   font-size: 13px;
   margin: 16px 0 0 0;
 }
 
 .direct-connection-entry {
   background: rgba(245, 245, 245, 0.5);
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
+  border: 1px solid $color-border;
+  border-radius: $radius-card;
   padding: 12px 14px;
   margin-bottom: 12px;
 }
 
 .direct-connection-fields .form-group {
   margin-bottom: 8px;
-}
 
-.direct-connection-fields .form-group:last-child {
-  margin-bottom: 0;
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .direct-connection-actions {
@@ -720,8 +694,7 @@ const clearAndReselect = () => {
 }
 
 .saved-connections-list {
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
   gap: 6px;
 }
 
@@ -730,8 +703,8 @@ const clearAndReselect = () => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #dee2e6;
+  border-radius: $radius-card;
+  border: 1px solid $color-border;
   background: rgba(255, 255, 255, 0.5);
   gap: 8px;
 }
@@ -744,20 +717,16 @@ const clearAndReselect = () => {
 
 .saved-connection-uri {
   font-size: 13px;
-  color: #333;
+  color: $color-text-regular;
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include text-ellipsis;
 }
 
 .saved-connection-token {
   font-size: 11px;
-  color: #808080;
+  color: $color-text-muted;
   margin-top: 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include text-ellipsis;
 }
 
 .saved-connection-actions {
@@ -769,10 +738,10 @@ const clearAndReselect = () => {
 
 .direct-hint {
   font-size: 12px;
-  color: #e67e22;
+  color: $color-warning;
   background: rgba(254, 243, 226, 0.7);
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: $radius-btn;
   margin-bottom: 14px;
   text-align: left;
 }
@@ -780,156 +749,102 @@ const clearAndReselect = () => {
 .form-group {
   margin-bottom: 12px;
   text-align: left;
-}
 
-.form-group label {
-  display: block;
-  font-size: 12px;
-  color: #808080;
-  margin-bottom: 4px;
-  font-weight: 500;
+  label {
+    display: block;
+    font-size: 12px;
+    color: $color-text-muted;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
 }
 
 .form-input {
+  @extend %input-base;
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  background: rgba(255, 255, 255, 0.6);
-  color: #333;
-}
 
-.form-input:focus {
-  border-color: #0099ff;
-  box-shadow: 0 0 0 2px rgba(0, 153, 255, 0.1);
-  background: rgba(255, 255, 255, 0.85);
-}
+  &:focus {
+    @extend %input-base-focus;
+  }
 
-.form-input::placeholder {
-  color: #bbb;
+  &::placeholder {
+    color: $color-text-lighter;
+  }
 }
 
 /* 统一按钮样式 */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include btn-base;
   padding: 8px 20px;
-  border: none;
-  border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s;
-  outline: 0;
   width: 100%;
 }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .btn--secondary {
-  background: rgba(0, 0, 0, 0.04);
-  color: #333;
-}
-
-.btn--secondary:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.08);
-}
-
-.btn--secondary:active:not(:disabled) {
-  transform: scale(0.98);
-  background: rgba(0, 0, 0, 0.12);
+  @include btn-secondary;
 }
 
 .btn--save {
   background: rgba(0, 0, 0, 0.04);
-  color: #333;
+  color: $color-text-regular;
   flex: 1;
   width: auto;
-}
 
-.btn--save:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.08);
-}
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.08);
+  }
 
-.btn--save:active:not(:disabled) {
-  transform: scale(0.98);
-  background: rgba(0, 0, 0, 0.12);
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+    background: rgba(0, 0, 0, 0.12);
+  }
 }
 
 .btn--cancel {
   background: transparent;
-  color: #808080;
+  color: $color-text-muted;
   flex: 1;
   width: auto;
-  border: 1px solid #dee2e6;
-}
+  border: 1px solid $color-border;
 
-.btn--cancel:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.04);
-  color: #333;
-}
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.04);
+    color: $color-text-regular;
+  }
 
-.btn--cancel:active:not(:disabled) {
-  transform: scale(0.98);
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
 }
 
 .btn--connect {
   background: rgba(0, 0, 0, 0.04);
-  color: #333;
+  color: $color-text-regular;
   font-size: 13px;
   padding: 6px 14px;
   width: auto;
   white-space: nowrap;
-}
 
-.btn--connect:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.08);
-}
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.08);
+  }
 
-.btn--connect:active:not(:disabled) {
-  transform: scale(0.98);
-  background: rgba(0, 0, 0, 0.12);
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+    background: rgba(0, 0, 0, 0.12);
+  }
 }
 
 .btn--icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  background: transparent;
-  color: #808080;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  margin: 0;
-  flex-shrink: 0;
-}
-
-.btn--icon:hover {
-  background: #ebebeb;
-  color: #333;
-  border-color: #ccc;
-}
-
-.btn--icon:active {
-  background: #e0e0e0;
-  transform: scale(0.95);
+  @include btn-icon;
 }
 
 .btn--danger:hover {
   background: #fee;
-  color: #e81123;
+  color: $color-danger;
   border-color: #fcc;
 }
 </style>

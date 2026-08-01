@@ -4,7 +4,7 @@ import LoadingSpinner from '../../Common/Widgets/LoadingSpinner.vue'
 import CustomScrollBar from '../../Common/Scrolling/CustomScrollBar.vue'
 import LicenseItemCard from './LicenseItemCard.vue'
 import QIcon from "../../Common/Icons/QIcon.vue";
-import { DestKey } from "../../../scripts/view-keys.js";  // 新增子组件
+import { DestKey } from "@/scripts/view-keys.js";
 
 export default defineComponent({
   name: "LicenseView",
@@ -149,7 +149,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .license-view {
   display: flex;
   flex-direction: column;
@@ -157,7 +157,7 @@ export default defineComponent({
 
 .license-view-header {
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid $color-border;
   padding: 6px 10px;
 }
 
@@ -214,7 +214,7 @@ export default defineComponent({
 
 .license-error-text {
   margin: 0;
-  color: #e74c3c;
+  color: $color-text-danger;
   font-size: 14px;
   text-align: center;
 }
@@ -236,27 +236,27 @@ export default defineComponent({
 .license-section-title {
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: $color-text-regular;
 }
 
 .license-section-count {
   font-size: 12px;
-  color: #999;
+  color: $color-text-light;
 }
 
 .license-empty-hint {
   border-radius: 8px;
-  background-color: white;
+  background-color: $color-bg-card;
   padding: 16px;
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   font-size: 14px;
 }
 
 /* ---- QQ 资源声明 ---- */
 .license-qq-notice {
   border-radius: 10px;
-  background-color: white;
+  background-color: $color-bg-card;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;

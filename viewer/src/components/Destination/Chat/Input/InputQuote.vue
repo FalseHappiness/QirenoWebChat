@@ -1,8 +1,8 @@
 <script>
 import { defineComponent, h } from 'vue'
-import { parseMessagePreview } from "../../../../scripts/parse-message.js";
+import { parseMessagePreview } from "@/scripts/parse-message.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
-import { CacheNameKey, fetchDisplayName } from "../../../../scripts/user-info-util.js";
+import { CacheNameKey, fetchDisplayName } from "@/scripts/user-info-util.js";
 
 export default defineComponent({
   name: "InputQuote",
@@ -79,14 +79,14 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .quoted-message {
-  background-color: rgb(0 0 0 / 5%);
+  background-color: $color-bg-quote;
   min-height: 20px;
   cursor: default;
   display: inline-block;
   padding: 5px 10px;
-  border-radius: 8px;
+  border-radius: $radius-card;
   max-width: 100%;
 }
 
@@ -95,15 +95,14 @@ export default defineComponent({
 }
 
 .remove-quote-btn {
-  color: gray;
+  color: $color-text-muted;
   width: 15px;
   height: 15px;
   margin: 0 0 2px 10px;
 }
 
 .quoted-msg-content-container {
-  display: flex;
-  flex-direction: row;
+  @extend %flex-row;
   align-items: flex-end;
 }
 

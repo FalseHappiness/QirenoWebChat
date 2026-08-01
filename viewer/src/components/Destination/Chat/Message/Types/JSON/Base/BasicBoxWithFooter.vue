@@ -24,13 +24,13 @@ export default defineComponent({
   </BasicBox>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 hr {
   height: 0;
   border: 0;
   margin: 4px 0 2px 0;
   width: 100%;
-  border-bottom: 1px solid #e1e1e3;
+  border-bottom: 1px solid $color-border-light;
 }
 
 .footer {

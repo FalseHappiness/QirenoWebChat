@@ -62,11 +62,11 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .markdown-message {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;
-  color: #333;
+  color: $color-text-regular;
   display: block;
 }
 
@@ -126,8 +126,8 @@ export default {
 }
 
 .markdown-message :deep(blockquote) {
-  border-left: 2px solid #f2f2f2;
-  color: #999999;
+  border-left: 2px solid $color-bg-card-alt;
+  color: $color-text-light;
   padding: 0 1em;
   margin: 0 0 8px 0;
 }

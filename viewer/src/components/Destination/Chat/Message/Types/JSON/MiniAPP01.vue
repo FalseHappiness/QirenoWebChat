@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref } from "vue";
-import { getMultimediaProxyUrl } from "../../../../../../scripts/backend-api.js";
-import { qqAppImg } from "../../../../../../composables/useBase.js";
+import { qqAppImg } from "@/composables/useBase.js";
 
 const props = defineProps({
   json: Object
@@ -33,15 +32,14 @@ const isLoaded = ref(false)
   </a>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-mini-app-01 {
   width: 270px;
   max-width: 100%;
   display: block;
-  background-color: white;
+  @include card($radius-sm);
   color: black;
   text-decoration: none !important;
-  border-radius: 4px;
   padding: 8px 12px 5px 12px;
   height: auto;
 }
@@ -60,7 +58,7 @@ const isLoaded = ref(false)
 
 .preview-image {
   width: 100%;
-  border-radius: 3px;
+  border-radius: $radius-xs;
 }
 
 hr {
@@ -68,7 +66,7 @@ hr {
   border: 0;
   margin: 10px 0 5px 0;
   width: 100%;
-  background-color: #e1e1e3;
+  background-color: $color-border-light;
 }
 
 .footer img {

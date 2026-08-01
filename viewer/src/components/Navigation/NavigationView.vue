@@ -4,7 +4,7 @@ import CategorizedContactsView from './CategorizedContactsView.vue'
 import SettingsView from './SettingsView.vue'
 import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
 import QMaskIcon from "../Common/Icons/QMaskIcon.vue";
-import { NavKey } from "../../scripts/view-keys.js";
+import { NavKey } from "@/scripts/view-keys.js";
 import RecentContactsView from "./RecentContacts/RecentContactsView.vue";
 
 const sidebarResize = ({ width }) => {
@@ -72,20 +72,19 @@ const changeNavView = key => currentNavView.value = key
 }
 </style>
 
-<style scoped>
+<style scoped lang="scss">
 .sidebar {
-  width: 250px;
-  background: #F5F5F5;
+  width: $sidebar-width;
+  background: $color-bg-sidebar;
   height: 100% !important;
   overflow: hidden;
-  border-right: 1px solid #dee2e6;
+  border-right: 1px solid $color-border;
   flex: none;
   max-width: calc(100% - 390px);
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
 }
 
-@media (max-width: 570px) {
+@include mobile {
   .sidebar {
     width: 100% !important;
     max-width: 100%;
@@ -93,10 +92,9 @@ const changeNavView = key => currentNavView.value = key
 }
 
 .navigation-bar {
-  height: 52px;
-  border-top: 1px solid #dee2e6;
-  display: flex;
-  flex-direction: row;
+  height: $navigation-bar-height;
+  border-top: 1px solid $color-border;
+  @extend %flex-row;
   flex-wrap: nowrap;
   align-items: center;
   justify-content: space-around;
@@ -109,11 +107,11 @@ const changeNavView = key => currentNavView.value = key
 }
 
 .nav-function-button:hover {
-  background-color: #EBEBEB;
+  background-color: $color-bg-hover;
 }
 
 .nav-function-button:active {
-  background-color: #E7E7E7;
+  background-color: $color-bg-nav-active;
 }
 
 .nav-function-button:deep(svg) {
@@ -122,11 +120,11 @@ const changeNavView = key => currentNavView.value = key
 }
 
 .nav-function-button:active:deep(svg) {
-  color: #B9B9B9;
+  color: $color-bg-nav-active-svg;
 }
 
 .nav-function-button.active:deep(.icon-new) {
-  color: #0099ff !important;
+  color: $color-primary !important;
 }
 </style>
 

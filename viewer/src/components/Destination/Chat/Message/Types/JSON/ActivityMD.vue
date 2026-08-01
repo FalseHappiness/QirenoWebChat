@@ -38,7 +38,7 @@ export default defineComponent({
   </BasicBoxWithFooter>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .activity-md-preview-img {
   width: 100%;
   max-height: 500px;
@@ -54,7 +54,7 @@ export default defineComponent({
 .activity-md-button {
   color: white;
   border-radius: 15px;
-  background-color: #0099ff;
+  background-color: $color-primary;
   margin: 5px 0 10px 0;
   padding: 5px;
   text-align: center;

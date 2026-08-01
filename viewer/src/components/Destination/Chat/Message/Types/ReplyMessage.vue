@@ -1,9 +1,9 @@
 <script>
 import { h } from 'vue'
-import { parseMessagePreview } from "../../../../../scripts/parse-message.js";
+import { parseMessagePreview } from "@/scripts/parse-message.js";
 
-import { isEmptyObject } from "../../../../../scripts/types-util.js";
-import { CacheNameKey, fetchDisplayName } from "../../../../../scripts/user-info-util.js";
+import { isEmptyObject } from "@/scripts/types-util.js";
+import { CacheNameKey, fetchDisplayName } from "@/scripts/user-info-util.js";
 
 export default {
   name: "ReplyMessage",
@@ -95,7 +95,7 @@ export default {
   <div
     class="reply-message no-user-select"
     v-if="!isEmptyObject(msg)"
-    :style="{ color: '#5a5a5a' }"
+    style="color: #5a5a5a"
     @click="scrollToMidway(msg)"
     ref="container"
   >
@@ -111,7 +111,7 @@ export default {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .reply-message {
   border-radius: 2px;
   border-left: 2px solid rgba(131, 131, 131, 0.5);
@@ -120,10 +120,10 @@ export default {
   font-size: 12px;
   padding: 2px 8px 0 8px;
   cursor: default;
-}
 
-.reply-message:hover {
-  background-color: rgb(0 0 0 / 5%);;
+  &:hover {
+    background-color: rgb(0 0 0 / 5%);
+  }
 }
 
 .top_24 {
@@ -133,20 +133,19 @@ export default {
 }
 
 .header {
-  display: flex;
-  flex-direction: row;
+  @extend %flex-row;
   align-items: center;
   justify-content: space-between;
 }
 
 .user-name {
   margin: 0;
-}
 
-.user-name:deep(.msg-preview-emoji) {
-  height: 16px !important;
-  width: 16px;
-  top: 0 !important;
+  &:deep(.msg-preview-emoji) {
+    height: 16px !important;
+    width: 16px;
+    top: 0 !important;
+  }
 }
 </style>
 

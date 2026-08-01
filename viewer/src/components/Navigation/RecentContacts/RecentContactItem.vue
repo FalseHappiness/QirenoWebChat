@@ -1,11 +1,11 @@
 <!-- RecentContactItem.vue -->
 <script setup>
 import { computed, ref, onMounted, h, watch, inject } from "vue";
-import { parseMessagePreview, parseNoticePreview } from "../../../scripts/parse-message.js";
-import { getGroupLogo, getUserLogo } from "../../../scripts/backend-api.js";
+import { parseMessagePreview, parseNoticePreview } from "@/scripts/parse-message.js";
+import { getGroupLogo, getUserLogo } from "@/scripts/backend-api.js";
 import { basicContextItem, vCustomMenu } from "../../../directives/context-menu.js";
-import { copy } from "../../../scripts/clipboard.js";
-import { formatRelativeTime, parseJSON } from "../../../scripts/util.js";
+import { copy } from "@/scripts/clipboard.js";
+import { formatRelativeTime, parseJSON } from "@/scripts/util.js";
 import { CacheNameKey, fetchDisplayName, getContactNameRef } from "../../../scripts/user-info-util.js";
 
 const props = defineProps({
@@ -175,38 +175,43 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .recent-contact-item {
   padding: 10px;
   cursor: pointer;
-  /*border-bottom: 1px solid #eee;*/
   display: flex;
   align-items: center;
   height: 60px;
   margin: 5px 4px;
-  border-radius: 6px;
-}
+  border-radius: $radius-btn;
 
-.recent-contact-item:hover {
-  background-color: #EBEBEB;
-}
+  &:hover {
+    background-color: $color-bg-hover;
+  }
 
-.recent-contact-item:active {
-  background-color: #e0e0e0;
-}
+  &:active {
+    background-color: $color-bg-active;
+  }
 
-.recent-contact-item.active {
-  background-color: #E2E2E2 !important;
-}
+  &.active {
+    background-color: $color-bg-active-contact !important;
 
-.recent-contact-item.active:active {
-  background-color: #D7D7D7 !important;
+    &:active {
+      background-color: $color-bg-active-contact-pressed !important;
+    }
+
+    .text-error {
+      color: #ff8894 !important;
+    }
+
+    .contact-name.text-muted {
+      opacity: 0.5;
+    }
+  }
 }
 
 .contact-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  @include avatar(40px);
   float: left;
   margin-right: 10px;
 }
@@ -214,9 +219,8 @@ onMounted(async () => {
 .contact-info {
   flex: 1;
   line-height: 18px;
-  /*max-width: calc(100% - 60px);*/
   overflow: hidden;
-  text-overflow: ellipsis;
+  @include text-ellipsis;
 }
 
 .text-muted {
@@ -229,15 +233,7 @@ onMounted(async () => {
 }
 
 .text-error {
-  color: #dc3545 !important;
-}
-
-.recent-contact-item.active .text-error {
-  color: #ff8894 !important;
-}
-
-.recent-contact-item.active .contact-name.text-muted {
-  opacity: 0.5;
+  color: $color-error !important;
 }
 
 .recent-contact-item:deep(.msg-preview-emoji) {

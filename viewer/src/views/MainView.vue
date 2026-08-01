@@ -493,12 +493,11 @@ onUnmounted(destroy)
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .main-view {
   height: 100%;
   width: 100%;
-  display: flex;
-  flex-direction: column;
+  @extend %flex-column;
 }
 
 .chat-container {

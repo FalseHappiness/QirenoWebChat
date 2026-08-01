@@ -98,7 +98,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 /* ---- 项目自身卡片 ---- */
 .license-self-card {
   border-radius: 8px;
@@ -118,18 +118,18 @@ export default defineComponent({
 .license-self-name {
   font-size: 16px;
   font-weight: 600;
-  color: #0099ff;
+  color: $color-primary;
 }
 
 .license-self-version {
   font-size: 13px;
-  color: #808080;
+  color: $color-text-muted;
 }
 
 .license-self-desc {
   margin: 0;
   font-size: 13px;
-  color: #555;
+  color: $color-text-note;
   line-height: 1.5;
 }
 
@@ -152,12 +152,12 @@ export default defineComponent({
 
 .license-self-author {
   font-size: 13px;
-  color: #808080;
+  color: $color-text-muted;
 }
 
 .license-self-link {
   font-size: 13px;
-  color: #0099ff;
+  color: $color-primary;
   text-decoration: none;
   align-self: flex-start;
 }
@@ -186,13 +186,13 @@ export default defineComponent({
 .license-item-name {
   font-size: 15px;
   font-weight: 500;
-  color: #333;
+  color: $color-text-regular;
   word-break: break-all;
 }
 
 .license-item-version {
   font-size: 12px;
-  color: #808080;
+  color: $color-text-muted;
 }
 
 .license-item-license-tag {
@@ -208,7 +208,7 @@ export default defineComponent({
 .license-item-desc {
   margin: 0;
   font-size: 13px;
-  color: #555;
+  color: $color-text-note;
   line-height: 1.5;
 }
 
@@ -221,12 +221,12 @@ export default defineComponent({
 
 .license-item-author {
   font-size: 12px;
-  color: #808080;
+  color: $color-text-muted;
 }
 
 .license-item-link {
   font-size: 12px;
-  color: #0099ff;
+  color: $color-primary;
   text-decoration: none;
 }
 
@@ -241,7 +241,7 @@ export default defineComponent({
 
 .license-expand-trigger {
   font-size: 12px;
-  color: #0099ff;
+  color: $color-primary;
   user-select: none;
   display: inline-flex;
   align-items: center;

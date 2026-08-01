@@ -164,7 +164,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .contacts-picker-contacts-area {
   width: 50%;
   border-right: 1px solid #e6e6e6;
@@ -270,7 +270,7 @@ export default defineComponent({
   width: 14px;
   height: 14px;
   color: #ffffff;
-  background-color: #b8b8b8;
+  background-color: $color-text-light;
   border-radius: 50%;
 }
 
@@ -296,41 +296,41 @@ export default defineComponent({
 }
 
 .contacts-picker-button-confirm {
-  background-color: #0099ff;
+  background-color: $color-primary;
   color: white;
 }
 
 .contacts-picker-button-confirm:hover {
-  background-color: #008be6;
+  background-color: $color-bg-primary-hover;
 }
 
 .contacts-picker-button-confirm:active {
-  background-color: #0076c5;
+  background-color: $color-bg-primary-active;
   color: rgba(255, 255, 255, 0.4);
 }
 
 .contacts-picker-button-cancel {
-  border: 1px solid #c4c4c4;
+  border: 1px solid $color-border-cancel;
   color: black;
 }
 
 .contacts-picker-button-cancel:hover {
-  background-color: #efefef;
+  background-color: $color-bg-hover-alt;
 }
 
 .contacts-picker-button-cancel:active {
-  background-color: #d8d8d8;
-  color: gray;
+  background-color: $color-bg-active-alt;
+  color: $color-text-muted;
 }
 
 .contacts-picker-contacts-area-search {
   margin: 5px 12px 5px 5px;
-  background-color: #f1f1f1;
+  background-color: $color-bg-search;
   border-radius: 6px;
   display: flex;
   height: 28px;
   align-items: center;
-  border: 1px solid #f1f1f1;
+  border: 1px solid $color-bg-search;
   overflow: hidden;
 }
 
@@ -338,7 +338,7 @@ export default defineComponent({
   height: 18px;
   width: 18px;
   margin: 0 4px 0 6px;
-  color: gray;
+  color: $color-text-muted;
   flex-shrink: 0;
 }
 

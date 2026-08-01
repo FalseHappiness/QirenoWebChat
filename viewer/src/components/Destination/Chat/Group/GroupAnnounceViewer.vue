@@ -1,12 +1,12 @@
 <script>
 import { defineComponent } from 'vue'
-import { getGroupNoticePicUrl } from "../../../../scripts/backend-api.js";
-import { convertMessageTextHTMLSyntax } from "../../../../scripts/parse-message.js";
+import { getGroupNoticePicUrl } from "@/scripts/backend-api.js";
+import { convertMessageTextHTMLSyntax } from "@/scripts/parse-message.js";
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
-import { formatTimeOptions } from "../../../../scripts/util.js";
+import { formatTimeOptions } from "@/scripts/util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
-import { CacheNameKey, fetchDisplayName } from "../../../../scripts/user-info-util.js";
+import { CacheNameKey, fetchDisplayName } from "@/scripts/user-info-util.js";
 
 export default defineComponent({
   name: "GroupAnnounceViewer",
@@ -114,13 +114,13 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .group-announce-viewer-title {
   text-align: center;
   font-weight: bold;
   font-size: 16px;
   padding: 5px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid $color-border-faint;
   user-select: none;
   position: relative;
 }
@@ -144,20 +144,20 @@ export default defineComponent({
 .group-announce-viewer-notice {
   padding: 12px;
   margin-bottom: 10px;
-  background-color: white;
+  background-color: $color-bg-card;
   border-radius: 4px;
-  border: 1px solid #eee;
+  border: 1px solid $color-border-faint;
 }
 
 .group-announce-viewer-notice:hover {
-  background-color: #EBEBEB;
+  background-color: $color-bg-hover;
 }
 
 .group-announce-viewer-notice-header {
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: #7F7F7F;
+  color: $color-text-gray;
   gap: 4px;
 }
 
@@ -166,8 +166,8 @@ export default defineComponent({
 }
 
 .group-announce-viewer-notice-pinned {
-  color: #0099FF;
-  background-color: #CCEBFF;
+  color: $color-primary;
+  background-color: $color-bg-message-out;
   border-radius: 4px;
   padding: 0 4px;
   font-size: 10px;
@@ -201,7 +201,7 @@ export default defineComponent({
 
 .group-announce-viewer-empty {
   text-align: center;
-  color: #999;
+  color: $color-text-light;
   padding: 40px 0;
   font-size: 14px;
 }
@@ -214,6 +214,6 @@ export default defineComponent({
   padding: 4px 2px;
   max-width: calc(100% - 20px);
   max-height: calc(100% - 20px);
-  background-color: #F5F5F5;
+  background-color: $color-bg-page;
 }
 </style>

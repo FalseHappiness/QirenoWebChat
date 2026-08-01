@@ -1,0 +1,183 @@
+// ============================================================
+// 常用 %placeholders — 通过 @extend 复用
+// ============================================================
+@use "./variables" as *;
+
+// ---- 卡片 ----
+%card {
+  background-color: $color-bg-card;
+  border-radius: $radius-card;
+}
+
+%card-with-shadow {
+  @extend %card;
+  box-shadow: $shadow-card;
+}
+
+// ---- 头像圆形 ----
+%avatar-rounded {
+  border-radius: $radius-avatar;
+  flex-shrink: 0;
+}
+
+%avatar-sm {
+  @extend %avatar-rounded;
+  width: $avatar-sm;
+  height: $avatar-sm;
+}
+
+%avatar-md {
+  @extend %avatar-rounded;
+  width: $avatar-md;
+  height: $avatar-md;
+}
+
+%avatar-lg {
+  @extend %avatar-rounded;
+  width: $avatar-lg;
+  height: $avatar-lg;
+}
+
+%avatar-xl {
+  @extend %avatar-rounded;
+  width: $avatar-xl;
+  height: $avatar-xl;
+}
+
+%avatar-msg {
+  @extend %avatar-rounded;
+  width: $avatar-msg;
+  height: $avatar-msg;
+}
+
+// ---- 文本溢出 ----
+%text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ---- flex 居中 ----
+%flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+%flex-center-children {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ---- 交互反馈 ----
+%hover-bg {
+  &:hover {
+    background-color: $color-bg-hover;
+  }
+}
+
+%active-bg {
+  &:active {
+    background-color: $color-bg-active;
+  }
+}
+
+%hover-active-bg {
+  @extend %hover-bg;
+  @extend %active-bg;
+}
+
+// ---- 轻量悬停（rgb半透明） ----
+%hover-light {
+  &:hover {
+    background-color: $color-bg-hover-light;
+  }
+}
+
+%active-light {
+  &:active {
+    background-color: $color-bg-active-light;
+  }
+}
+
+%hover-active-light {
+  @extend %hover-light;
+  @extend %active-light;
+}
+
+// ---- 消息气泡容器 ----
+%message-container {
+  width: 100%;
+  display: flex;
+  position: relative;
+  padding: 10px 0;
+}
+
+// ---- 消息气泡内容 ----
+%message-bubble {
+  padding: 7px 14px;
+  border-radius: $radius-bubble;
+  display: inline-block;
+  line-height: 23px;
+  font-size: 16px;
+  min-height: 38px;
+  min-width: 30px;
+  direction: ltr;
+  text-align: left;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+
+// ---- 弹性容器 ----
+%flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+%flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+// ---- 无用户选择 ----
+%no-user-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -moz-user-drag: none;
+  -ms-user-drag: none;
+  user-drag: none;
+}
+
+// ---- 绝对定位全屏 ----
+%absolute-fill {
+  position: absolute;
+  inset: 0;
+}
+
+// ---- 边框底部分割线 ----
+%border-bottom {
+  border-bottom: 1px solid $color-border;
+}
+
+// ---- 输入框基础 ----
+%input-base {
+  outline: none;
+  border: 1px solid $color-border;
+  border-radius: $radius-btn;
+  font-size: 14px;
+  transition: border-color $transition-normal, box-shadow $transition-normal;
+  background: $color-bg-input;
+  color: $color-text-regular;
+}
+
+%input-base-focus {
+  border-color: $color-primary;
+  box-shadow: 0 0 0 2px $color-primary-light;
+  background: rgba(255, 255, 255, 0.85);
+}
