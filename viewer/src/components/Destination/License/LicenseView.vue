@@ -236,14 +236,14 @@ export default defineComponent({
 
 .license-section-count {
   font-size: 12px;
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .license-empty-hint {
   @extend %card;
   padding: $spacing-lg;
   text-align: center;
-  color: $color-text-light;
+  color: $color-text-muted;
   font-size: 14px;
 }
 

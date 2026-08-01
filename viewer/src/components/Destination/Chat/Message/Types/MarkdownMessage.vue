@@ -127,7 +127,7 @@ export default {
 
 .markdown-message :deep(blockquote) {
   border-left: 2px solid $color-bg-card-alt;
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: 0 1em;
   margin: 0 0 8px 0;
 }

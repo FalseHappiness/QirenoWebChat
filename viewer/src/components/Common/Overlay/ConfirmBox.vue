@@ -45,20 +45,18 @@ export default defineComponent({
                  :on-cancel="onCancel"
                  :container-styles="$style['confirm-box-container']"
                  ref="popUp">
-      <template #default>
-        <div class="confirm-box-header">
-          <span class="confirm-box-title">{{ title }}</span>
+      <div class="confirm-box-header">
+        <span class="confirm-box-title">{{ title }}</span>
+      </div>
+      <div class="confirm-box-body">
+        <p class="confirm-box-content">{{ content }}</p>
+      </div>
+      <div class="confirm-box-footer">
+        <div class="confirm-box-buttons-container">
+          <div class="confirm-box-button confirm-box-button-confirm" @click="confirm(true)">{{ confirmText }}</div>
+          <div class="confirm-box-button confirm-box-button-cancel" @click="confirm(false)">{{ cancelText }}</div>
         </div>
-        <div class="confirm-box-body">
-          <p class="confirm-box-content">{{ content }}</p>
-        </div>
-        <div class="confirm-box-footer">
-          <div class="confirm-box-buttons-container">
-            <div class="confirm-box-button confirm-box-button-confirm" @click="confirm(true)">{{ confirmText }}</div>
-            <div class="confirm-box-button confirm-box-button-cancel" @click="confirm(false)">{{ cancelText }}</div>
-          </div>
-        </div>
-      </template>
+      </div>
     </SimplePopUp>
   </div>
 </template>

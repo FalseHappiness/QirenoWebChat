@@ -75,47 +75,33 @@ export default defineComponent({
                  :on-cancel="onCancel"
                  :container-styles="$style['contacts-picker-container']"
                  ref="popUp">
-      <template #default>
-        <div class="contacts-picker-contacts-area">
-          <div class="contacts-picker-contacts-area-search">
-            <QIcon name="search_24" class="contacts-picker-contacts-area-search-icon"/>
-            <input @input="filterContactsValue = $event.target.value" placeholder="搜索"
-                   class="contacts-picker-contacts-area-search-input">
-          </div>
-          <div class="contacts-picker-contacts-area-contacts">
-            <CustomScrollBar>
-              <a-checkbox-group v-model:value="selectedContactsKeys" class="width-100">
-                <a-collapse v-if="filteredContacts === undefined"
-                            ghost
-                            v-model:activeKey="collapseActiveKeys"
-                            style="width: 100%">
-                  <template #expandIcon="{ isActive }">
-                    <QIcon
-                      name="arrow_right_small_16"
-                      class="contacts-picker-expand-icon"
-                      :class="{ active: isActive }"
-                    />
-                  </template>
-                  <a-collapse-panel
-                    v-if="categorizedContacts?.length"
-                    v-for="category in categorizedContacts"
-                    :key="category.id"
-                    :header="category.name">
-                    <a-checkbox
-                      v-for="contact in category.contacts"
-                      :value="`${contact.type}.${contact.contact_id}`"
-                      class="contacts-picker-contacts-area-contact">
-                      <img class="contacts-picker-contacts-area-contact-logo" alt=""
-                           :src="getLogo(contact.contact_id, contact.type)"
-                           loading="lazy">
-                      {{ contact.name }}
-                    </a-checkbox>
-                  </a-collapse-panel>
-                </a-collapse>
-                <div v-else style="width: 100%;">
+      <div class="contacts-picker-contacts-area">
+        <div class="contacts-picker-contacts-area-search">
+          <QIcon name="search_24" class="contacts-picker-contacts-area-search-icon"/>
+          <input @input="filterContactsValue = $event.target.value" placeholder="搜索"
+                 class="contacts-picker-contacts-area-search-input">
+        </div>
+        <div class="contacts-picker-contacts-area-contacts">
+          <CustomScrollBar>
+            <a-checkbox-group v-model:value="selectedContactsKeys" class="width-100">
+              <a-collapse v-if="filteredContacts === undefined"
+                          ghost
+                          v-model:activeKey="collapseActiveKeys"
+                          style="width: 100%">
+                <template #expandIcon="{ isActive }">
+                  <QIcon
+                    name="arrow_right_small_16"
+                    class="contacts-picker-expand-icon"
+                    :class="{ active: isActive }"
+                  />
+                </template>
+                <a-collapse-panel
+                  v-if="categorizedContacts?.length"
+                  v-for="category in categorizedContacts"
+                  :key="category.id"
+                  :header="category.name">
                   <a-checkbox
-                    v-if="filteredContacts.length"
-                    v-for="contact in filteredContacts"
+                    v-for="contact in category.contacts"
                     :value="`${contact.type}.${contact.contact_id}`"
                     class="contacts-picker-contacts-area-contact">
                     <img class="contacts-picker-contacts-area-contact-logo" alt=""
@@ -123,43 +109,55 @@ export default defineComponent({
                          loading="lazy">
                     {{ contact.name }}
                   </a-checkbox>
-                  <p v-else style="color: gray;text-align: center">无搜索结果</p>
-                </div>
-              </a-checkbox-group>
-            </CustomScrollBar>
-          </div>
-        </div>
-        <div class="contacts-picker-preview-area">
-          <div class="contacts-picker-selected-info">
-            <span>{{ selectedContactsKeys?.length > 1 ? '分别' : '' }}发送给：</span>
-            <span style="color: gray;" v-if="selectedContactsKeys?.length">
-              已选 {{ selectedContactsKeys.length }} 个联系人
-            </span>
-          </div>
-          <div class="contacts-picker-selected-contacts-area">
-            <CustomScrollBar style="padding-right: 9px;">
-              <div
-                v-for="contact in selectedContacts"
-                class="contacts-picker-contacts-area-contact"
-                @click="selectedContactsKeys = selectedContactsKeys.filter(key => key !== `${contact.type}.${contact.contact_id}`)">
-                <div class="contacts-picker-contacts-area-contact-left">
+                </a-collapse-panel>
+              </a-collapse>
+              <div v-else style="width: 100%;">
+                <a-checkbox
+                  v-if="filteredContacts.length"
+                  v-for="contact in filteredContacts"
+                  :value="`${contact.type}.${contact.contact_id}`"
+                  class="contacts-picker-contacts-area-contact">
                   <img class="contacts-picker-contacts-area-contact-logo" alt=""
                        :src="getLogo(contact.contact_id, contact.type)"
                        loading="lazy">
                   {{ contact.name }}
-                </div>
-                <QIcon name="close_16" class="contacts-picker-contacts-area-contact-close-btn"/>
+                </a-checkbox>
+                <p v-else style="color: gray;text-align: center">无搜索结果</p>
               </div>
-            </CustomScrollBar>
-          </div>
-          <div class="contacts-picker-control-area">
-            <div class="contacts-picker-buttons-container">
-              <div class="contacts-picker-button contacts-picker-button-confirm" @click="confirm(true)">确定</div>
-              <div class="contacts-picker-button contacts-picker-button-cancel" @click="confirm(false)">取消</div>
+            </a-checkbox-group>
+          </CustomScrollBar>
+        </div>
+      </div>
+      <div class="contacts-picker-preview-area">
+        <div class="contacts-picker-selected-info">
+          <span>{{ selectedContactsKeys?.length > 1 ? '分别' : '' }}发送给：</span>
+          <span style="color: gray;" v-if="selectedContactsKeys?.length">
+              已选 {{ selectedContactsKeys.length }} 个联系人
+            </span>
+        </div>
+        <div class="contacts-picker-selected-contacts-area">
+          <CustomScrollBar style="padding-right: 9px;">
+            <div
+              v-for="contact in selectedContacts"
+              class="contacts-picker-contacts-area-contact"
+              @click="selectedContactsKeys = selectedContactsKeys.filter(key => key !== `${contact.type}.${contact.contact_id}`)">
+              <div class="contacts-picker-contacts-area-contact-left">
+                <img class="contacts-picker-contacts-area-contact-logo" alt=""
+                     :src="getLogo(contact.contact_id, contact.type)"
+                     loading="lazy">
+                {{ contact.name }}
+              </div>
+              <QIcon name="close_16" class="contacts-picker-contacts-area-contact-close-btn"/>
             </div>
+          </CustomScrollBar>
+        </div>
+        <div class="contacts-picker-control-area">
+          <div class="contacts-picker-buttons-container">
+            <div class="contacts-picker-button contacts-picker-button-confirm" @click="confirm(true)">确定</div>
+            <div class="contacts-picker-button contacts-picker-button-cancel" @click="confirm(false)">取消</div>
           </div>
         </div>
-      </template>
+      </div>
     </SimplePopUp>
   </div>
 </template>
@@ -270,7 +268,7 @@ export default defineComponent({
   width: 14px;
   height: 14px;
   color: $color-text-white;
-  background-color: $color-text-light;
+  background-color: $color-text-muted;
   border-radius: 50%;
 }
 

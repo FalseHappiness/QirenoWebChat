@@ -15,7 +15,7 @@ export default defineComponent({
 
 <template>
   <div class="enter-arrow" :style="{ width: size + 'px', height: size + 'px' }">
-    <QIcon name="arrow_right_small_16" style="color: var(--color-text-gray);"></QIcon>
+    <QIcon name="arrow_right_small_16" style="color: var(--color-text-muted);"></QIcon>
   </div>
 </template>
 

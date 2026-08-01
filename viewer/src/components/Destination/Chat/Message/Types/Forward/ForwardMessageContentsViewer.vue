@@ -132,9 +132,8 @@ export default defineComponent({
                  :on-confirm="onClose"
                  :on-cancel="onClose"
                  :container-styles="$style['forward-viewer-container']">
-      <template #default>
-        <!-- 标题栏 -->
-        <div class="fv-head">
+      <!-- 标题栏 -->
+      <div class="fv-head">
           <span class="fv-head-name">
             <span v-if="message_type === 'group'">群聊</span>
             <span v-else-if="message_type === 'private' && isObject(private_users)">{{
@@ -143,61 +142,60 @@ export default defineComponent({
             <span v-else>未知</span>
             <span>的聊天记录</span>
           </span>
-          <QIcon name="close_fill_24" class="fv-close-btn" @click="close"/>
+        <QIcon name="close_fill_24" class="fv-close-btn" @click="close"/>
+      </div>
+
+      <!-- 主体区域 -->
+      <div class="fv-body">
+        <!-- 加载中 -->
+        <div v-if="loading" class="fv-loading text-muted">
+          加载中...
         </div>
 
-        <!-- 主体区域 -->
-        <div class="fv-body">
-          <!-- 加载中 -->
-          <div v-if="loading" class="fv-loading text-muted">
-            加载中...
-          </div>
+        <!-- 错误提示 -->
+        <div v-else-if="error" class="fv-error">
+          {{ error }}
+        </div>
 
-          <!-- 错误提示 -->
-          <div v-else-if="error" class="fv-error">
-            {{ error }}
+        <!-- 消息列表 (仿 ChatArea 聊天气泡布局 / 使用 CustomScrollBar) -->
+        <CustomScrollBar v-else class="fv-messages-wrapper">
+          <div v-if="displayMessages.length === 0" class="fv-empty text-muted">
+            暂无消息
           </div>
-
-          <!-- 消息列表 (仿 ChatArea 聊天气泡布局 / 使用 CustomScrollBar) -->
-          <CustomScrollBar v-else class="fv-messages-wrapper">
-            <div v-if="displayMessages.length === 0" class="fv-empty text-muted">
-              暂无消息
-            </div>
-            <div
-              v-for="(msg, idx) in displayMessages"
-              :key="idx"
-              class="fv-message-container"
-              :class="[
+          <div
+            v-for="(msg, idx) in displayMessages"
+            :key="idx"
+            class="fv-message-container"
+            :class="[
                 msg.self_id === msg.user_id ? 'fv-message-out' : 'fv-message-in',
                 msg.message_type === 'group' ? 'fv-group' : 'fv-private'
               ]"
-            >
-              <!-- 头像 -->
-              <img
-                class="fv-message-avatar"
-                alt=""
-                :src="getUserLogo(msg.user_id)"
-              />
+          >
+            <!-- 头像 -->
+            <img
+              class="fv-message-avatar"
+              alt=""
+              :src="getUserLogo(msg.user_id)"
+            />
 
-              <!-- 消息侧 -->
-              <div class="fv-message-msg-side">
-                <!-- 上方信息：群聊显示名称 + 时间 -->
-                <div class="fv-message-before">
-                  <div class="fv-message-name-title">
-                    <span class="fv-message-name-title-display-name">{{ getDisplayName(msg) }}</span>
-                  </div>
-                  <span class="fv-message-send-time">{{ formatTime(msg.time) }}</span>
+            <!-- 消息侧 -->
+            <div class="fv-message-msg-side">
+              <!-- 上方信息：群聊显示名称 + 时间 -->
+              <div class="fv-message-before">
+                <div class="fv-message-name-title">
+                  <span class="fv-message-name-title-display-name">{{ getDisplayName(msg) }}</span>
                 </div>
+                <span class="fv-message-send-time">{{ formatTime(msg.time) }}</span>
+              </div>
 
-                <!-- 消息气泡 -->
-                <div class="fv-message">
-                  <RenderVNode :vnode="getMessageContent(msg)"/>
-                </div>
+              <!-- 消息气泡 -->
+              <div class="fv-message">
+                <RenderVNode :vnode="getMessageContent(msg)"/>
               </div>
             </div>
-          </CustomScrollBar>
-        </div>
-      </template>
+          </div>
+        </CustomScrollBar>
+      </div>
     </SimplePopUp>
   </div>
 </template>
@@ -328,7 +326,7 @@ export default defineComponent({
 /* ===== 消息上方信息 (仿 MessageItem.message-before) ===== */
 .fv-message-before {
   font-size: 13px;
-  color: $color-text-light !important;
+  color: $color-text-muted !important;
   margin: 0 8px;
   height: 24px;
   white-space: nowrap;

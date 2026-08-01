@@ -801,7 +801,7 @@ export default {
 
 .message-time {
   font-size: 12px;
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .loading-indicator {

@@ -12,20 +12,16 @@ import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import TruncatedText from "../../../Common/Widgets/TruncatedText.vue";
 import { qqFileIcon } from "@/composables/useBase.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
+import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 
 export default defineComponent({
   name: "GroupFilesViewer",
-  components: { QIcon, TruncatedText, SimplePopUp, CustomScrollBar },
+  components: { SimpleWindow, QIcon, TruncatedText, SimplePopUp, CustomScrollBar },
   props: {
     group_id: {
       type: [Number, String],
       required: true
     },
-    onClose: {
-      type: Function,
-      default: () => {
-      }
-    }
   },
   data() {
     return {
@@ -188,9 +184,6 @@ export default defineComponent({
     getFileDownloadUrl(fileItem) {
       return getGroupFileProxyUrl(fileItem.raw.group_id, fileItem.id, fileItem.name)
     },
-    close() {
-      this.$refs.popUp.confirm(false)
-    }
   },
   mounted() {
     this.loadFolder('root')
@@ -200,149 +193,121 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="group-files-viewer">
-    <SimplePopUp ref="popUp"
-                 :on-confirm="onClose"
-                 :on-cancel="onClose"
-                 :container-styles="$style['group-files-viewer-container']">
-      <template #default>
-        <div class="gv-title">
-          群文件
-          <QIcon name="close_fill_24" class="gv-close-btn cannot-drag"
-                 @click="close"/>
+  <SimpleWindow
+    class="group-files-viewer"
+    :width="1000"
+    :height="700"
+    title="群文件">
+    <!-- 工具栏 -->
+    <div class="gv-toolbar">
+      <!-- 面包屑导航 -->
+      <div class="gv-breadcrumb no-scrollbar">
+        <span class="gv-breadcrumb-item" @click="goToRoot">全部文件</span>
+        <template v-for="(p, idx) in pathStack" :key="idx">
+          <span class="gv-breadcrumb-sep">/</span>
+          <span class="gv-breadcrumb-item" @click="goBack">{{ p.folder_name }}</span>
+        </template>
+      </div>
+
+      <!-- 排序和选项 -->
+      <div class="gv-controls">
+        <select v-model="sortBy" class="gv-select" title="排序方式">
+          <option value="new_first">从新到旧</option>
+          <option value="old_first">从旧到新</option>
+          <option value="large_first">从大到小</option>
+          <option value="small_first">从小到大</option>
+        </select>
+        <select v-model="folderOrder" class="gv-select" title="文件夹排列" v-if="pathStack.length === 0">
+          <option value="before">文件夹在前</option>
+          <option value="mixed">{{ isSizeBasedSortBy ? "隐藏文件夹" : "混合排序" }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 文件系统信息 -->
+    <div v-if="fileSysInfo" class="gv-sys-info">
+      <div class="gv-sys-info-text">
+        共 {{ fileSysInfo.file_count || 0 }} 个文件
+        <template v-if="fileSysInfo.limit_count">
+          ，上限 {{ fileSysInfo.limit_count }} 个
+        </template>
+      </div>
+      <div class="gv-storage-bar-wrapper">
+        <div class="gv-storage-bar">
+          <div class="gv-storage-bar-used" :style="{ width: storagePercent + '%' }"></div>
         </div>
-
-        <!-- 工具栏 -->
-        <div class="gv-toolbar">
-          <!-- 面包屑导航 -->
-          <div class="gv-breadcrumb no-scrollbar">
-            <span class="gv-breadcrumb-item" @click="goToRoot">全部文件</span>
-            <template v-for="(p, idx) in pathStack" :key="idx">
-              <span class="gv-breadcrumb-sep">/</span>
-              <span class="gv-breadcrumb-item" @click="goBack">{{ p.folder_name }}</span>
-            </template>
-          </div>
-
-          <!-- 排序和选项 -->
-          <div class="gv-controls">
-            <select v-model="sortBy" class="gv-select" title="排序方式">
-              <option value="new_first">从新到旧</option>
-              <option value="old_first">从旧到新</option>
-              <option value="large_first">从大到小</option>
-              <option value="small_first">从小到大</option>
-            </select>
-            <select v-model="folderOrder" class="gv-select" title="文件夹排列" v-if="pathStack.length === 0">
-              <option value="before">文件夹在前</option>
-              <option value="mixed">{{ isSizeBasedSortBy ? "隐藏文件夹" : "混合排序" }}</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 文件系统信息 -->
-        <div v-if="fileSysInfo" class="gv-sys-info">
-          <div class="gv-sys-info-text">
-            共 {{ fileSysInfo.file_count || 0 }} 个文件
-            <template v-if="fileSysInfo.limit_count">
-              ，上限 {{ fileSysInfo.limit_count }} 个
-            </template>
-          </div>
-          <div class="gv-storage-bar-wrapper">
-            <div class="gv-storage-bar">
-              <div class="gv-storage-bar-used" :style="{ width: storagePercent + '%' }"></div>
-            </div>
-            <span class="gv-storage-text">
+        <span class="gv-storage-text">
               {{ formatFileSize(fileSysInfo.used_space) }} / {{ formatFileSize(fileSysInfo.total_space) }}
             </span>
+      </div>
+    </div>
+
+    <!-- 加载中 -->
+    <div v-if="loading" class="gv-loading">
+      加载中...
+    </div>
+
+    <!-- 错误提示 -->
+    <div v-else-if="error" class="gv-error">
+      {{ error }}
+    </div>
+
+    <!-- 文件列表 -->
+    <CustomScrollBar v-else class="gv-list">
+      <div v-if="sortedItems.length === 0" class="gv-empty">
+        暂无文件
+      </div>
+      <a
+        v-for="(item, idx) in sortedItems"
+        :key="item.type + '-' + item.id + '-' + idx"
+        class="gv-item"
+        :class="{ 'gv-item--folder': item.type === 'folder', 'gv-item--file': item.type === 'file' }"
+        @click="item.type === 'folder' ? enterFolder(item.raw) : undefined"
+        :href="item.type === 'file' ? getFileDownloadUrl(item) : undefined"
+        target="_blank"
+      >
+        <!-- 图标 -->
+        <img
+          v-if="item.type === 'folder'"
+          :src="qqFileIcon('folder.png')"
+          alt=""
+          class="gv-item-icon"
+        >
+        <img
+          v-else
+          :src="qqFileIcon(getFileIcon(item.name))"
+          alt=""
+          class="gv-item-icon"
+        >
+
+        <!-- 信息 -->
+        <div class="gv-item-info">
+          <TruncatedText :content="item.name" one-line class="gv-item-name"/>
+          <div class="gv-item-meta two-lines" v-if="item.type === 'folder'">
+            <span class="gv-item-meta-text">{{ item.total_file_count }} 个文件</span>
+            <span class="gv-item-meta-text">{{ item.creator_name }} 创建于 {{ formatTime(item.create_time) }}</span>
+          </div>
+          <div class="gv-item-meta" v-else>
+            <span class="gv-item-meta-text">{{ formatFileSize(item.file_size) }}</span>
           </div>
         </div>
 
-        <!-- 加载中 -->
-        <div v-if="loading" class="gv-loading">
-          加载中...
+        <div class="gv-item-meta-upload-info">
+          <template v-if="item.type === 'file'">
+            <span class="gv-item-meta-text">{{ formatTime(item.modify_time) }}</span>
+            <span class="gv-item-meta-text">来自: {{ item.uploader_name || item.uploader }}</span>
+          </template>
+          <template v-else>
+            <span class="gv-item-meta-text">{{ formatTime(item.last_upload_time) }}</span>
+            <span class="gv-item-meta-text">更新: {{ item.last_uploader_name || item.last_uploader }}</span>
+          </template>
         </div>
-
-        <!-- 错误提示 -->
-        <div v-else-if="error" class="gv-error">
-          {{ error }}
-        </div>
-
-        <!-- 文件列表 -->
-        <CustomScrollBar v-else class="gv-list">
-          <div v-if="sortedItems.length === 0" class="gv-empty">
-            暂无文件
-          </div>
-          <a
-            v-for="(item, idx) in sortedItems"
-            :key="item.type + '-' + item.id + '-' + idx"
-            class="gv-item"
-            :class="{ 'gv-item--folder': item.type === 'folder', 'gv-item--file': item.type === 'file' }"
-            @click="item.type === 'folder' ? enterFolder(item.raw) : undefined"
-            :href="item.type === 'file' ? getFileDownloadUrl(item) : undefined"
-            target="_blank"
-          >
-            <!-- 图标 -->
-            <img
-              v-if="item.type === 'folder'"
-              :src="qqFileIcon('folder.png')"
-              alt=""
-              class="gv-item-icon"
-            >
-            <img
-              v-else
-              :src="qqFileIcon(getFileIcon(item.name))"
-              alt=""
-              class="gv-item-icon"
-            >
-
-            <!-- 信息 -->
-            <div class="gv-item-info">
-              <TruncatedText :content="item.name" one-line class="gv-item-name"/>
-              <div class="gv-item-meta two-lines" v-if="item.type === 'folder'">
-                <span class="gv-item-meta-text">{{ item.total_file_count }} 个文件</span>
-                <span class="gv-item-meta-text">{{ item.creator_name }} 创建于 {{ formatTime(item.create_time) }}</span>
-              </div>
-              <div class="gv-item-meta" v-else>
-                <span class="gv-item-meta-text">{{ formatFileSize(item.file_size) }}</span>
-              </div>
-            </div>
-
-            <div class="gv-item-meta-upload-info">
-              <template v-if="item.type === 'file'">
-                <span class="gv-item-meta-text">{{ formatTime(item.modify_time) }}</span>
-                <span class="gv-item-meta-text">来自: {{ item.uploader_name || item.uploader }}</span>
-              </template>
-              <template v-else>
-                <span class="gv-item-meta-text">{{ formatTime(item.last_upload_time) }}</span>
-                <span class="gv-item-meta-text">更新: {{ item.last_uploader_name || item.last_uploader }}</span>
-              </template>
-            </div>
-          </a>
-        </CustomScrollBar>
-      </template>
-    </SimplePopUp>
-  </div>
+      </a>
+    </CustomScrollBar>
+  </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
-.gv-title {
-  text-align: center;
-  font-size: 16px;
-  padding: 0 0 2px 0;
-  border-bottom: 1px solid $color-border-divider;
-  user-select: none;
-  position: relative;
-}
-
-.gv-close-btn {
-  float: right;
-  width: 20px;
-  height: 20px;
-  position: absolute;
-  right: 6px;
-  top: 1px;
-  cursor: pointer;
-}
-
 /* 工具栏 */
 .gv-toolbar {
   padding: 8px 20px 0 20px;
@@ -382,7 +347,7 @@ export default defineComponent({
 }
 
 .gv-breadcrumb-sep {
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: 0 2px;
 }
 
@@ -404,7 +369,7 @@ export default defineComponent({
 .gv-sys-info {
   padding: 6px 20px;
   font-size: 12px;
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .gv-storage-bar-wrapper {
@@ -525,26 +490,6 @@ export default defineComponent({
 
   .gv-item-meta-text {
     font-size: 10px;
-  }
-}
-</style>
-
-<style module lang="scss">
-.group-files-viewer-container {
-  width: 1000px;
-  height: 700px;
-  padding: 4px 2px;
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
-  background-color: $color-bg-section;
-}
-
-@media (max-width: 480px) {
-  .group-files-viewer-container {
-    max-width: 100%;
-    max-height: 100%;
-    height: 100%;
-    border-radius: 0;
   }
 }
 </style>

@@ -734,7 +734,7 @@ onUnmounted(() => {
 
 .message-before {
   font-size: 13px;
-  color: $color-text-light !important;
+  color: $color-text-muted !important;
   margin: 0 8px;
   height: 24px;
   white-space: nowrap;

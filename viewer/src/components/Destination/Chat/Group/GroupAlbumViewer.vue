@@ -1,9 +1,9 @@
 <script>
 import { defineComponent } from 'vue'
-import { fetchGroupAlbumList, fetchGroupAlbumMediaList } from "../../../../scripts/backend-api.js"
+import { fetchGroupAlbumList, fetchGroupAlbumMediaList } from "@/scripts/backend-api.js"
 import { formatTimeOptions } from "@/scripts/util.js"
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue"
-import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue"
+import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue"
 import { showInfoToast } from "@/scripts/toast.js";
 import ImageViewer from "../../../Common/Media/ImageViewer.vue";
 import VideoPlayer from "../../../Common/Media/VideoPlayer.vue";
@@ -11,13 +11,9 @@ import QIcon from "../../../Common/Icons/QIcon.vue";
 
 export default defineComponent({
   name: "GroupAlbumViewer",
-  components: { QIcon, CustomScrollBar, SimplePopUp, ImageViewer, VideoPlayer },
+  components: { QIcon, CustomScrollBar, SimpleWindow, ImageViewer, VideoPlayer },
   props: {
     group_id: { type: [Number, String], required: true },
-    onClose: {
-      type: Function, default: () => {
-      }
-    }
   },
   data() {
     return {
@@ -53,6 +49,10 @@ export default defineComponent({
     }
   },
   computed: {
+    windowTitle() {
+      if (this.view === 'albums') return '群相册'
+      return (this.currentAlbum && this.currentAlbum.name) || '相册'
+    },
     /** 按天分组的媒体列表（upload_time大的在前，同一天内也按upload_time大的在前） */
     groupedMedia() {
       const groups = []
@@ -412,10 +412,6 @@ export default defineComponent({
     },
 
     /* ========== 其他 ========== */
-    close() {
-      this.$refs.popUp.confirm(false)
-    },
-
     onKeydown(e) {
       if (this.view === 'detail') {
         if (e.key === 'ArrowLeft') {
@@ -442,128 +438,108 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="group-album-viewer">
-    <SimplePopUp ref="popUp"
-                 :on-confirm="onClose"
-                 :on-cancel="onClose"
-                 :container-styles="$style['group-album-viewer-container']">
-      <template #default>
-        <!-- ===== 相册列表视图 ===== -->
-        <template v-if="view === 'albums'">
-          <div class="gav-title">
-            群相册
-            <QIcon name="close_fill_24" class="gav-close-btn cannot-drag"
-                   @click="close"/>
+  <SimpleWindow
+    class="group-album-viewer"
+    :width="900"
+    :height="700"
+    :title="windowTitle">
+    <!-- 返回按钮（非相册列表视图时显示） -->
+    <QIcon v-if="view === 'media' || view === 'detail'"
+           name="arrow_left_24" class="gav-back-btn cannot-drag"
+           @click="goBackToAlbums"/>
+
+    <!-- ===== 相册列表视图 ===== -->
+    <template v-if="view === 'albums'">
+      <CustomScrollBar ref="albumScroller" class="gav-scroll" @scroll="onAlbumScroll">
+        <div v-if="loadingAlbums && !albums.length" class="gav-loading">加载中...</div>
+        <div v-else-if="!albums.length" class="gav-empty">暂无相册</div>
+        <div v-else class="gav-grid">
+          <div v-for="album in albums" :key="album.album_id" class="gav-grid-item"
+               @click="enterAlbum(album)">
+            <div class="gav-grid-item-cover">
+              <img v-if="getCoverUrl(album)" :src="getCoverUrl(album)" alt=""
+                   class="gav-grid-item-img" loading="lazy"
+                   @error="handleImgError">
+              <div v-else class="gav-no-cover">无封面</div>
+              <div v-if="album.upload_number && parseInt(album.upload_number) > 0"
+                   class="gav-grid-item-count">
+                {{ album.upload_number }}
+              </div>
+            </div>
+            <div class="gav-grid-item-info">
+              <div class="gav-grid-item-name overflow-ellipsis">{{ album.name || '未命名相册' }}</div>
+              <div class="gav-grid-item-meta">
+                {{ album.upload_number || 0 }} 张
+                <template v-if="album.last_upload_time && parseInt(album.last_upload_time) > 0">
+                  · {{ formatTime(album.last_upload_time) }}
+                </template>
+              </div>
+            </div>
           </div>
-          <CustomScrollBar ref="albumScroller" class="gav-scroll" @scroll="onAlbumScroll">
-            <div v-if="loadingAlbums && !albums.length" class="gav-loading">加载中...</div>
-            <div v-else-if="!albums.length" class="gav-empty">暂无相册</div>
-            <div v-else class="gav-grid">
-              <div v-for="album in albums" :key="album.album_id" class="gav-grid-item"
-                   @click="enterAlbum(album)">
+        </div>
+        <div v-if="loadingMoreAlbums" class="gav-loading-more">加载更多...</div>
+      </CustomScrollBar>
+    </template>
+
+    <!-- ===== 媒体列表视图（详情视图时保持显示作为背景） ===== -->
+    <template v-if="view === 'media' || view === 'detail'">
+      <CustomScrollBar ref="mediaScroller" class="gav-scroll" @scroll="onMediaScroll">
+        <div v-if="loadingMedia && !mediaList.length" class="gav-loading">加载中...</div>
+        <div v-else-if="!mediaList.length" class="gav-empty">暂无内容</div>
+        <template v-else>
+          <div v-for="group in groupedMedia" :key="group.date" class="gav-media-group">
+            <div class="gav-media-date-header">{{ formatDateLabel(group.items[0].upload_time) }}</div>
+            <div class="gav-grid">
+              <div v-for="(media, idx) in group.items" :key="media.batch_id + '-' + media.upload_time"
+                   class="gav-grid-item" @click="enterDetail(mediaList.indexOf(media))">
                 <div class="gav-grid-item-cover">
-                  <img v-if="getCoverUrl(album)" :src="getCoverUrl(album)" alt=""
+                  <img v-if="getMediaThumbUrl(media)" :src="getMediaThumbUrl(media)" alt=""
                        class="gav-grid-item-img" loading="lazy"
                        @error="handleImgError">
-                  <div v-else class="gav-no-cover">无封面</div>
-                  <div v-if="album.upload_number && parseInt(album.upload_number) > 0"
-                       class="gav-grid-item-count">
-                    {{ album.upload_number }}
-                  </div>
-                </div>
-                <div class="gav-grid-item-info">
-                  <div class="gav-grid-item-name overflow-ellipsis">{{ album.name || '未命名相册' }}</div>
-                  <div class="gav-grid-item-meta">
-                    {{ album.upload_number || 0 }} 张
-                    <template v-if="album.last_upload_time && parseInt(album.last_upload_time) > 0">
-                      · {{ formatTime(album.last_upload_time) }}
-                    </template>
+                  <div v-else class="gav-no-cover">加载失败</div>
+                  <div v-if="media.type === 1" class="gav-video-badge">
+                    <QIcon name="play_fill_24" class="gav-play-icon"/>
                   </div>
                 </div>
               </div>
             </div>
-            <div v-if="loadingMoreAlbums" class="gav-loading-more">加载更多...</div>
-          </CustomScrollBar>
-        </template>
-
-        <!-- ===== 媒体列表视图（详情视图时保持显示作为背景） ===== -->
-        <template v-if="view === 'media' || view === 'detail'">
-          <div class="gav-title">
-            <QIcon name="arrow_left_24" class="gav-back-btn cannot-drag"
-                   @click="goBackToAlbums"/>
-            {{ (currentAlbum && currentAlbum.name) || '相册' }}
-            <QIcon name="close_fill_24" class="gav-close-btn cannot-drag"
-                   @click="close"/>
           </div>
-          <CustomScrollBar ref="mediaScroller" class="gav-scroll" @scroll="onMediaScroll">
-            <div v-if="loadingMedia && !mediaList.length" class="gav-loading">加载中...</div>
-            <div v-else-if="!mediaList.length" class="gav-empty">暂无内容</div>
-            <template v-else>
-              <div v-for="group in groupedMedia" :key="group.date" class="gav-media-group">
-                <div class="gav-media-date-header">{{ formatDateLabel(group.items[0].upload_time) }}</div>
-                <div class="gav-grid">
-                  <div v-for="(media, idx) in group.items" :key="media.batch_id + '-' + media.upload_time"
-                       class="gav-grid-item" @click="enterDetail(mediaList.indexOf(media))">
-                    <div class="gav-grid-item-cover">
-                      <img v-if="getMediaThumbUrl(media)" :src="getMediaThumbUrl(media)" alt=""
-                           class="gav-grid-item-img" loading="lazy"
-                           @error="handleImgError">
-                      <div v-else class="gav-no-cover">加载失败</div>
-                      <div v-if="media.type === 1" class="gav-video-badge">
-                        <QIcon name="play_fill_24" class="gav-play-icon"/>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </template>
-            <div v-if="loadingMoreMedia" class="gav-loading-more">加载更多...</div>
-          </CustomScrollBar>
         </template>
+        <div v-if="loadingMoreMedia" class="gav-loading-more">加载更多...</div>
+      </CustomScrollBar>
+    </template>
 
-        <!-- ===== 媒体详情视图 - 图片使用 ImageViewer ===== -->
-        <ImageViewer v-if="view === 'detail' && currentMedia && currentMedia.type === 0"
-                     :imageUrl="getHighestQualityUrl(currentMedia) || ''"
-                     :showLeftArrow="currentMediaIndex > 0"
-                     :showRightArrow="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
-                     :counterText="counterText"
-                     @click-left="prevMedia"
-                     @click-right="nextMedia"
-                     @close="goBackToMedia"/>
+    <!-- ===== 媒体详情视图 - 图片使用 ImageViewer ===== -->
+    <ImageViewer v-if="view === 'detail' && currentMedia && currentMedia.type === 0"
+                 :imageUrl="getHighestQualityUrl(currentMedia) || ''"
+                 :showLeftArrow="currentMediaIndex > 0"
+                 :showRightArrow="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
+                 :counterText="counterText"
+                 @click-left="prevMedia"
+                 @click-right="nextMedia"
+                 @close="goBackToMedia"/>
 
-        <!-- ===== 媒体详情视图 - 视频使用 VideoPlayer ===== -->
-        <VideoPlayer v-if="view === 'detail' && currentMedia && currentMedia.type === 1"
-                     :videoUrl="getVideoUrl(currentMedia) || ''"
-                     :showLeftArrow="currentMediaIndex > 0"
-                     :showRightArrow="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
-                     :counterText="counterText"
-                     @click-left="prevMedia"
-                     @click-right="nextMedia"
-                     @close="goBackToMedia"/>
-      </template>
-    </SimplePopUp>
-  </div>
+    <!-- ===== 媒体详情视图 - 视频使用 VideoPlayer ===== -->
+    <VideoPlayer v-if="view === 'detail' && currentMedia && currentMedia.type === 1"
+                 :videoUrl="getVideoUrl(currentMedia) || ''"
+                 :showLeftArrow="currentMediaIndex > 0"
+                 :showRightArrow="currentMediaIndex < (currentAlbum.upload_number || mediaList.length) - 1"
+                 :counterText="counterText"
+                 @click-left="prevMedia"
+                 @click-right="nextMedia"
+                 @close="goBackToMedia"/>
+  </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
 /* ===== 通用 ===== */
-.gav-title {
-  @include dialog-title;
-  line-height: 36px;
-  @include flex-center;
-}
-
-.gav-close-btn {
-  @extend %popup-close-btn;
-}
-
 .gav-back-btn {
   width: $close-btn-size;
   height: $close-btn-size;
   position: absolute;
-  left: 6px;
-  top: 50%;
-  transform: translateY(-50%);
+  left: 8px;
+  top: 6px;
+  z-index: 10;
   cursor: pointer;
 }
 
@@ -580,7 +556,7 @@ export default defineComponent({
 
 .gav-loading-more {
   text-align: center;
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: $spacing-md 0;
   font-size: 13px;
 }
@@ -624,7 +600,7 @@ export default defineComponent({
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: $color-text-lighter;
+  color: $color-text-muted;
   font-size: 13px;
   background: $color-bg-page;
 }
@@ -664,7 +640,7 @@ export default defineComponent({
 
 .gav-grid-item-meta {
   font-size: 11px;
-  color: $color-text-light;
+  color: $color-text-muted;
   margin-top: 2px;
 }
 
@@ -701,28 +677,5 @@ export default defineComponent({
     font-size: 10px;
   }
 
-}
-</style>
-
-<style module lang="scss">
-.group-album-viewer-container {
-  width: 900px;
-  height: 700px;
-  padding: 4px 2px;
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
-  background-color: $color-bg-section;
-  position: relative;
-  overflow: hidden;
-}
-
-@media (max-width: 480px) {
-  .group-album-viewer-container {
-    max-width: 100%;
-    max-height: 100%;
-    height: 100%;
-    width: 100%;
-    border-radius: 0;
-  }
 }
 </style>

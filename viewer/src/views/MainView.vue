@@ -502,6 +502,7 @@ onUnmounted(destroy)
   height: 100%;
   width: 100%;
   @extend %flex-column;
+  color: $color-text-primary;
 }
 
 .chat-container {

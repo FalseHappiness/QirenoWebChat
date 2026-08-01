@@ -20,6 +20,10 @@ export default defineComponent({
     containerStyles: {
       type: [String, Object, Array],
       default: {}
+    },
+    inlineStyles: {
+      type: [String, Object, Array],
+      default: ""
     }
   },
   methods: {
@@ -54,8 +58,8 @@ export default defineComponent({
   <div class="simple-pop-up">
     <teleport to="body">
       <div class="simple-pop-up-mask" :class="{ closed }" ref="simplePopUpMask">
-        <div class="simple-pop-up-container" :class="containerStyles" ref="simplePopUpContainer">
-          <slot name="default"></slot>
+        <div class="simple-pop-up-container" :class="containerStyles" :style="inlineStyles" ref="simplePopUpContainer">
+          <slot></slot>
         </div>
       </div>
     </teleport>

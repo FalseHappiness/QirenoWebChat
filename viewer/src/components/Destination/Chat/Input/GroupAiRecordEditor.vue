@@ -2,7 +2,7 @@
 import { defineComponent } from 'vue'
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
-import { fetchAiRecordCharacters, fetchSendGroupAiRecord } from "../../../../scripts/backend-api.js";
+import { fetchAiRecordCharacters, fetchSendGroupAiRecord } from "@/scripts/backend-api.js";
 import { showToast } from "@/scripts/toast.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 
@@ -139,86 +139,84 @@ export default defineComponent({
                  :on-confirm="onClose"
                  :on-cancel="onClose"
                  :container-styles="$style['group-ai-record-editor-container']">
-      <template #default>
-        <div class="group-ai-record-editor-title">
-          AI 语音
-          <QIcon name="close_fill_24" class="group-ai-record-editor-close-btn cannot-drag"
+      <div class="group-ai-record-editor-title">
+        AI 语音
+        <QIcon name="close_fill_24" class="group-ai-record-editor-close-btn cannot-drag"
                @click="close"/>
-        </div>
+      </div>
 
-        <div class="group-ai-record-editor-body">
-          <!-- 角色选择区域 -->
-          <div class="group-ai-record-editor-characters-section">
-            <div class="group-ai-record-editor-section-label">选择角色</div>
-            <CustomScrollBar class="group-ai-record-editor-characters-list">
-              <template v-if="loading">
-                <div class="group-ai-record-editor-loading">加载中...</div>
-              </template>
-              <template v-else-if="!categories?.length">
-                <div class="group-ai-record-editor-empty">暂无可用角色</div>
-              </template>
-              <template v-else>
-                <div v-for="(category, catIndex) in categories" :key="catIndex" class="group-ai-record-editor-category">
-                  <div class="group-ai-record-editor-category-title">{{ category.type }}</div>
-                  <div class="group-ai-record-editor-category-characters">
-                    <div v-for="character in category.characters"
-                         :key="character.character_id"
-                         class="group-ai-record-editor-character-card"
-                         :class="{ 'selected': selectedCharacter?.character_id === character.character_id }"
-                         @click="selectCharacter(character)">
-                      <div class="group-ai-record-editor-character-avatar"
-                           :style="{ backgroundColor: getAvatarColor(character.character_id) }">
-                        {{ character.character_name.charAt(0) }}
-                      </div>
-                      <div class="group-ai-record-editor-character-name overflow-ellipsis">
-                        {{ character.character_name }}
-                      </div>
-                      <div class="group-ai-record-editor-character-preview"
-                           @click.stop="previewAudio(character)"
-                           :title="isPlaying(character.character_id) ? '停止播放' : '预览声音'">
-                        <QIcon v-if="isPlaying(character.character_id)"
+      <div class="group-ai-record-editor-body">
+        <!-- 角色选择区域 -->
+        <div class="group-ai-record-editor-characters-section">
+          <div class="group-ai-record-editor-section-label">选择角色</div>
+          <CustomScrollBar class="group-ai-record-editor-characters-list">
+            <template v-if="loading">
+              <div class="group-ai-record-editor-loading">加载中...</div>
+            </template>
+            <template v-else-if="!categories?.length">
+              <div class="group-ai-record-editor-empty">暂无可用角色</div>
+            </template>
+            <template v-else>
+              <div v-for="(category, catIndex) in categories" :key="catIndex" class="group-ai-record-editor-category">
+                <div class="group-ai-record-editor-category-title">{{ category.type }}</div>
+                <div class="group-ai-record-editor-category-characters">
+                  <div v-for="character in category.characters"
+                       :key="character.character_id"
+                       class="group-ai-record-editor-character-card"
+                       :class="{ 'selected': selectedCharacter?.character_id === character.character_id }"
+                       @click="selectCharacter(character)">
+                    <div class="group-ai-record-editor-character-avatar"
+                         :style="{ backgroundColor: getAvatarColor(character.character_id) }">
+                      {{ character.character_name.charAt(0) }}
+                    </div>
+                    <div class="group-ai-record-editor-character-name overflow-ellipsis">
+                      {{ character.character_name }}
+                    </div>
+                    <div class="group-ai-record-editor-character-preview"
+                         @click.stop="previewAudio(character)"
+                         :title="isPlaying(character.character_id) ? '停止播放' : '预览声音'">
+                      <QIcon v-if="isPlaying(character.character_id)"
                              name="pause_24"
                              class="group-ai-record-editor-preview-icon"/>
-                        <QIcon v-else
+                      <QIcon v-else
                              name="play_fill_24"
                              class="group-ai-record-editor-preview-icon"
                              style="margin-left: 2px;"/>
-                      </div>
                     </div>
                   </div>
                 </div>
-              </template>
-            </CustomScrollBar>
-          </div>
-
-          <!-- 文本输入区域 -->
-          <div class="group-ai-record-editor-input-section">
-            <div class="group-ai-record-editor-section-label">输入文本</div>
-            <textarea
-              v-model="text"
-              class="group-ai-record-editor-textarea"
-              placeholder="请输入要转换为语音的文本..."
-              :disabled="sending"
-            ></textarea>
-          </div>
+              </div>
+            </template>
+          </CustomScrollBar>
         </div>
 
-        <!-- 底部操作栏 -->
-        <div class="group-ai-record-editor-footer">
-          <div class="group-ai-record-editor-selected-info" v-if="selectedCharacter">
-            <span class="group-ai-record-editor-selected-label">已选角色：</span>
-            <span class="group-ai-record-editor-selected-name">{{ selectedCharacter.character_name }}</span>
-          </div>
-          <div class="group-ai-record-editor-selected-info" v-else>
-            <span class="group-ai-record-editor-selected-label">请选择一个角色</span>
-          </div>
-          <button class="group-ai-record-editor-send-btn"
-                  :disabled="sending || !text.trim() || !selectedCharacter"
-                  @click="send">
-            {{ sending ? '发送中...' : '发送 AI 语音' }}
-          </button>
+        <!-- 文本输入区域 -->
+        <div class="group-ai-record-editor-input-section">
+          <div class="group-ai-record-editor-section-label">输入文本</div>
+          <textarea
+            v-model="text"
+            class="group-ai-record-editor-textarea"
+            placeholder="请输入要转换为语音的文本..."
+            :disabled="sending"
+          ></textarea>
         </div>
-      </template>
+      </div>
+
+      <!-- 底部操作栏 -->
+      <div class="group-ai-record-editor-footer">
+        <div class="group-ai-record-editor-selected-info" v-if="selectedCharacter">
+          <span class="group-ai-record-editor-selected-label">已选角色：</span>
+          <span class="group-ai-record-editor-selected-name">{{ selectedCharacter.character_name }}</span>
+        </div>
+        <div class="group-ai-record-editor-selected-info" v-else>
+          <span class="group-ai-record-editor-selected-label">请选择一个角色</span>
+        </div>
+        <button class="group-ai-record-editor-send-btn"
+                :disabled="sending || !text.trim() || !selectedCharacter"
+                @click="send">
+          {{ sending ? '发送中...' : '发送 AI 语音' }}
+        </button>
+      </div>
     </SimplePopUp>
   </div>
 </template>
@@ -278,7 +276,7 @@ export default defineComponent({
 .group-ai-record-editor-loading,
 .group-ai-record-editor-empty {
   text-align: center;
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: 30px 0;
   font-size: 13px;
 }
@@ -289,7 +287,7 @@ export default defineComponent({
 
 .group-ai-record-editor-category-title {
   font-size: 12px;
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: 4px 2px;
   font-weight: 500;
 }
@@ -410,7 +408,7 @@ export default defineComponent({
 }
 
 .group-ai-record-editor-selected-label {
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .group-ai-record-editor-selected-name {

@@ -7,10 +7,11 @@ import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import { formatTimeOptions } from "@/scripts/util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { CacheNameKey, fetchDisplayName } from "@/scripts/user-info-util.js";
+import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 
 export default defineComponent({
   name: "GroupAnnounceViewer",
-  components: { QIcon, SimplePopUp, CustomScrollBar },
+  components: { SimpleWindow, QIcon, SimplePopUp, CustomScrollBar },
   props: {
     group_id: {
       type: Number,
@@ -20,11 +21,6 @@ export default defineComponent({
       type: Array,
       default: () => []
     },
-    onClose: {
-      type: Function,
-      default: () => {
-      }
-    }
   },
   data() {
     return {
@@ -64,77 +60,46 @@ export default defineComponent({
     getCachedName(user_id) {
       return this.userNameMap[user_id] || user_id
     },
-    close() {
-      this.$refs.popUp.confirm(false)
-    }
   }
 })
 </script>
 
 <template>
-  <div class="group-announce-viewer">
-    <SimplePopUp ref="popUp"
-                 :on-confirm="onClose"
-                 :on-cancel="onClose"
-                 :container-styles="$style['group-announce-viewer-container']">
-      <template #default>
-        <div class="group-announce-viewer-title">
-          群公告
-          <QIcon name="close_fill_24" class="group-announce-viewer-close-btn cannot-drag"
-               @click="$refs.popUp.confirm(false)"/>
-        </div>
-        <CustomScrollBar class="group-announce-viewer-list">
-          <div class="group-announce-viewer-notice" v-for="(notice) in notices" :key="notice.notice_id">
-            <div class="group-announce-viewer-notice-header">
+  <SimpleWindow
+    class="group-announce-viewer"
+    :width="520"
+    :height="540"
+    title="群公告">
+    <CustomScrollBar class="group-announce-viewer-list">
+      <div class="group-announce-viewer-notice" v-for="(notice) in notices" :key="notice.notice_id">
+        <div class="group-announce-viewer-notice-header">
               <span class="group-announce-viewer-notice-name overflow-ellipsis">{{
                   getCachedName(notice.sender_id)
                 }}</span>
-              <span class="group-announce-viewer-notice-time">{{ formatTime(notice.publish_time) }}</span>
-              <span class="group-announce-viewer-notice-pinned" v-if="notice.pinned">置顶</span>
-            </div>
-            <div class="group-announce-viewer-notice-content" v-html="renderText(notice.message.text)">
-            </div>
-            <div class="group-announce-viewer-notice-images" v-if="notice.message.image?.length">
-              <img
-                v-for="(img, index) in notice.message.image"
-                :key="index"
-                :src="getNoticeImageUrl(img.id)"
-                alt=""
-                class="group-announce-viewer-notice-image"
-                :style="{ '--width': img.width, '--height': img.height }"
-              >
-            </div>
-          </div>
-          <div class="group-announce-viewer-empty" v-if="!notices.length">
-            暂无群公告
-          </div>
-        </CustomScrollBar>
-      </template>
-    </SimplePopUp>
-  </div>
+          <span class="group-announce-viewer-notice-time">{{ formatTime(notice.publish_time) }}</span>
+          <span class="group-announce-viewer-notice-pinned" v-if="notice.pinned">置顶</span>
+        </div>
+        <div class="group-announce-viewer-notice-content" v-html="renderText(notice.message.text)">
+        </div>
+        <div class="group-announce-viewer-notice-images" v-if="notice.message.image?.length">
+          <img
+            v-for="(img, index) in notice.message.image"
+            :key="index"
+            :src="getNoticeImageUrl(img.id)"
+            alt=""
+            class="group-announce-viewer-notice-image"
+            :style="{ '--width': img.width, '--height': img.height }"
+          >
+        </div>
+      </div>
+      <div class="group-announce-viewer-empty" v-if="!notices.length">
+        暂无群公告
+      </div>
+    </CustomScrollBar>
+  </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
-.group-announce-viewer-title {
-  text-align: center;
-  font-weight: bold;
-  font-size: 16px;
-  padding: 5px 0;
-  border-bottom: 1px solid $color-border-faint;
-  user-select: none;
-  position: relative;
-}
-
-.group-announce-viewer-close-btn {
-  float: right;
-  width: 25px;
-  height: 25px;
-  position: absolute;
-  right: 5px;
-  top: 5px;
-  cursor: pointer;
-}
-
 .group-announce-viewer-list {
   flex: 1;
   padding: 10px 10px 0 10px;
@@ -157,7 +122,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: $color-text-gray;
+  color: $color-text-muted;
   gap: 4px;
 }
 
@@ -201,7 +166,7 @@ export default defineComponent({
 
 .group-announce-viewer-empty {
   text-align: center;
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: 40px 0;
   font-size: 14px;
 }

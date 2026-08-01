@@ -133,70 +133,68 @@ export default defineComponent({
 <template>
   <div class="files-upload-tasks-viewer">
     <SimplePopUp ref="popUp" :on-confirm="onClose" :on-cancel="onClose">
-      <template #default>
-        <div class="files-upload-tasks-title">
-          文件上传任务
-          <QIcon name="close_fill_24" class="files-upload-tasks-close-btn cannot-drag"
+      <div class="files-upload-tasks-title">
+        文件上传任务
+        <QIcon name="close_fill_24" class="files-upload-tasks-close-btn cannot-drag"
                @click="close()"/>
-        </div>
+      </div>
 
-        <!-- 任务列表 -->
-        <CustomScrollBar class="files-upload-tasks-list">
-          <div class="files-upload-tasks-item" v-for="(task, index) in tasks" :key="`${index}-${task?.chunk_index}`">
-            <img alt="" :src="qqFileIcon(getFileIcon(task.file.name))" class="files-upload-tasks-item-icon">
-            <div class="files-upload-tasks-item-info">
-              <TruncatedText one-line :content="task.file.name"/>
-              <div class="files-upload-tasks-item-status">
-                <!-- 出错 -->
-                <template v-if="isTaskError(task)">
-                  <span class="status-error">出错: {{ task.error }}</span>
-                </template>
-                <!-- 已取消 -->
-                <template v-else-if="isTaskCancelled(task)">
-                  <span class="status-cancelled">已取消</span>
-                </template>
-                <!-- 已完成 -->
-                <template v-else-if="isTaskCompleted(task)">
-                  <span class="status-completed">已完成</span>
-                </template>
-                <!-- 计算 Hash 中 -->
-                <template v-else-if="task.is_calc_hash">
-                  <span class="status-hashing">计算 SHA256 中...</span>
-                </template>
-                <!-- 分片上传中 -->
-                <template v-else-if="task.chunked">
+      <!-- 任务列表 -->
+      <CustomScrollBar class="files-upload-tasks-list">
+        <div class="files-upload-tasks-item" v-for="(task, index) in tasks" :key="`${index}-${task?.chunk_index}`">
+          <img alt="" :src="qqFileIcon(getFileIcon(task.file.name))" class="files-upload-tasks-item-icon">
+          <div class="files-upload-tasks-item-info">
+            <TruncatedText one-line :content="task.file.name"/>
+            <div class="files-upload-tasks-item-status">
+              <!-- 出错 -->
+              <template v-if="isTaskError(task)">
+                <span class="status-error">出错: {{ task.error }}</span>
+              </template>
+              <!-- 已取消 -->
+              <template v-else-if="isTaskCancelled(task)">
+                <span class="status-cancelled">已取消</span>
+              </template>
+              <!-- 已完成 -->
+              <template v-else-if="isTaskCompleted(task)">
+                <span class="status-completed">已完成</span>
+              </template>
+              <!-- 计算 Hash 中 -->
+              <template v-else-if="task.is_calc_hash">
+                <span class="status-hashing">计算 SHA256 中...</span>
+              </template>
+              <!-- 分片上传中 -->
+              <template v-else-if="task.chunked">
                     <span class="status-uploading">
                       {{ formatFileSize(getTaskUploadedBytes(task)) }} / {{ formatFileSize(task.file.size) }}
                     </span>
-                  <span class="status-speed" v-if="getTaskSpeed(task) > 0">
+                <span class="status-speed" v-if="getTaskSpeed(task) > 0">
                       {{ formatSpeed(getTaskSpeed(task)) }}
                     </span>
-                  <span class="status-remaining"
-                        v-if="getTaskRemainingTime(task) > 0 && isFinite(getTaskRemainingTime(task))">
+                <span class="status-remaining"
+                      v-if="getTaskRemainingTime(task) > 0 && isFinite(getTaskRemainingTime(task))">
                       剩约 {{ formatTime(getTaskRemainingTime(task)) }}
                     </span>
-                  <!-- 单个文件进度条 -->
-                  <div class="files-upload-tasks-item-progress-bar-container">
-                    <div class="files-upload-tasks-item-progress-bar"
-                         :style="{ width: getTaskProgress(task) + '%' }"></div>
-                  </div>
-                </template>
-                <!-- 普通上传中 -->
-                <template v-else>
-                  <span class="status-uploading">上传中...</span>
-                </template>
-              </div>
-            </div>
-            <div class="files-upload-tasks-item-action">
-              <div v-if="!isTaskCompleted(task) && !isTaskCancelled(task)"
-                   class="files-upload-tasks-cancel-btn"
-                   @click="cancelTask(task)">
-                取消
-              </div>
+                <!-- 单个文件进度条 -->
+                <div class="files-upload-tasks-item-progress-bar-container">
+                  <div class="files-upload-tasks-item-progress-bar"
+                       :style="{ width: getTaskProgress(task) + '%' }"></div>
+                </div>
+              </template>
+              <!-- 普通上传中 -->
+              <template v-else>
+                <span class="status-uploading">上传中...</span>
+              </template>
             </div>
           </div>
-        </CustomScrollBar>
-      </template>
+          <div class="files-upload-tasks-item-action">
+            <div v-if="!isTaskCompleted(task) && !isTaskCancelled(task)"
+                 class="files-upload-tasks-cancel-btn"
+                 @click="cancelTask(task)">
+              取消
+            </div>
+          </div>
+        </div>
+      </CustomScrollBar>
     </SimplePopUp>
   </div>
 </template>
@@ -272,11 +270,11 @@ export default defineComponent({
 }
 
 .status-cancelled {
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .status-hashing {
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .status-speed {
@@ -285,7 +283,7 @@ export default defineComponent({
 }
 
 .status-remaining {
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .status-error {

@@ -518,7 +518,7 @@ const clearAndReselect = () => {
 
 .no-bots .hint {
   font-size: 12px;
-  color: $color-text-light;
+  color: $color-text-muted;
   margin: 4px 0 0;
 }
 
@@ -770,7 +770,7 @@ const clearAndReselect = () => {
   }
 
   &::placeholder {
-    color: $color-text-lighter;
+    color: $color-text-muted;
   }
 }
 
@@ -844,7 +844,7 @@ const clearAndReselect = () => {
 
 .btn--danger:hover {
   background: #fee;
-  color: $color-danger;
+  color: $color-error;
   border-color: #fcc;
 }
 </style>

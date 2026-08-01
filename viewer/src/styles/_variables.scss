@@ -9,45 +9,42 @@ $color-primary-mid: rgba($color-primary, 0.4) !default;
 
 // ---- 文字颜色 ----
 $color-text-primary: #1a1a1a !default;
-$color-text-regular: #333 !default;             // 正文主色
+$color-text-regular: #333 !default; // 正文主色
 $color-text-secondary: #666 !default;
-$color-text-muted: #808080 !default;            // 弱化辅助文字
-$color-text-gray: $color-text-muted !default;   // 灰色辅助文字（已合并：使用 $color-text-muted）
-$color-text-light: #999 !default;
-$color-text-lighter: #bbb !default;
+$color-text-muted: #999 !default; // 弱化辅助文字
 $color-text-white: #fff !default;
-$color-text-meta: #888 !default;                // 元信息文字（日期/速度）
-$color-text-meta-secondary: #7A7A7A !default;   // 次级元信息（群文件上传者）
-$color-text-soft: #4a4a4a !default;             // 柔和正文（ConfirmBox内容）
-$color-text-info: #3a5a7a !default;             // 信息说明文字（许可证QQ声明）
-$color-text-note: #555 !default;                // 描述/说明文字
-$color-text-link: #4A90D9 !default;             // 链接色（转发消息/面包屑）
-$color-text-link-hover: #2A6CB0 !default;       // 链接悬停色
-$color-text-link-markdown: #0f9fff !default;    // Markdown 链接色
-$color-text-at-link: #007bff !default;          // @提及链接
-$color-text-record-cancel: #2D77E5 !default;    // 录音取消/通知命令链接
-$color-text-danger: #e74c3c !default;           // 危险/错误文字
-$color-text-error-bright: #ff4d4f !default;     // 高亮错误（上传任务）
-$color-text-warning: #FF6B6B !default;          // 警告提示（转发/群文件加载失败）
-$color-text-success: #52c41a !default;          // 成功状态文字
-$color-text-red-tip: #b90000 !default;          // 红色提示（已撤回）
-$color-text-red-tip-icon: #900000 !default;     // 红色提示图标
-$color-text-error-soft: #ff8894 !default;       // 柔和错误（联系人列表）
-$color-text-reply: #5a5a5a !default;            // 回复消息引用文字
+$color-text-meta: #888 !default; // 元信息文字（日期/速度）
+$color-text-meta-secondary: #7A7A7A !default; // 次级元信息（群文件上传者）
+$color-text-soft: #4a4a4a !default; // 柔和正文（ConfirmBox内容）
+$color-text-info: #3a5a7a !default; // 信息说明文字（许可证QQ声明）
+$color-text-note: #555 !default; // 描述/说明文字
+$color-text-link: #4A90D9 !default; // 链接色（转发消息/面包屑）
+$color-text-link-hover: #2A6CB0 !default; // 链接悬停色
+$color-text-link-markdown: #0f9fff !default; // Markdown 链接色
+$color-text-at-link: #007bff !default; // @提及链接
+$color-text-record-cancel: #2D77E5 !default; // 录音取消/通知命令链接
+$color-text-danger: #e74c3c !default; // 危险/错误文字
+$color-text-error-bright: #ff4d4f !default; // 高亮错误（上传任务）
+$color-text-warning: #FF6B6B !default; // 警告提示（转发/群文件加载失败）
+$color-text-success: #52c41a !default; // 成功状态文字
+$color-text-red-tip: #b90000 !default; // 红色提示（已撤回）
+$color-text-red-tip-icon: #900000 !default; // 红色提示图标
+$color-text-error-soft: #ff8894 !default; // 柔和错误（联系人列表）
+$color-text-reply: #5a5a5a !default; // 回复消息引用文字
 
 // ---- 标签色 ----
-$color-tag-green-bg: #e8f5e9 !default;          // 绿色标签背景（许可证自身）
-$color-tag-green-text: #2e7d32 !default;        // 绿色标签文字（许可证自身）
-$color-tag-blue-bg: #e3f2fd !default;           // 蓝色标签背景（许可证依赖）
-$color-tag-blue-text: #1565c0 !default;         // 蓝色标签文字（许可证依赖）
+$color-tag-green-bg: #e8f5e9 !default; // 绿色标签背景（许可证自身）
+$color-tag-green-text: #2e7d32 !default; // 绿色标签文字（许可证自身）
+$color-tag-blue-bg: #e3f2fd !default; // 蓝色标签背景（许可证依赖）
+$color-tag-blue-text: #1565c0 !default; // 蓝色标签文字（许可证依赖）
 
 // ---- 背景色 ----
 $color-bg-page: #f5f5f5 !default;
 $color-bg-card: #fff !default;
 $color-bg-hover: #EBEBEB !default;
 $color-bg-active: #e0e0e0 !default;
-$color-bg-sidebar: $color-bg-page !default;     // 已合并：使用 $color-bg-page
-$color-bg-chat: $color-bg-page !default;        // 已合并：使用 $color-bg-page
+$color-bg-sidebar: $color-bg-page !default; // 已合并：使用 $color-bg-page
+$color-bg-chat: $color-bg-page !default; // 已合并：使用 $color-bg-page
 $color-bg-message-in: #fff !default;
 $color-bg-message-out: #CCEBFF !default;
 $color-bg-mask: rgba(0, 0, 0, 0.48) !default;
@@ -57,36 +54,36 @@ $color-bg-card-alt: #f2f2f2 !default;
 $color-bg-light: rgba(255, 255, 255, 0.72) !default;
 $color-bg-input: rgba(255, 255, 255, 0.6) !default;
 $color-bg-blur: rgba(255, 255, 255, 0.95) !default;
-$color-bg-hover-alt: #efefef !default;          // 轻悬停（表情面板/取消按钮）
-$color-bg-active-alt: #e6e6e6 !default;         // 轻激活（表情面板/滚动按钮）
-$color-bg-active-contact: #E2E2E2 !default;     // 联系栏选中
+$color-bg-hover-alt: #efefef !default; // 轻悬停（表情面板/取消按钮）
+$color-bg-active-alt: #e6e6e6 !default; // 轻激活（表情面板/滚动按钮）
+$color-bg-active-contact: #E2E2E2 !default; // 联系栏选中
 $color-bg-active-contact-pressed: #D7D7D7 !default; // 联系栏选中按下
-$color-bg-nav-active: #E7E7E7 !default;         // 导航按钮激活
-$color-bg-nav-active-svg: #B9B9B9 !default;     // 导航按钮激活图标
-$color-bg-hover-light: rgb(200 200 200 / 25%) !default;  // 轻量悬停（头部控制按钮）
-$color-bg-active-light: rgb(200 200 200 / 50%) !default;  // 轻量激活（头部控制按钮）
-$color-bg-primary-hover: #008be6 !default;      // 主色悬停（确认按钮）
-$color-bg-primary-active: #0076c5 !default;     // 主色激活（确认按钮）
-$color-bg-image-placeholder: #e7eaf1 !default;  // 图片占位符
-$color-bg-search: #f1f1f1 !default;             // 搜索框背景
+$color-bg-nav-active: #E7E7E7 !default; // 导航按钮激活
+$color-bg-nav-active-svg: #B9B9B9 !default; // 导航按钮激活图标
+$color-bg-hover-light: rgb(200 200 200 / 25%) !default; // 轻量悬停（头部控制按钮）
+$color-bg-active-light: rgb(200 200 200 / 50%) !default; // 轻量激活（头部控制按钮）
+$color-bg-primary-hover: #008be6 !default; // 主色悬停（确认按钮）
+$color-bg-primary-active: #0076c5 !default; // 主色激活（确认按钮）
+$color-bg-image-placeholder: #e7eaf1 !default; // 图片占位符
+$color-bg-search: #f1f1f1 !default; // 搜索框背景
 $color-bg-red-tip: rgb(255 0 0 / 25%) !default; // 红色提示背景
 $color-bg-tip: rgba(158, 158, 158, 0.2) !default; // 通用提示标签背景
 $color-bg-notice: rgb(255 255 255 / 50%) !default; // 通知条背景
-$color-bg-quote: rgb(0 0 0 / 5%) !default;      // 引用消息背景
-$color-bg-scroll-btn-hover: #ececec !default;    // 滚动按钮悬停边框
-$color-bg-scroll-btn-active: #dddddd !default;   // 滚动按钮激活边框/背景
-$color-bg-section: #FAFAFA !default;             // 分区背景（群文件/相册/AI语音）
-$color-bg-legal: #f0f7ff !default;               // 法律声明背景（许可证）
-$color-bg-code: #f6f8fa !default;                // 代码块背景（许可证文本/Markdown）
-$color-bg-error: #fef0f0 !default;               // 错误提示背景
-$color-bg-hover-danger: #fff1f0 !default;        // 危险按钮悬停背景（上传取消）
-$color-bg-active-danger: #ffccc7 !default;       // 危险按钮激活背景（上传取消）
-$color-bg-notice-warning: #fffbe6 !default;      // 警告通知背景
-$color-bg-highlight: #80808030 !default;         // 高亮动画背景（消息搜索）
-$color-bg-button-default: #e8e8e8 !default;      // 默认按钮背景
+$color-bg-quote: rgb(0 0 0 / 5%) !default; // 引用消息背景
+$color-bg-scroll-btn-hover: #ececec !default; // 滚动按钮悬停边框
+$color-bg-scroll-btn-active: #dddddd !default; // 滚动按钮激活边框/背景
+$color-bg-section: #FAFAFA !default; // 分区背景（群文件/相册/AI语音）
+$color-bg-legal: #f0f7ff !default; // 法律声明背景（许可证）
+$color-bg-code: #f6f8fa !default; // 代码块背景（许可证文本/Markdown）
+$color-bg-error: #fef0f0 !default; // 错误提示背景
+$color-bg-hover-danger: #fff1f0 !default; // 危险按钮悬停背景（上传取消）
+$color-bg-active-danger: #ffccc7 !default; // 危险按钮激活背景（上传取消）
+$color-bg-notice-warning: #fffbe6 !default; // 警告通知背景
+$color-bg-highlight: #80808030 !default; // 高亮动画背景（消息搜索）
+$color-bg-button-default: #e8e8e8 !default; // 默认按钮背景
 $color-bg-button-default-hover: #d5d5d5 !default; // 默认按钮悬停
-$color-bg-ai-selected: #f0f8ff !default;         // AI角色选中背景
-$color-bg-ai-active: #e6f4ff !default;           // AI角色激活背景
+$color-bg-ai-selected: #f0f8ff !default; // AI角色选中背景
+$color-bg-ai-active: #e6f4ff !default; // AI角色激活背景
 $color-bg-contact-picker-border: $color-bg-active-alt !default; // 联系人选择器边框（已合并：使用 $color-bg-active-alt）
 $color-bg-contact-picker-checkbox: #d9d9d9 !default; // 联系人选择器复选框
 $color-bg-contact-picker-focus: #0077ed !default; // 联系人选择器搜索聚焦
@@ -95,33 +92,32 @@ $color-bg-contact-picker-focus: #0077ed !default; // 联系人选择器搜索聚
 $color-border: #dee2e6 !default;
 $color-border-light: #e1e1e3 !default;
 $color-border-hover: #ccc !default;
-$color-border-cancel: #c4c4c4 !default;          // 取消按钮边框
-$color-border-divider: #EDEDED !default;          // 弹窗标题分割线
-$color-border-faint: #f0f0f0 !default;            // 极淡边框（卡片/网格）
-$color-border-tooltip: $color-bg-button-default-hover !default;          // Tooltip 边框
-$color-border-legal: #d0e3f7 !default;            // 法律声明边框（许可证）
-$color-border-code: #e1e4e8 !default;             // 代码块边框（许可证文本）
-$color-border-notice: #fff3cd !default;            // 通知边框（许可证警告）
-$color-border-item: #f9f9f9 !default;             // 列表项分割线（群文件）
-$color-border-essence: $color-bg-active !default;  // 精华消息分割线（已合并：使用 $color-bg-active）
+$color-border-cancel: #c4c4c4 !default; // 取消按钮边框
+$color-border-divider: #EDEDED !default; // 弹窗标题分割线
+$color-border-faint: #f0f0f0 !default; // 极淡边框（卡片/网格）
+$color-border-tooltip: $color-bg-button-default-hover !default; // Tooltip 边框
+$color-border-legal: #d0e3f7 !default; // 法律声明边框（许可证）
+$color-border-code: #e1e4e8 !default; // 代码块边框（许可证文本）
+$color-border-notice: #fff3cd !default; // 通知边框（许可证警告）
+$color-border-item: #f9f9f9 !default; // 列表项分割线（群文件）
+$color-border-essence: $color-bg-active !default; // 精华消息分割线（已合并：使用 $color-bg-active）
 $color-border-essence-item: $color-bg-hover !default; // 精华消息项边框（已合并：使用 $color-bg-hover）
-$color-border-markdown-heading: #eaecef !default;  // Markdown标题边框
-$color-border-markdown-table: #dfe2e5 !default;    // Markdown表格边框
+$color-border-markdown-heading: #eaecef !default; // Markdown标题边框
+$color-border-markdown-table: #dfe2e5 !default; // Markdown表格边框
 $color-border-markdown-table-header: #c6cbd1 !default; // Markdown表格头边框
-$color-border-markdown-hr: #f5f5f5 !default;       // Markdown分割线
-$color-border-ai-input: #ddd !default;             // AI编辑器输入框边框
+$color-border-markdown-hr: #f5f5f5 !default; // Markdown分割线
+$color-border-ai-input: #ddd !default; // AI编辑器输入框边框
 
 // ---- 功能色 ----
 $color-error: #dc3545 !default;
-$color-danger: #e81123 !default;
 $color-warning: #e67e22 !default;
 $color-success: #4facfe !default;
 $color-retry: #f0ad4e !default;
-$color-link-url: #06c !default;                   // URL链接色（下载弹窗）
+$color-link-url: #06c !default; // URL链接色（下载弹窗）
 
 // ---- 主题色（PageScroller等） ----
-$color-theme-green: #4CAF50 !default;              // 绿色主题
-$color-theme-green-hover: #45a049 !default;        // 绿色主题悬停
+$color-theme-green: #4CAF50 !default; // 绿色主题
+$color-theme-green-hover: #45a049 !default; // 绿色主题悬停
 $color-theme-green-light: $color-bg-active !default; // 绿色主题边框（已合并：使用 $color-bg-active）
 
 // ---- 阴影 ----

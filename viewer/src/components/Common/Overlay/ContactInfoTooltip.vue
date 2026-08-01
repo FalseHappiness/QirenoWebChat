@@ -257,7 +257,7 @@ export default defineComponent({
 }
 
 .contact-info-id {
-  color: $color-text-light;
+  color: $color-text-muted;
 }
 
 .contact-info-details {
@@ -275,7 +275,7 @@ export default defineComponent({
   .label {
     flex: 0 0 80px;
     white-space: nowrap;
-    color: $color-text-light;
+    color: $color-text-muted;
   }
 
   .label, .value {

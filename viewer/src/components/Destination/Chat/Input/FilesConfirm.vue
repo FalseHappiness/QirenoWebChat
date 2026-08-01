@@ -47,25 +47,23 @@ export default defineComponent({
 <template>
   <div class="files-confirm">
     <SimplePopUp ref="popUp" :on-confirm="onConfirm" :on-cancel="onCancel">
-      <template #default>
-        <div class="files-confirm-title">
-          发送<span v-if="typeName">{{ ` ${typeName} ` }}</span>给 {{ contactName }}
-          <QIcon name="close_fill_24" class="files-confirm-close-btn cannot-drag"
+      <div class="files-confirm-title">
+        发送<span v-if="typeName">{{ ` ${typeName} ` }}</span>给 {{ contactName }}
+        <QIcon name="close_fill_24" class="files-confirm-close-btn cannot-drag"
                @click="confirm(false)"/>
-        </div>
-        <div class="files-confirm-files">
-          <SimpleBar class="files-confirm-files-scroller" data-simplebar data-simplebar-auto-hide="false">
-            <div class="files-confirm-file" v-for="(value) in files">
-              <img alt="" :src="qqFileIcon(getFileIcon(value.name))" class="files-confirm-file-icon">
-              <div class="files-confirm-file-info">
-                <TruncatedText one-line :content="value.name"/>
-                <span class="files-confirm-file-size">{{ formatFileSize(value.size) }}</span>
-              </div>
+      </div>
+      <div class="files-confirm-files">
+        <SimpleBar class="files-confirm-files-scroller" data-simplebar data-simplebar-auto-hide="false">
+          <div class="files-confirm-file" v-for="(value) in files">
+            <img alt="" :src="qqFileIcon(getFileIcon(value.name))" class="files-confirm-file-icon">
+            <div class="files-confirm-file-info">
+              <TruncatedText one-line :content="value.name"/>
+              <span class="files-confirm-file-size">{{ formatFileSize(value.size) }}</span>
             </div>
-          </SimpleBar>
-        </div>
-        <div class="files-confirm-confirm-button no-user-select" @click="confirm()">发送({{ files.length }})</div>
-      </template>
+          </div>
+        </SimpleBar>
+      </div>
+      <div class="files-confirm-confirm-button no-user-select" @click="confirm()">发送({{ files.length }})</div>
     </SimplePopUp>
   </div>
 </template>

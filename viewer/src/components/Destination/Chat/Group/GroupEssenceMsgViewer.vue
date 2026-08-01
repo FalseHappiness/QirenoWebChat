@@ -6,6 +6,7 @@ import { parseMessage } from "@/scripts/parse-message.js";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
+import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 
 /**
  * 使用 parseMessage 渲染消息段的内联组件
@@ -25,14 +26,7 @@ const MessageContentRenderer = {
 
 export default defineComponent({
   name: "GroupEssenceMsgViewer",
-  components: { QIcon, SimplePopUp, CustomScrollBar, MessageContentRenderer },
-  props: {
-    onClose: {
-      type: Function,
-      default: () => {
-      }
-    }
-  },
+  components: { SimpleWindow, QIcon, SimplePopUp, CustomScrollBar, MessageContentRenderer },
   data() {
     return {
       fetchedMessages: {}
@@ -91,96 +85,65 @@ export default defineComponent({
       const content = this.getMessageContent(msg)
       return content && content.length > 0
     },
-    close() {
-      this.$refs.popUp.confirm(false)
-    }
   }
 })
 </script>
 
 <template>
-  <div class="essence-msg-viewer">
-    <SimplePopUp ref="popUp"
-                 :on-confirm="onClose"
-                 :on-cancel="onClose"
-                 :container-styles="$style['group-essence-msg-viewer-container']">
-      <template #default>
-        <div class="essence-msg-viewer-title">
-          精华消息
-          <QIcon name="close_fill_24" class="essence-msg-viewer-close-btn cannot-drag"
-                 @click="close"/>
-        </div>
-        <CustomScrollBar class="essence-msg-viewer-list">
-          <div v-if="!messages?.length" class="essence-msg-viewer-empty">
-            暂无精华消息
+  <SimpleWindow
+    class="essence-msg-viewer"
+    :width="520"
+    :height="540"
+    title="精华消息">
+    <CustomScrollBar class="essence-msg-viewer-list">
+      <div v-if="!messages?.length" class="essence-msg-viewer-empty">
+        暂无精华消息
+      </div>
+      <div
+        v-for="(msg, msgIndex) in messages"
+        :key="msg.message_id || msgIndex"
+        class="essence-msg-viewer-item"
+      >
+        <div class="essence-msg-viewer-item-header">
+          <div class="flex-1">
+            <img
+              :src="getAvatarUrl(msg.sender_id)"
+              alt=""
+              class="essence-msg-viewer-avatar"
+            >
+            <span class="essence-msg-viewer-sender-name overflow-ellipsis">{{
+                msg.sender_nick || msg.sender_id
+              }}</span>
           </div>
-          <div
-            v-for="(msg, msgIndex) in messages"
-            :key="msg.message_id || msgIndex"
-            class="essence-msg-viewer-item"
-          >
-            <div class="essence-msg-viewer-item-header">
-              <div class="flex-1">
-                <img
-                  :src="getAvatarUrl(msg.sender_id)"
-                  alt=""
-                  class="essence-msg-viewer-avatar"
-                >
-                <span class="essence-msg-viewer-sender-name overflow-ellipsis">{{
-                    msg.sender_nick || msg.sender_id
-                  }}</span>
-              </div>
-              <span class="essence-msg-viewer-time">{{ formatTime(msg.operator_time) }}</span>
-            </div>
-            <div class="essence-msg-viewer-item-content">
-              <MessageContentRenderer v-if="hasContent(msg)" :segments="getMessageContent(msg)"/>
-              <span v-else-if="msg.message_id && fetchedMessages[msg.message_id] === undefined"
-                    class="essence-msg-viewer-status">
+          <span class="essence-msg-viewer-time">{{ formatTime(msg.operator_time) }}</span>
+        </div>
+        <div class="essence-msg-viewer-item-content">
+          <MessageContentRenderer v-if="hasContent(msg)" :segments="getMessageContent(msg)"/>
+          <span v-else-if="msg.message_id && fetchedMessages[msg.message_id] === undefined"
+                class="essence-msg-viewer-status">
                 加载中...
               </span>
-              <span v-else-if="msg.message_id && fetchedMessages[msg.message_id] === null"
-                    class="essence-msg-viewer-status essence-msg-viewer-status--error">
+          <span v-else-if="msg.message_id && fetchedMessages[msg.message_id] === null"
+                class="essence-msg-viewer-status essence-msg-viewer-status--error">
                 获取消息失败
               </span>
-              <span v-else class="essence-msg-viewer-status">
+          <span v-else class="essence-msg-viewer-status">
                 无消息
               </span>
-            </div>
-            <div class="essence-msg-viewer-item-footer">
+        </div>
+        <div class="essence-msg-viewer-item-footer">
               <span class="essence-msg-viewer-operator">
                 <QIcon name="essence_message_24" class="essence-msg-viewer-essence-icon"/>
                 <span class="essence-msg-viewer-operator-text">{{ msg.operator_nick || msg.operator_id }} 加精</span>
                 <span class="essence-msg-viewer-operator-time">{{ formatTime(msg.operator_time) }}</span>
               </span>
-            </div>
-          </div>
-        </CustomScrollBar>
-      </template>
-    </SimplePopUp>
-  </div>
+        </div>
+      </div>
+    </CustomScrollBar>
+  </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
-.essence-msg-viewer-title {
-  text-align: center;
-  font-weight: bold;
-  font-size: 16px;
-  padding: 10px 0;
-  border-bottom: 1px solid $color-border-faint;
-  user-select: none;
-  position: relative;
-}
-
-.essence-msg-viewer-close-btn {
-  float: right;
-  width: 25px;
-  height: 25px;
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  cursor: pointer;
-}
-
 .essence-msg-viewer-list {
   flex: 1;
   padding: 10px 10px 0 10px;
@@ -200,7 +163,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: $color-text-gray;
+  color: $color-text-muted;
   gap: 8px;
   margin-bottom: 8px;
   justify-content: space-between;
@@ -223,7 +186,7 @@ export default defineComponent({
 
 .essence-msg-viewer-time {
   font-size: 11px;
-  color: $color-text-light;
+  color: $color-text-muted;
   flex-shrink: 0;
   align-self: flex-start;
 }
@@ -237,7 +200,7 @@ export default defineComponent({
 }
 
 .essence-msg-viewer-status {
-  color: $color-text-light;
+  color: $color-text-muted;
   font-style: italic;
   font-size: 13px;
 }
@@ -272,13 +235,13 @@ export default defineComponent({
 }
 
 .essence-msg-viewer-operator-time {
-  color: $color-text-lighter;
+  color: $color-text-muted;
   margin-left: auto;
 }
 
 .essence-msg-viewer-empty {
   text-align: center;
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: 40px 0;
   font-size: 14px;
 }

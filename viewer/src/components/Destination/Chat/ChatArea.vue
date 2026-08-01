@@ -519,24 +519,24 @@ defineExpose({
 <template>
   <div class="chat-area" @click="handleChatAreaClick">
     <GroupAnnounceViewer
-      v-if="showGroupAnnounceViewer"
+      v-if="showGroupAnnounceViewer && isGroup"
       :group_id="activeContact?.contact_id"
       :notices="groupNotifications || []"
-      :onClose="() => changeShowGroupAnnounce(false)"
+      @close="() => changeShowGroupAnnounce(false)"
     />
     <GroupEssenceMsgViewer
-      v-if="showGroupEssenceListViewer"
-      :on-close="() => changeShowGroupEssenceList(false)"
+      v-if="showGroupEssenceListViewer && isGroup"
+      @close="() => changeShowGroupEssenceList(false)"
     />
     <GroupFilesViewer
-      v-if="showGroupFilesViewer"
+      v-if="showGroupFilesViewer && isGroup"
       :group_id="activeContact?.contact_id"
-      :on-close="() => changeShowGroupFiles(false)"
+      @close="() => changeShowGroupFiles(false)"
     />
     <GroupAlbumViewer
-      v-if="showGroupAlbumViewer"
+      v-if="showGroupAlbumViewer && isGroup"
       :group_id="activeContact?.contact_id"
-      :on-close="() => changeShowGroupAlbum(false)"
+      @close="() => changeShowGroupAlbum(false)"
     />
     <ImageViewer ref="imageViewer"/>
     <VideoPlayer ref="videoPlayer"/>
@@ -582,7 +582,9 @@ defineExpose({
         <div>
           {{ displayName }}
           <br>
-          <small style="color: var(--color-text-muted);display: block;margin-top: -4px;">{{ activeContact.contact_id }}</small>
+          <small style="color: var(--color-text-muted);display: block;margin-top: -4px;">{{
+              activeContact.contact_id
+            }}</small>
         </div>
       </div>
 
@@ -608,10 +610,10 @@ defineExpose({
         </div>
       </div>
 
-      <div class="chat-area-contact-more-area with-title display-flex" data-title="群公告"
+      <div class="chat-area-contact-more-area with-title display-flex cursor-pointer" data-title="群公告"
            @click="changeShowGroupAnnounce()">
-        <span v-if="groupNotifications == null" style="color: var(--color-text-light);">内容获取中</span>
-        <span v-else-if="!groupNotifications?.length" style="color: var(--color-text-light);">未设置</span>
+        <span v-if="groupNotifications == null" style="color: var(--color-text-muted);">内容获取中</span>
+        <span v-else-if="!groupNotifications?.length" style="color: var(--color-text-muted);">未设置</span>
         <span v-else class="overflow-ellipsis">
           <span v-if="latestGroupNoticeMsg?.image?.length">【图片】</span>
           <span v-html="latestGroupNoticeMsg.text"></span>

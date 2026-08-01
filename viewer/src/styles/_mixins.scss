@@ -281,8 +281,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 // ---- 消息气泡通用 ----
@@ -326,8 +330,12 @@
 }
 
 @keyframes simplePopUpMaskIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 // ---- 弹窗容器 ----
@@ -379,8 +387,12 @@
 }
 
 @keyframes videoPlayerMaskIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 // ---- 全屏顶部栏（ImageViewer/VideoPlayer） ----
@@ -438,7 +450,7 @@
 // ---- 加载/错误/空状态占位 ----
 @mixin state-placeholder {
   text-align: center;
-  color: $color-text-light;
+  color: $color-text-muted;
   padding: 40px 0;
   font-size: 14px;
 }
@@ -626,4 +638,10 @@
     animation: simplePopUpContainerIn 0.3s ease-in-out reverse;
     opacity: 0;
   }
+}
+
+// 内缩容器
+@mixin box-fit($gap: 20px) {
+  max-width: calc(100% - $gap);
+  max-height: calc(100% - $gap);
 }

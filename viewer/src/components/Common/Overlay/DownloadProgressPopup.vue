@@ -184,77 +184,75 @@ export default defineComponent({
                  :on-confirm="onClosed"
                  :on-cancel="onClosed"
                  :container-styles="$style['download-progress-container']">
-      <template #default>
-        <div class="download-content">
-          <!-- 标题 -->
-          <div class="download-title">
-            {{
-              status === 'completed' ? '✅ 下载完成' :
-                status === 'error' ? '❌ 下载失败' :
-                  status === 'cancelled' ? '⏹ 已取消' :
-                    '⏳ 下载文件中...'
-            }}
-          </div>
+      <div class="download-content">
+        <!-- 标题 -->
+        <div class="download-title">
+          {{
+            status === 'completed' ? '✅ 下载完成' :
+              status === 'error' ? '❌ 下载失败' :
+                status === 'cancelled' ? '⏹ 已取消' :
+                  '⏳ 下载文件中...'
+          }}
+        </div>
 
-          <!-- 文件名 -->
-          <div class="download-file-name" :title="fileName">
-            {{ fileName }}
-          </div>
+        <!-- 文件名 -->
+        <div class="download-file-name" :title="fileName">
+          {{ fileName }}
+        </div>
 
-          <!-- 真实源地址（仅代理类处理器有） -->
-          <div class="download-url" v-if="resolvedUrl">
-            <span class="url-label">源地址:</span>
-            <span class="url-value" :title="resolvedUrl">{{ resolvedUrl }}</span>
-          </div>
+        <!-- 真实源地址（仅代理类处理器有） -->
+        <div class="download-url" v-if="resolvedUrl">
+          <span class="url-label">源地址:</span>
+          <span class="url-value" :title="resolvedUrl">{{ resolvedUrl }}</span>
+        </div>
 
-          <!-- 进度条 -->
-          <div class="download-progress-bar-container" v-if="status === 'downloading'">
-            <div class="download-progress-bar"
-                 :class="{ indeterminate: progress === -1 }"
-                 :style="progress > 0 ? { width: progress + '%' } : {}">
-            </div>
-          </div>
-
-          <!-- 进度信息 -->
-          <div class="download-info" v-if="status === 'downloading'">
-            <span v-if="progress > 0">{{ progress }}%</span>
-            <span v-else>准备中...</span>
-            <span class="bytes-info" v-if="totalBytes > 0">
-              {{ (receivedBytes / 1024 / 1024).toFixed(1) }} MB / {{ (totalBytes / 1024 / 1024).toFixed(1) }} MB
-            </span>
-          </div>
-
-          <!-- 错误信息 -->
-          <div class="download-error" v-if="status === 'error'">
-            {{ errorMessage }}
-          </div>
-
-          <!-- 按钮区域 -->
-          <div class="download-actions">
-            <!-- 下载中：仅取消按钮 -->
-            <template v-if="status === 'downloading'">
-              <button class="download-btn cancel-btn" @click="cancelDownload">
-                取消
-              </button>
-            </template>
-
-            <!-- 失败 / 已取消：重试 + 关闭两个按钮 -->
-            <template v-else-if="status === 'error' || status === 'cancelled'">
-              <button class="download-btn retry-btn" @click="retryDownload">
-                重试
-              </button>
-              <button class="download-btn close-btn" @click="close">
-                关闭
-              </button>
-            </template>
-
-            <!-- 下载完成：仅关闭 -->
-            <button v-else class="download-btn close-btn" @click="close">
-              关闭
-            </button>
+        <!-- 进度条 -->
+        <div class="download-progress-bar-container" v-if="status === 'downloading'">
+          <div class="download-progress-bar"
+               :class="{ indeterminate: progress === -1 }"
+               :style="progress > 0 ? { width: progress + '%' } : {}">
           </div>
         </div>
-      </template>
+
+        <!-- 进度信息 -->
+        <div class="download-info" v-if="status === 'downloading'">
+          <span v-if="progress > 0">{{ progress }}%</span>
+          <span v-else>准备中...</span>
+          <span class="bytes-info" v-if="totalBytes > 0">
+              {{ (receivedBytes / 1024 / 1024).toFixed(1) }} MB / {{ (totalBytes / 1024 / 1024).toFixed(1) }} MB
+            </span>
+        </div>
+
+        <!-- 错误信息 -->
+        <div class="download-error" v-if="status === 'error'">
+          {{ errorMessage }}
+        </div>
+
+        <!-- 按钮区域 -->
+        <div class="download-actions">
+          <!-- 下载中：仅取消按钮 -->
+          <template v-if="status === 'downloading'">
+            <button class="download-btn cancel-btn" @click="cancelDownload">
+              取消
+            </button>
+          </template>
+
+          <!-- 失败 / 已取消：重试 + 关闭两个按钮 -->
+          <template v-else-if="status === 'error' || status === 'cancelled'">
+            <button class="download-btn retry-btn" @click="retryDownload">
+              重试
+            </button>
+            <button class="download-btn close-btn" @click="close">
+              关闭
+            </button>
+          </template>
+
+          <!-- 下载完成：仅关闭 -->
+          <button v-else class="download-btn close-btn" @click="close">
+            关闭
+          </button>
+        </div>
+      </div>
     </SimplePopUp>
   </div>
 </template>
@@ -289,7 +287,7 @@ export default defineComponent({
 
 .download-url {
   font-size: 11px;
-  color: $color-text-light;
+  color: $color-text-muted;
   margin-bottom: 12px;
   padding: 6px 8px;
   background: $color-bg-page;
@@ -346,7 +344,7 @@ export default defineComponent({
 
 .bytes-info {
   margin-left: $spacing-sm;
-  color: $color-text-lighter;
+  color: $color-text-muted;
 }
 
 .download-error {

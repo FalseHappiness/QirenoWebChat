@@ -76,7 +76,7 @@ hr {
   margin: 0;
   font-size: 12px;
   line-height: 20px;
-  color: $color-text-light !important;
+  color: $color-text-muted !important;
   overflow: hidden;
   @include text-ellipsis;
 }
