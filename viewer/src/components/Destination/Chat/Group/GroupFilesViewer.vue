@@ -231,7 +231,7 @@ export default defineComponent({
               <option value="large_first">从大到小</option>
               <option value="small_first">从小到大</option>
             </select>
-            <select v-model="folderOrder" class="gv-select" title="文件夹排列" v-if="pathStack.length == 0">
+            <select v-model="folderOrder" class="gv-select" title="文件夹排列" v-if="pathStack.length === 0">
               <option value="before">文件夹在前</option>
               <option value="mixed">{{ isSizeBasedSortBy ? "隐藏文件夹" : "混合排序" }}</option>
             </select>
@@ -397,7 +397,7 @@ export default defineComponent({
 }
 
 .gv-select:focus {
-  border-color: $color-link-default;
+  border-color: $color-primary;
 }
 
 /* 系统信息 */
@@ -529,7 +529,7 @@ export default defineComponent({
 }
 </style>
 
-<style module>
+<style module lang="scss">
 .group-files-viewer-container {
   width: 1000px;
   height: 700px;

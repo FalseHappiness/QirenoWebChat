@@ -284,7 +284,7 @@ export default defineComponent({
 }
 </style>
 
-<style scoped>
+<style scoped lang="scss">
 .essence-msg-viewer-item-content:deep(.message-file-message) {
   border: 1px solid $color-border-essence-item;
 }

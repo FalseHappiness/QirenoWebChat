@@ -481,7 +481,7 @@ export default defineComponent({
 }
 
 .fv-message:deep(.at-somebody-link) {
-  color: $color-link-default;
+  color: $color-text-link;
   cursor: pointer;
 }
 
@@ -502,7 +502,7 @@ export default defineComponent({
 }
 </style>
 
-<style module>
+<style module lang="scss">
 .forward-viewer-container {
   width: 620px;
   height: 700px;

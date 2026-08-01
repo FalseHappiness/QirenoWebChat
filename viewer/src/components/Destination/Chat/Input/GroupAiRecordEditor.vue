@@ -306,7 +306,7 @@ export default defineComponent({
   gap: 6px;
   padding: 6px 8px;
   background-color: $color-bg-card;
-  border: 1px solid $color-border-ai-default;
+  border: 1px solid $color-bg-button-default;
   border-radius: $radius-btn;
   cursor: pointer;
   transition: all 0.2s;
@@ -439,7 +439,7 @@ export default defineComponent({
 }
 </style>
 
-<style module>
+<style module lang="scss">
 .group-ai-record-editor-container {
   width: 480px;
   height: 520px;

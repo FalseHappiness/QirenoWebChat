@@ -482,7 +482,7 @@ export default defineComponent({
   </teleport>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .image-viewer-mask {
   position: fixed;
   top: 0;

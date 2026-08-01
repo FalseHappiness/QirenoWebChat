@@ -207,7 +207,7 @@ export default defineComponent({
 }
 </style>
 
-<style module>
+<style module lang="scss">
 .group-announce-viewer-container {
   width: 520px;
   height: 540px;

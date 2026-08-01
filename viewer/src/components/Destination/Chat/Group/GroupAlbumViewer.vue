@@ -704,7 +704,7 @@ export default defineComponent({
 }
 </style>
 
-<style module>
+<style module lang="scss">
 .group-album-viewer-container {
   width: 900px;
   height: 700px;
