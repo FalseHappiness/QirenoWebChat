@@ -1,10 +1,10 @@
 <script>
 import { defineComponent } from 'vue'
 import { fetchGroupAlbumList, fetchGroupAlbumMediaList } from "../../../../scripts/backend-api.js"
-import { formatTimeOptions } from "../../../../scripts/util.js"
+import { formatTimeOptions } from "@/scripts/util.js"
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue"
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue"
-import { showInfoToast } from "../../../../scripts/toast.js";
+import { showInfoToast } from "@/scripts/toast.js";
 import ImageViewer from "../../../Common/Media/ImageViewer.vue";
 import VideoPlayer from "../../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
@@ -548,31 +548,18 @@ export default defineComponent({
 <style scoped lang="scss">
 /* ===== 通用 ===== */
 .gav-title {
-  text-align: center;
-  font-size: 16px;
-  padding: 0 0 2px 0;
-  border-bottom: 1px solid $color-border-divider;
-  user-select: none;
-  position: relative;
+  @include dialog-title;
   line-height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
 }
 
 .gav-close-btn {
-  width: 20px;
-  height: 20px;
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
+  @extend %popup-close-btn;
 }
 
 .gav-back-btn {
-  width: 20px;
-  height: 20px;
+  width: $close-btn-size;
+  height: $close-btn-size;
   position: absolute;
   left: 6px;
   top: 50%;
@@ -588,16 +575,13 @@ export default defineComponent({
 
 .gav-loading,
 .gav-empty {
-  text-align: center;
-  color: $color-text-light;
-  padding: 40px 0;
-  font-size: 14px;
+  @extend %state-placeholder;
 }
 
 .gav-loading-more {
   text-align: center;
   color: $color-text-light;
-  padding: 12px 0;
+  padding: $spacing-md 0;
   font-size: 13px;
 }
 
@@ -624,11 +608,7 @@ export default defineComponent({
 
 /* 固定宽高比例容器 - 1:1 正方形 */
 .gav-grid-item-cover {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background: $color-bg-page;
+  @extend %aspect-square-cover;
 }
 
 .gav-grid-item-img {
@@ -650,35 +630,18 @@ export default defineComponent({
 }
 
 .gav-grid-item-count {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
+  @extend %badge-corner;
   background: $color-bg-toolbar;
-  color: #fff;
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 8px;
-  line-height: 16px;
 }
 
 .gav-video-badge {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 36px;
-  height: 36px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @extend %video-play-badge;
 }
 
 .gav-play-icon {
   width: 18px;
   height: 18px;
-  color: white;
+  color: $color-text-white;
   margin-left: 2px;
 }
 

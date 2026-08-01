@@ -77,7 +77,7 @@
 </template>
 
 <script>
-import { isFunction, isObject } from "../../../scripts/types-util.js";
+import { isFunction, isObject } from "@/scripts/types-util.js";
 
 export default {
   name: 'PageScroller',
@@ -214,10 +214,10 @@ export default {
       anchorOffset: 0,
       // 颜色
       themeColors: {
-        loadingSpinner: "#4CAF50",
+        loadingSpinner: "$color-theme-green",
         loadingText: "black",
-        toBottomBtn: "#4CAF50",
-        toBottomBtnHover: "#45a049",
+        toBottomBtn: "$color-theme-green",
+        toBottomBtnHover: "$color-theme-green-hover",
         toBottomText: "white",
       }
     }
@@ -762,7 +762,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .message-content {
   display: flex;
   align-items: flex-start;
@@ -776,9 +776,9 @@ export default {
 .message-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background: #4CAF50;
-  color: white;
+  border-radius: $radius-avatar;
+  background: $color-theme-green;
+  color: $color-text-white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -795,13 +795,13 @@ export default {
 .message-text {
   font-size: 14px;
   line-height: 1.4;
-  color: #333;
-  margin-bottom: 4px;
+  color: $color-text-regular;
+  margin-bottom: $spacing-xs;
 }
 
 .message-time {
   font-size: 12px;
-  color: #999;
+  color: $color-text-light;
 }
 
 .loading-indicator {
@@ -815,16 +815,16 @@ export default {
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 14px;
-  color: #666;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: $color-text-secondary;
+  box-shadow: $shadow-grid-item;
   z-index: 10;
 }
 
 .loading-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid #e0e0e0;
-  --color: #4CAF50;
+  border: 2px solid $color-theme-green-light;
+  --color: $color-theme-green;
   border-top: 2px solid var(--color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -843,9 +843,9 @@ export default {
   position: absolute;
   right: 20px;
   bottom: 10px;
-  --color: #4CAF50;
-  --text-color: white;
-  --hover-color: #45a049;
+  --color: $color-theme-green;
+  --text-color: $color-text-white;
+  --hover-color: $color-theme-green-hover;
   background: var(--color);
   color: var(--text-color);
   border: none;
@@ -863,16 +863,16 @@ export default {
 }
 </style>
 
-<style>
+<style lang="scss">
 @keyframes midway-message-highlight-animation {
   0% {
     background-color: transparent;
   }
   33% {
-    background-color: #80808030;
+    background-color: $color-bg-highlight;
   }
   80% {
-    background-color: #80808030;
+    background-color: $color-bg-highlight;
   }
   100% {
     background-color: transparent;

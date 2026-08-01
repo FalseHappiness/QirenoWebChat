@@ -1,7 +1,7 @@
 <script>
 import { defineComponent } from 'vue'
-import { qqAppImg } from "../../../composables/useBase.js";
-import { isString } from "../../../scripts/types-util.js";
+import { qqAppImg } from "@/composables/useBase.js";
+import { isString } from "@/scripts/types-util.js";
 import QIcon from "../Icons/QIcon.vue";
 
 export default defineComponent({
@@ -271,7 +271,7 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .loading-image-container,
 .loading-image-placeholder,
 .failed-image-placeholder,
@@ -285,13 +285,11 @@ export default defineComponent({
 .loading-image-placeholder, .failed-image-placeholder {
   width: 324px;
   height: 324px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  @include flex-center;
   flex-direction: column;
   flex-wrap: nowrap;
-  background-color: #e7eaf1;
-  border-radius: 8px;
+  background-color: $color-bg-image-placeholder;
+  border-radius: $radius-card;
   overflow: hidden;
 }
 

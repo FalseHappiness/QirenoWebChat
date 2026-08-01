@@ -1,5 +1,11 @@
+@use "sass:color";
 @use "variables" as *;
 
 :root {
-  --color-text-muted: $color-text-muted;
+  --color-text-muted: #{$color-text-muted};
+  --color-text-gray: #{$color-text-gray};
+  --color-text-light: #{$color-text-light};
+  --color-primary: #{$color-primary};
+  --color-primary-light: #{color.adjust($color-primary, $lightness: 15%)};
+  --color-text-reply: #{$color-text-reply};
 }

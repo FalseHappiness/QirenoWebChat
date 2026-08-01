@@ -101,18 +101,11 @@ export default defineComponent({
 <style scoped lang="scss">
 /* ---- 项目自身卡片 ---- */
 .license-self-card {
-  border-radius: 8px;
-  background-color: white;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  @extend %card-column;
 }
 
 .license-self-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @extend %header-row;
 }
 
 .license-self-name {
@@ -134,20 +127,11 @@ export default defineComponent({
 }
 
 .license-self-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  @extend %meta-row;
 }
 
 .license-self-license-tag {
-  display: inline-block;
-  background-color: #e8f5e9;
-  color: #2e7d32;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 4px;
+  @include tag-badge($color-tag-green-bg, $color-tag-green-text);
 }
 
 .license-self-author {
@@ -160,26 +144,16 @@ export default defineComponent({
   color: $color-primary;
   text-decoration: none;
   align-self: flex-start;
-}
-
-.license-self-link:hover {
-  text-decoration: underline;
+  @extend %link-hover-underline;
 }
 
 /* ---- 依赖项卡片 ---- */
 .license-item-card {
-  border-radius: 8px;
-  background-color: white;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  @extend %card-column;
 }
 
 .license-item-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  @extend %header-row;
   flex-wrap: wrap;
 }
 
@@ -196,13 +170,8 @@ export default defineComponent({
 }
 
 .license-item-license-tag {
-  display: inline-block;
-  background-color: #e3f2fd;
-  color: #1565c0;
-  font-size: 11px;
-  font-weight: 500;
+  @include tag-badge($color-tag-blue-bg, $color-tag-blue-text, 11px);
   padding: 1px 6px;
-  border-radius: 4px;
 }
 
 .license-item-desc {
@@ -215,7 +184,7 @@ export default defineComponent({
 .license-item-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: $spacing-md;
   flex-wrap: wrap;
 }
 
@@ -228,10 +197,7 @@ export default defineComponent({
   font-size: 12px;
   color: $color-primary;
   text-decoration: none;
-}
-
-.license-item-link:hover {
-  text-decoration: underline;
+  @extend %link-hover-underline;
 }
 
 /* ---- 展开/收起（共用） ---- */
@@ -245,14 +211,14 @@ export default defineComponent({
   user-select: none;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: $spacing-xs;
   cursor: pointer;
 }
 
 .license-expand-arrow {
   display: inline-block;
   font-size: 10px;
-  transition: transform 0.2s ease;
+  transition: transform $transition-normal ease;
 }
 
 .license-expand-arrow.expanded {
@@ -261,24 +227,17 @@ export default defineComponent({
 
 .license-text-scroll {
   max-height: 300px;
-  margin-top: 8px;
-  border: 1px solid #e1e4e8;
-  border-radius: 6px;
+  margin-top: $spacing-sm;
+  border: 1px solid $color-border-code;
+  border-radius: $radius-btn;
 }
 
 .license-text-block {
-  margin: 0;
-  padding: 10px 12px;
-  background-color: #f6f8fa;
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: #333;
+  @include code-block;
 }
 
 .license-notice-block {
-  border-color: #fff3cd;
-  background-color: #fffbe6;
+  border-color: $color-border-notice;
+  background-color: $color-bg-notice-warning;
 }
 </style>

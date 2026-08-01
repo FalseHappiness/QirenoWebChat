@@ -205,10 +205,8 @@ export default defineComponent({
 <style scoped lang="scss">
 /* ===== 标题栏 (仿 ChatArea 头部风格) ===== */
 .fv-head {
-  display: flex;
-  flex-direction: row;
+  @include flex-row-center;
   justify-content: center;
-  align-items: center;
   border-bottom: 1px solid $color-border;
   flex-shrink: 0;
   background: $color-bg-chat;
@@ -216,20 +214,19 @@ export default defineComponent({
 }
 
 .fv-head-name {
-  display: flex;
-  align-items: center;
+  @include flex-row-center;
   font-size: 14px;
 }
 
 .fv-close-btn {
-  width: 20px;
-  height: 20px;
+  width: $close-btn-size;
+  height: $close-btn-size;
   position: absolute;
   right: 6px;
   top: 4px;
   cursor: pointer;
   padding: 2px;
-  border-radius: 8px;
+  border-radius: $radius-card;
 }
 
 .fv-close-btn:hover {
@@ -243,8 +240,7 @@ export default defineComponent({
 /* ===== 主体区域 ===== */
 .fv-body {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  @include flex-column;
   overflow: hidden;
   background: $color-bg-chat;
 }
@@ -252,16 +248,11 @@ export default defineComponent({
 /* ===== 加载/错误/空状态 ===== */
 .fv-loading,
 .fv-empty {
-  text-align: center;
-  padding: 40px 0;
-  font-size: 14px;
+  @extend %state-placeholder;
 }
 
 .fv-error {
-  text-align: center;
-  color: $color-text-warning;
-  padding: 40px 0;
-  font-size: 14px;
+  @extend %state-error;
 }
 
 /* ===== 消息列表容器 (CustomScrollBar 接管滚动) ===== */

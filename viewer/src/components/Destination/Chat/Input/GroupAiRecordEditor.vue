@@ -306,8 +306,8 @@ export default defineComponent({
   gap: 6px;
   padding: 6px 8px;
   background-color: $color-bg-card;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
+  border: 1px solid $color-border-ai-default;
+  border-radius: $radius-btn;
   cursor: pointer;
   transition: all 0.2s;
   width: calc(50% - 3px);
@@ -316,12 +316,12 @@ export default defineComponent({
 
 .group-ai-record-editor-character-card:hover {
   border-color: $color-primary;
-  background-color: #f0f8ff;
+  background-color: $color-bg-ai-selected;
 }
 
 .group-ai-record-editor-character-card.selected {
   border-color: $color-primary;
-  background-color: #e6f4ff;
+  background-color: $color-bg-ai-active;
   box-shadow: 0 0 0 1px $color-primary;
 }
 
@@ -375,8 +375,8 @@ export default defineComponent({
 .group-ai-record-editor-textarea {
   width: 100%;
   height: 70px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid $color-border-ai-input;
+  border-radius: $radius-sm;
   padding: 8px;
   font-size: 13px;
   resize: none;
@@ -434,7 +434,7 @@ export default defineComponent({
 }
 
 .group-ai-record-editor-send-btn:disabled {
-  background-color: #ccc;
+  background-color: $color-border-hover;
   cursor: not-allowed;
 }
 </style>

@@ -6,27 +6,27 @@ import {
   fetchGroupNotice,
   fetchMsg,
   fetchSetGroupMemberRemark
-} from "../../../scripts/backend-api.js";
+} from "@/scripts/backend-api.js";
 import PageScroller from "../../Common/Scrolling/PageScroller.vue";
 import SimpleBarCore from "simplebar";
 import 'simplebar/dist/simplebar.min.css';
 import MessageInputBox from "./Input/MessageInputBox.vue";
-import { useGlobalStore } from "../../../store/global.js";
-import { parseJSON } from "../../../scripts/util.js";
+import { useGlobalStore } from "@/store/global.js";
+import { parseJSON } from "@/scripts/util.js";
 import Tooltip from "../../Common/Overlay/Tooltip.vue";
-import { Emitter } from "../../../composables/useEventBus.js";
+import { Emitter } from "@/composables/useEventBus.js";
 import GroupAnnounceViewer from "./Group/GroupAnnounceViewer.vue";
 import EnterArrow from "../../Common/Widgets/EnterArrow.vue";
 import GroupEssenceMsgViewer from "./Group/GroupEssenceMsgViewer.vue";
 import GroupFilesViewer from "./Group/GroupFilesViewer.vue";
 import GroupAlbumViewer from "./Group/GroupAlbumViewer.vue";
-import { qqAppImg } from "../../../composables/useBase.js";
+import { qqAppImg } from "@/composables/useBase.js";
 import CustomScrollBar from "../../Common/Scrolling/CustomScrollBar.vue";
 import ImageViewer from "../../Common/Media/ImageViewer.vue";
-import { isEmptyObject, isObject, isString } from "../../../scripts/types-util.js";
+import { isEmptyObject, isObject, isString } from "@/scripts/types-util.js";
 import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../Common/Icons/QIcon.vue";
-import { getContactNameRef } from "../../../scripts/user-info-util.js";
+import { getContactNameRef } from "@/scripts/user-info-util.js";
 
 const activeContact = inject("activeContact")
 const selfInfo = inject("selfInfo")
@@ -598,7 +598,7 @@ defineExpose({
             群文件
           </div>
           <div @click="changeShowGroupAlbum()" class="group-app-list-app-container">
-            <QIcon name="image_24" class="group-app-icon" style="color: #0099ff;"/>
+            <QIcon name="image_24" class="group-app-icon" style="color: var(--color-primary);"/>
             群相册
           </div>
           <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">
@@ -610,8 +610,8 @@ defineExpose({
 
       <div class="chat-area-contact-more-area with-title display-flex" data-title="群公告"
            @click="changeShowGroupAnnounce()">
-        <span v-if="groupNotifications == null" style="color: #999;">内容获取中</span>
-        <span v-else-if="!groupNotifications?.length" style="color: #999;">未设置</span>
+        <span v-if="groupNotifications == null" style="color: var(--color-text-light);">内容获取中</span>
+        <span v-else-if="!groupNotifications?.length" style="color: var(--color-text-light);">未设置</span>
         <span v-else class="overflow-ellipsis">
           <span v-if="latestGroupNoticeMsg?.image?.length">【图片】</span>
           <span v-html="latestGroupNoticeMsg.text"></span>
@@ -689,8 +689,8 @@ defineExpose({
       </template>
       <template #scroll-to-bottom-btn="{ scrollToBottom }">
         <div class="scroll-to-bottom-btn" @click="scrollToBottom">
-          <QIcon name="arrow_down_mini_16" style="transform: translateY(-8%); color: #58bafb;"/>
-          <QIcon name="arrow_down_mini_16" style="transform: translateY(-80%); color: #0099ff;"/>
+          <QIcon name="arrow_down_mini_16" style="transform: translateY(-8%); color: var(--color-primary-light);"/>
+          <QIcon name="arrow_down_mini_16" style="transform: translateY(-80%); color: var(--color-primary);"/>
         </div>
       </template>
     </page-scroller>

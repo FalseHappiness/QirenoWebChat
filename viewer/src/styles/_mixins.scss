@@ -172,8 +172,8 @@
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: $close-btn-size;
+  height: $close-btn-size;
   cursor: pointer;
 }
 
@@ -306,4 +306,324 @@
   display: block;
   margin: 4px 0;
   max-width: 324px !important;
+}
+
+// ============================================================
+// 新增 mixin — 封装从 Vue 组件中提取的通用样式
+// ============================================================
+
+// ---- 弹窗遮罩层 ----
+@mixin popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: $color-bg-mask;
+  opacity: 1;
+  --anim-time: 0.3s;
+  animation: simplePopUpMaskIn var(--anim-time) ease-in-out;
+}
+
+@keyframes simplePopUpMaskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ---- 弹窗容器 ----
+@mixin popup-container($width: 360px, $height: 380px) {
+  width: $width;
+  height: $height;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: $radius-btn;
+  box-shadow: $shadow-popup;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  padding: 10px 15px 15px 15px;
+  --anim-time: 0.3s;
+  animation: simplePopUpContainerIn var(--anim-time) ease-in-out;
+}
+
+@keyframes simplePopUpContainerIn {
+  from {
+    opacity: 0;
+    top: calc(50% - 50px);
+  }
+  to {
+    opacity: 1;
+    top: 50%;
+  }
+}
+
+// ---- 全屏遮罩（ImageViewer/VideoPlayer） ----
+@mixin fullscreen-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: $color-bg-mask;
+  z-index: 888;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  opacity: 1;
+  --anim-time: 0.3s;
+  animation: videoPlayerMaskIn var(--anim-time) ease-in-out;
+  touch-action: none;
+}
+
+@keyframes videoPlayerMaskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ---- 全屏顶部栏（ImageViewer/VideoPlayer） ----
+@mixin fullscreen-top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  z-index: 889;
+  padding: 12px;
+}
+
+// ---- 全屏关闭按钮（ImageViewer/VideoPlayer） ----
+@mixin fullscreen-close-btn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  height: 28px;
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $color-text-white;
+  z-index: 889;
+}
+
+// ---- 全屏导航箭头（ImageViewer/VideoPlayer） ----
+@mixin fullscreen-nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 890;
+  color: $color-text-white;
+  opacity: 0.75;
+  border-radius: $radius-avatar;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+// ---- 弹窗头部关闭按钮（通用） ----
+@mixin popup-close-btn($right: 5px, $top: 5px, $size: 25px) {
+  width: $size;
+  height: $size;
+  position: absolute;
+  right: $right;
+  top: $top;
+  cursor: pointer;
+}
+
+// ---- 加载/错误/空状态占位 ----
+@mixin state-placeholder {
+  text-align: center;
+  color: $color-text-light;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+// ---- 错误状态占位 ----
+@mixin state-error {
+  text-align: center;
+  color: $color-text-warning;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+// ---- 正方形宽高比容器 ----
+@mixin aspect-square {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+// ---- 绝对定位居中 ----
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+// ---- 进度条容器 ----
+@mixin progress-bar-track($height: 4px, $bg: $color-bg-active) {
+  width: 100%;
+  height: $height;
+  background: $bg;
+  border-radius: $radius-progress;
+  overflow: hidden;
+}
+
+// ---- 进度条填充 ----
+@mixin progress-bar-fill($height: 100%, $color: $color-primary, $radius: $radius-progress) {
+  height: $height;
+  background: $color;
+  border-radius: $radius;
+  transition: width $transition-slow ease;
+}
+
+// ---- 水平flex居中 ----
+@mixin flex-row-center {
+  display: flex;
+  align-items: center;
+}
+
+// ---- 水平flex两端对齐 ----
+@mixin flex-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ---- 垂直flex ----
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// ---- 垂直flex居中 ----
+@mixin flex-column-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+// ---- 主色按钮完全填充（确认框底部） ----
+@mixin btn-primary-full($height: 45px, $radius: $radius-lg) {
+  height: $height;
+  border-radius: $radius;
+  background-color: $color-primary;
+  color: $color-text-white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: default;
+
+  &:hover {
+    background-color: $color-bg-primary-hover;
+  }
+
+  &:active {
+    background-color: $color-bg-primary-active;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+// ---- 危险操作按钮（取消上传） ----
+@mixin btn-danger {
+  font-size: 12px;
+  color: $color-danger-bright;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: $radius-sm;
+  border: 1px solid $color-danger-bright;
+
+  &:hover {
+    background: $color-bg-hover-danger;
+  }
+
+  &:active {
+    background: $color-bg-active-danger;
+  }
+}
+
+// ---- 自定义滚动条样式 ----
+@mixin custom-scrollbar-style {
+  .resizable-r {
+    width: 8px !important;
+  }
+
+  .simplebar-scrollbar {
+    visibility: hidden;
+    opacity: 0.3;
+  }
+
+  .simplebar-scrollbar:before {
+    width: 7px;
+    left: 3.5px;
+  }
+}
+
+// ---- 选择框基础样式 ----
+@mixin select-base {
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid $color-border-hover;
+  border-radius: $radius-sm;
+  background: $color-bg-card;
+  color: $color-text-secondary;
+  cursor: pointer;
+  outline: none;
+
+  &:focus {
+    border-color: $color-link-default;
+  }
+}
+
+// ---- 标签徽章 ----
+@mixin tag-badge($bg: $color-tag-green-bg, $color: $color-tag-green-text, $size: 12px) {
+  display: inline-block;
+  background-color: $bg;
+  color: $color;
+  font-size: $size;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: $radius-sm;
+}
+
+// ---- 代码块样式 ----
+@mixin code-block {
+  margin: 0;
+  padding: 10px 12px;
+  background-color: $color-bg-code;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: $color-text-regular;
+}
+
+// ---- 列表项底部边框 ----
+@mixin list-item-border($color: $color-border-item) {
+  border-bottom: 1px solid $color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// ---- 简单弹出容器过渡 ----
+@mixin popup-close-transition {
+  .simple-pop-up-mask.closed {
+    animation: simplePopUpMaskIn 0.3s ease-in-out reverse;
+    opacity: 0;
+  }
+
+  .simple-pop-up-mask.closed .simple-pop-up-container {
+    animation: simplePopUpContainerIn 0.3s ease-in-out reverse;
+    opacity: 0;
+  }
 }

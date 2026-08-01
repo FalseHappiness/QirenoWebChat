@@ -249,7 +249,7 @@ export default defineComponent({
 .essence-msg-viewer-item-footer {
   margin-top: 4px;
   padding-top: 6px;
-  border-top: 1px dashed #E0E0E0;
+  border-top: 1px dashed $color-border-essence;
 }
 
 .essence-msg-viewer-operator {
@@ -272,7 +272,7 @@ export default defineComponent({
 }
 
 .essence-msg-viewer-operator-time {
-  color: #AAA;
+  color: $color-text-lighter;
   margin-left: auto;
 }
 
@@ -286,7 +286,7 @@ export default defineComponent({
 
 <style scoped>
 .essence-msg-viewer-item-content:deep(.message-file-message) {
-  border: 1px solid #ebebeb;
+  border: 1px solid $color-border-essence-item;
 }
 
 .essence-msg-viewer-item-content:deep(.message-emoji-png), .essence-msg-viewer-item-content:deep(.msg-preview-emoji) {

@@ -62,15 +62,9 @@ export default defineComponent({
   </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .simple-pop-up-mask {
-  position: fixed;
-  height: 100%;
-  width: 100%;
-  background-color: rgba(0, 0, 0, 0.48);
-  opacity: 1;
-  --anim-time: 0.3s;
-  animation: simplePopUpMaskIn var(--anim-time) ease-in-out;
+  @include popup-mask;
 }
 
 .simple-pop-up-mask.closed {
@@ -78,46 +72,12 @@ export default defineComponent({
   opacity: 0;
 }
 
-@keyframes simplePopUpMaskIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 :where(.simple-pop-up-container) {
-  width: 360px;
-  height: 380px;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  border-radius: 6px;
-  box-shadow: 0 0 20px 20px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  padding: 10px 15px 15px 15px;
-  --anim-time: 0.3s;
-  animation: simplePopUpContainerIn var(--anim-time) ease-in-out;
+  @include popup-container;
 }
 
 .simple-pop-up-mask.closed .simple-pop-up-container {
   animation: simplePopUpContainerIn 0.3s ease-in-out reverse;
   opacity: 0;
-}
-
-@keyframes simplePopUpContainerIn {
-  from {
-    opacity: 0;
-    top: calc(50% - 50px);
-  }
-  to {
-    opacity: 1;
-    top: 50%;
-  }
 }
 </style>

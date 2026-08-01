@@ -181,3 +181,226 @@
   box-shadow: 0 0 0 2px $color-primary-light;
   background: rgba(255, 255, 255, 0.85);
 }
+
+// ============================================================
+// 新增占位样式 — 从 Vue 组件中提取的通用结构
+// ============================================================
+
+// ---- 全屏遮罩层 ----
+%fullscreen-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: $color-bg-mask;
+  z-index: 888;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  touch-action: none;
+}
+
+// ---- 全屏顶部栏 ----
+%fullscreen-top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  z-index: 889;
+  padding: 12px;
+}
+
+// ---- 全屏关闭按钮 ----
+%fullscreen-close-btn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  height: 28px;
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $color-text-white;
+  z-index: 889;
+}
+
+// ---- 全屏导航箭头 ----
+%fullscreen-nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 890;
+  color: $color-text-white;
+  opacity: 0.75;
+  border-radius: $radius-avatar;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+// ---- 弹窗关闭按钮 ----
+%popup-close-btn {
+  width: $close-btn-size;
+  height: $close-btn-size;
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+// ---- 弹窗右上角关闭按钮（大号） ----
+%popup-close-btn-lg {
+  width: $close-btn-size-sm;
+  height: $close-btn-size-sm;
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  cursor: pointer;
+}
+
+// ---- 加载/空/错误状态占位（水平居中） ----
+%state-placeholder {
+  text-align: center;
+  color: $color-text-light;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+// ---- 错误状态占位 ----
+%state-error {
+  text-align: center;
+  color: $color-text-warning;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+// ---- 水平flex居中 ----
+%flex-row-center {
+  display: flex;
+  align-items: center;
+}
+
+// ---- 水平flex两端对齐 ----
+%flex-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ---- flex 项目信息容器 ----
+%flex-item-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+// ---- 列表项行 ----
+%list-item {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  transition: background-color $transition-fast;
+  gap: 10px;
+  cursor: pointer;
+}
+
+// ---- 列表项底部边框 ----
+%list-item-border {
+  border-bottom: 1px solid $color-border-faint;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// ---- 正方形封面容器 ----
+%aspect-square-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: $color-bg-page;
+}
+
+// ---- 徽章角标 ----
+%badge-corner {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  color: $color-text-white;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  line-height: 16px;
+}
+
+// ---- 视频播放按钮遮罩 ----
+%video-play-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: $radius-avatar;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ---- 进度条容器 ----
+%progress-track {
+  width: 100%;
+  height: 4px;
+  background: $color-bg-active;
+  border-radius: $radius-progress;
+  overflow: hidden;
+}
+
+// ---- 进度条填充 ----
+%progress-fill {
+  height: 100%;
+  border-radius: $radius-progress;
+  transition: width $transition-slow ease;
+}
+
+// ---- 卡片容器（flex列 + gap） ----
+%card-column {
+  border-radius: $radius-card;
+  background-color: $color-bg-card;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+// ---- 头部flex行（align:center + gap） ----
+%header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// ---- 元信息flex行 ----
+%meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// ---- 链接hover下划线 ----
+%link-hover-underline {
+  &:hover {
+    text-decoration: underline;
+  }
+}

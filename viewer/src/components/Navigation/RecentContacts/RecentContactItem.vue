@@ -6,7 +6,7 @@ import { getGroupLogo, getUserLogo } from "@/scripts/backend-api.js";
 import { basicContextItem, vCustomMenu } from "../../../directives/context-menu.js";
 import { copy } from "@/scripts/clipboard.js";
 import { formatRelativeTime, parseJSON } from "@/scripts/util.js";
-import { CacheNameKey, fetchDisplayName, getContactNameRef } from "../../../scripts/user-info-util.js";
+import { CacheNameKey, fetchDisplayName, getContactNameRef } from "@/scripts/user-info-util.js";
 
 const props = defineProps({
   contact: {
@@ -201,7 +201,7 @@ onMounted(async () => {
     }
 
     .text-error {
-      color: #ff8894 !important;
+      color: $color-text-error-soft !important;
     }
 
     .contact-name.text-muted {

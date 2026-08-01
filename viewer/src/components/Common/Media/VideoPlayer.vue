@@ -166,37 +166,14 @@ export default defineComponent({
   </teleport>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .video-player-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.48);
-  z-index: 888;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  opacity: 1;
-  --anim-time: 0.3s;
-  animation: videoPlayerMaskIn var(--anim-time) ease-in-out;
-  /* 阻止移动端浏览器默认触摸行为 */
-  touch-action: none;
+  @include fullscreen-mask;
 }
 
 .video-player-mask.closed {
   animation: videoPlayerMaskIn 0.3s ease-in-out reverse;
   opacity: 0;
-}
-
-@keyframes videoPlayerMaskIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .video-player-mask.closed .video-player-video-area {
@@ -250,7 +227,7 @@ export default defineComponent({
 }
 
 .video-player-counter {
-  color: #fff;
+  color: $color-text-white;
   font-size: 14px;
   user-select: none;
   pointer-events: auto;
@@ -271,7 +248,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #fff;
+  color: $color-text-white;
   z-index: 889;
   border-radius: 50%;
   transition: background-color 0.2s;
@@ -328,7 +305,7 @@ export default defineComponent({
   justify-content: center;
   cursor: pointer;
   z-index: 890;
-  color: #fff;
+  color: $color-text-white;
   opacity: 0.75;
   transition: opacity 0.2s, background-color 0.2s;
   backdrop-filter: blur(6px);

@@ -41,7 +41,7 @@ const contact = computed(() => {
   border: 0;
   margin: 10px 0 0 0;
   width: 100%;
-  background-color: #f2f2f2;
+  background-color: $color-bg-card-alt;
 }
 
 .message-troop-share-card div {

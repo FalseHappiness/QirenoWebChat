@@ -293,19 +293,13 @@ export default defineComponent({
 }
 
 .files-upload-tasks-item-progress-bar-container {
-  width: 100%;
-  height: 4px;
-  background: $color-bg-active;
-  border-radius: 2px;
+  @include progress-bar-track;
   margin-top: 3px;
-  overflow: hidden;
 }
 
 .files-upload-tasks-item-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #0099ff, #00ccff);
-  border-radius: 2px;
-  transition: width 0.3s ease;
+  @extend %progress-fill;
+  background: linear-gradient(90deg, $color-primary, #00ccff);
 }
 
 .files-upload-tasks-item-action {
@@ -314,19 +308,14 @@ export default defineComponent({
 }
 
 .files-upload-tasks-cancel-btn {
-  font-size: 12px;
-  color: $color-danger-bright;
-  cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid $color-danger-bright;
+  @include btn-danger;
 }
 
 .files-upload-tasks-cancel-btn:hover {
-  background: #fff1f0;
+  background: $color-bg-hover-danger;
 }
 
 .files-upload-tasks-cancel-btn:active {
-  background: #ffccc7;
+  background: $color-bg-active-danger;
 }
 </style>

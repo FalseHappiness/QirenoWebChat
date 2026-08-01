@@ -167,7 +167,7 @@ export default defineComponent({
 <style scoped lang="scss">
 .contacts-picker-contacts-area {
   width: 50%;
-  border-right: 1px solid #e6e6e6;
+  border-right: 1px solid $color-bg-contact-picker-border;
   display: flex;
   flex-direction: column;
 }
@@ -228,7 +228,7 @@ export default defineComponent({
 }
 
 .contacts-picker-contacts-area-contact:deep(.ant-checkbox-inner):hover, .contacts-picker-contacts-area-contact:hover:deep(.ant-checkbox-inner) {
-  border-color: #d9d9d9;
+  border-color: $color-bg-contact-picker-checkbox;
 }
 
 .contacts-picker-contacts-area-contact:deep(.ant-checkbox-checked)::after {
@@ -269,7 +269,7 @@ export default defineComponent({
 .contacts-picker-contacts-area-contact-close-btn {
   width: 14px;
   height: 14px;
-  color: #ffffff;
+  color: $color-text-white;
   background-color: $color-text-light;
   border-radius: 50%;
 }
@@ -343,7 +343,7 @@ export default defineComponent({
 }
 
 .contacts-picker-contacts-area-search:focus-within {
-  border-color: #0077ed;
+  border-color: $color-bg-contact-picker-focus;
 }
 
 .contacts-picker-contacts-area-search-input {

@@ -192,19 +192,15 @@ export default defineComponent({
 /* ---- 加载 & 错误 ---- */
 .license-loading-area,
 .license-error-area {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
   flex: 1;
 }
 
 .license-error-card {
-  border-radius: 8px;
-  background-color: white;
+  border-radius: $radius-card;
+  background-color: $color-bg-card;
   padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  @include flex-column-center;
   gap: 10px;
 }
 
@@ -221,16 +217,15 @@ export default defineComponent({
 
 /* ---- 分区 ---- */
 .license-section {
-  display: flex;
-  flex-direction: column;
+  @include flex-column;
   gap: 10px;
 }
 
 .license-section-header {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 0 4px;
+  gap: $spacing-sm;
+  padding: 0 $spacing-xs;
 }
 
 .license-section-title {
@@ -245,9 +240,8 @@ export default defineComponent({
 }
 
 .license-empty-hint {
-  border-radius: 8px;
-  background-color: $color-bg-card;
-  padding: 16px;
+  @extend %card;
+  padding: $spacing-lg;
   text-align: center;
   color: $color-text-light;
   font-size: 14px;
@@ -255,17 +249,15 @@ export default defineComponent({
 
 /* ---- QQ 资源声明 ---- */
 .license-qq-notice {
-  border-radius: 10px;
+  border-radius: $radius-bubble;
   background-color: $color-bg-card;
   padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  @include flex-column;
+  gap: $spacing-sm;
 }
 
 .license-qq-notice-body {
-  display: flex;
-  flex-direction: column;
+  @include flex-column;
   gap: 6px;
 }
 
@@ -273,14 +265,14 @@ export default defineComponent({
   margin: 0;
   font-size: 13px;
   line-height: 1.6;
-  color: #3a5a7a;
+  color: $color-text-info;
 }
 
 .license-qq-notice-legal {
   margin-top: 4px;
   padding: 8px 10px;
-  background-color: #f0f7ff;
-  border: 1px solid #d0e3f7;
+  background-color: $color-bg-legal;
+  border: 1px solid $color-border-legal;
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.6;

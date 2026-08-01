@@ -393,14 +393,7 @@ export default defineComponent({
 }
 
 .gv-select {
-  font-size: 12px;
-  padding: 3px 6px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  color: #555;
-  cursor: pointer;
-  outline: none;
+  @include select-base;
 }
 
 .gv-select:focus {
@@ -442,23 +435,14 @@ export default defineComponent({
   white-space: nowrap;
 }
 
-/* 加载中 */
 .gv-loading {
-  text-align: center;
-  color: $color-text-light;
-  padding: 40px 0;
-  font-size: 14px;
+  @extend %state-placeholder;
 }
 
-/* 错误提示 */
 .gv-error {
-  text-align: center;
-  color: $color-text-warning;
-  padding: 40px 0;
-  font-size: 14px;
+  @extend %state-error;
 }
 
-/* 列表 */
 .gv-list {
   flex: 1;
   padding: 4px 0;
@@ -469,21 +453,13 @@ export default defineComponent({
 }
 
 .gv-empty {
-  text-align: center;
-  color: $color-text-light;
-  padding: 40px 0;
-  font-size: 14px;
+  @extend %state-placeholder;
 }
 
 /* 列表项 */
 .gv-item {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  transition: background-color 0.15s;
-  gap: 10px;
-  border-bottom: 1px solid #f9f9f9;
-  cursor: pointer;
+  @extend %list-item;
+  border-bottom: 1px solid $color-border-item;
   height: 65px;
 }
 
@@ -513,10 +489,10 @@ export default defineComponent({
 .gv-item-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: $spacing-xs;
   margin-top: 2px;
   font-size: 12px;
-  color: #7A7A7A;
+  color: $color-text-meta-secondary;
   flex-wrap: wrap;
 }
 
@@ -535,8 +511,8 @@ export default defineComponent({
 
 .gv-item-meta-upload-info {
   display: flex;
-  color: #7A7A7A;
-  gap: 4px;
+  color: $color-text-meta-secondary;
+  gap: $spacing-xs;
   font-size: 12px;
   align-items: flex-end;
   flex-direction: column;

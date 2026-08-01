@@ -75,18 +75,18 @@ export default {
 }
 
 .markdown-message :deep(hr) {
-  border-top: 1px solid #f5f5f5;
+  border-top: 1px solid $color-border-markdown-hr;
 }
 
 .markdown-message :deep(h1) {
   font-size: 2em;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid $color-border-markdown-heading;
   padding-bottom: 0.3em;
 }
 
 .markdown-message :deep(h2) {
   font-size: 1.5em;
-  border-bottom: 1px solid #eaecef;
+  border-bottom: 1px solid $color-border-markdown-heading;
   padding-bottom: 0.3em;
 }
 
@@ -96,13 +96,13 @@ export default {
 }
 
 .markdown-message :deep(a) {
-  color: #0f9fff;
+  color: $color-text-link-markdown;
   text-decoration: none;
   cursor: pointer;
 }
 
 .markdown-message :deep(a:hover) {
-  color: #0f9fff;
+  color: $color-text-link-markdown;
   text-decoration: none;
 }
 
@@ -114,8 +114,8 @@ export default {
 }
 
 .markdown-message :deep(pre) {
-  background-color: #f6f8fa;
-  border-radius: 3px;
+  background-color: $color-bg-code;
+  border-radius: $radius-xs;
   padding: 16px;
   overflow: auto;
 }
@@ -140,16 +140,16 @@ export default {
 
 .markdown-message :deep(table th),
 .markdown-message :deep(table td) {
-  border: 1px solid #dfe2e5;
+  border: 1px solid $color-border-markdown-table;
   padding: 6px 13px;
 }
 
 .markdown-message :deep(table tr) {
-  background-color: #fff;
-  border-top: 1px solid #c6cbd1;
+  background-color: $color-bg-card;
+  border-top: 1px solid $color-border-markdown-table-header;
 }
 
 .markdown-message :deep(table tr:nth-child(2n)) {
-  background-color: #f6f8fa;
+  background-color: $color-bg-code;
 }
 </style>

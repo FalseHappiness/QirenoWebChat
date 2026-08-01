@@ -260,6 +260,8 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
+@use "sass:color";
+
 .download-content {
   display: flex;
   flex-direction: column;
@@ -303,21 +305,21 @@ export default defineComponent({
 }
 
 .url-value {
-  color: #06c;
+  color: $color-link-url;
 }
 
 .download-progress-bar-container {
   height: 8px;
-  background: #e8e8e8;
-  border-radius: 4px;
+  background: $color-bg-button-default;
+  border-radius: $radius-sm;
   margin: 15px 0 8px;
   overflow: hidden;
 }
 
 .download-progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #4facfe, #00f2fe);
-  border-radius: 4px;
+  background: linear-gradient(90deg, $color-success, #00f2fe);
+  border-radius: $radius-sm;
   transition: width 0.3s ease;
 }
 
@@ -343,8 +345,8 @@ export default defineComponent({
 }
 
 .bytes-info {
-  margin-left: 8px;
-  color: #aaa;
+  margin-left: $spacing-sm;
+  color: $color-text-lighter;
 }
 
 .download-error {
@@ -352,9 +354,9 @@ export default defineComponent({
   color: $color-text-danger;
   text-align: center;
   margin: 10px 0;
-  padding: 8px;
-  background: #fef0f0;
-  border-radius: 4px;
+  padding: $spacing-sm;
+  background: $color-bg-error;
+  border-radius: $radius-sm;
   word-break: break-all;
 }
 
@@ -376,30 +378,30 @@ export default defineComponent({
 }
 
 .cancel-btn {
-  background: #e8e8e8;
-  color: #666;
+  background: $color-bg-button-default;
+  color: $color-text-secondary;
 }
 
 .cancel-btn:hover {
-  background: #d5d5d5;
+  background: $color-bg-button-default-hover;
 }
 
 .close-btn {
-  background: #4facfe;
-  color: #fff;
+  background: $color-success;
+  color: $color-text-white;
 }
 
 .close-btn:hover {
-  background: #3d9ae6;
+  background: $color-bg-primary-hover;
 }
 
 .retry-btn {
-  background: #f0ad4e;
-  color: #fff;
+  background: $color-retry;
+  color: $color-text-white;
 }
 
 .retry-btn:hover {
-  background: #e09d3e;
+  background: color.adjust($color-retry, $lightness: -8%);
 }
 </style>
 

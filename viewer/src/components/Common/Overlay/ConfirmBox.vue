@@ -82,7 +82,7 @@ export default defineComponent({
 
 .confirm-box-content {
   font-size: 14px;
-  color: #4a4a4a;
+  color: $color-text-soft;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -96,18 +96,16 @@ export default defineComponent({
 .confirm-box-buttons-container {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: $spacing-sm;
 }
 
 .confirm-box-button {
   margin: 0;
   width: 76px;
   height: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: white;
-  border-radius: 10px;
+  @include flex-center;
+  background-color: $color-bg-card;
+  border-radius: $radius-bubble;
   cursor: pointer;
   font-size: 14px;
 }

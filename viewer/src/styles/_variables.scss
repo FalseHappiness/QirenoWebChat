@@ -18,9 +18,13 @@ $color-text-white: #fff !default;
 $color-text-dark: #333 !default;          // 深色正文（群文件/相册/许可证）
 $color-text-gray: #7F7F7F !default;       // 灰色辅助文字（EnterArrow/公告/精华）
 $color-text-meta: #888 !default;          // 元信息文字（日期/速度）
+$color-text-meta-secondary: #7A7A7A !default; // 次级元信息（群文件上传者）
+$color-text-soft: #4a4a4a !default;       // 柔和正文（ConfirmBox内容）
+$color-text-info: #3a5a7a !default;       // 信息说明文字（许可证QQ声明）
 $color-text-note: #555 !default;          // 描述/说明文字
 $color-text-link: #4A90D9 !default;       // 链接色（转发消息/面包屑）
 $color-text-link-hover: #2A6CB0 !default; // 链接悬停色
+$color-text-link-markdown: #0f9fff !default; // Markdown 链接色
 $color-text-at-link: #007bff !default;    // @提及链接
 $color-text-record-cancel: #2D77E5 !default; // 录音取消/通知命令链接
 $color-text-danger: #e74c3c !default;     // 危险/错误文字
@@ -29,6 +33,14 @@ $color-text-warning: #FF6B6B !default;    // 警告提示（转发/群文件加�
 $color-text-success: #52c41a !default;    // 成功状态文字
 $color-text-red-tip: #b90000 !default;    // 红色提示（已撤回）
 $color-text-red-tip-icon: #900000 !default; // 红色提示图标
+$color-text-error-soft: #ff8894 !default; // 柔和错误（联系人列表）
+$color-text-reply: #5a5a5a !default;      // 回复消息引用文字
+
+// ---- 标签色 ----
+$color-tag-green-bg: #e8f5e9 !default;    // 绿色标签背景（许可证自身）
+$color-tag-green-text: #2e7d32 !default;  // 绿色标签文字（许可证自身）
+$color-tag-blue-bg: #e3f2fd !default;     // 蓝色标签背景（许可证依赖）
+$color-tag-blue-text: #1565c0 !default;   // 蓝色标签文字（许可证依赖）
 
 // ---- 背景色 ----
 $color-bg-page: #f5f5f5 !default;
@@ -66,6 +78,20 @@ $color-bg-scroll-btn-hover: #ececec !default;  // 滚动按钮悬停边框
 $color-bg-scroll-btn-active: #dddddd !default; // 滚动按钮激活边框/背景
 $color-bg-section: #FAFAFA !default;           // 分区背景（群文件/相册/AI语音）
 $color-bg-divider: #EDEDED !default;           // 标题分割线色
+$color-bg-legal: #f0f7ff !default;             // 法律声明背景（许可证）
+$color-bg-code: #f6f8fa !default;              // 代码块背景（许可证文本/Markdown）
+$color-bg-error: #fef0f0 !default;             // 错误提示背景
+$color-bg-hover-danger: #fff1f0 !default;      // 危险按钮悬停背景（上传取消）
+$color-bg-active-danger: #ffccc7 !default;     // 危险按钮激活背景（上传取消）
+$color-bg-notice-warning: #fffbe6 !default;    // 警告通知背景
+$color-bg-highlight: #80808030 !default;       // 高亮动画背景（消息搜索）
+$color-bg-button-default: #e8e8e8 !default;    // 默认按钮背景
+$color-bg-button-default-hover: #d5d5d5 !default; // 默认按钮悬停
+$color-bg-ai-selected: #f0f8ff !default;       // AI角色选中背景
+$color-bg-ai-active: #e6f4ff !default;         // AI角色激活背景
+$color-bg-contact-picker-border: #e6e6e6 !default; // 联系人选择器边框
+$color-bg-contact-picker-checkbox: #d9d9d9 !default; // 联系人选择器复选框
+$color-bg-contact-picker-focus: #0077ed !default; // 联系人选择器搜索聚焦
 
 // ---- 边框色 ----
 $color-border: #dee2e6 !default;
@@ -76,6 +102,18 @@ $color-border-cancel: #c4c4c4 !default;      // 取消按钮边框
 $color-border-divider: #EDEDED !default;      // 弹窗标题分割线
 $color-border-faint: #f0f0f0 !default;        // 极淡边框（卡片/网格）
 $color-border-tooltip: #d5d5d5 !default;      // Tooltip 边框
+$color-border-legal: #d0e3f7 !default;        // 法律声明边框（许可证）
+$color-border-code: #e1e4e8 !default;         // 代码块边框（许可证文本）
+$color-border-notice: #fff3cd !default;        // 通知边框（许可证警告）
+$color-border-item: #f9f9f9 !default;         // 列表项分割线（群文件）
+$color-border-essence: #E0E0E0 !default;      // 精华消息分割线
+$color-border-essence-item: #ebebeb !default; // 精华消息项边框
+$color-border-markdown-heading: #eaecef !default; // Markdown标题边框
+$color-border-markdown-table: #dfe2e5 !default;  // Markdown表格边框
+$color-border-markdown-table-header: #c6cbd1 !default; // Markdown表格头边框
+$color-border-markdown-hr: #f5f5f5 !default;  // Markdown分割线
+$color-border-ai-default: #e8e8e8 !default;   // AI角色默认边框
+$color-border-ai-input: #ddd !default;        // AI编辑器输入框边框
 
 // ---- 功能色 ----
 $color-error: #dc3545 !default;
@@ -91,12 +129,20 @@ $color-link-default: #4A90D9 !default;        // 默认链接色
 $color-link-hover: #2A6CB0 !default;          // 链接悬停色
 $color-at-link: #007bff !default;             // @提及链接色
 $color-record-cancel: #2D77E5 !default;       // 录音取消链接色
+$color-link-url: #06c !default;               // URL链接色（下载弹窗）
+
+// ---- 主题色（PageScroller等） ----
+$color-theme-green: #4CAF50 !default;          // 绿色主题
+$color-theme-green-hover: #45a049 !default;   // 绿色主题悬停
+$color-theme-green-light: #e0e0e0 !default;   // 绿色主题边框
 
 // ---- 阴影 ----
 $shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06) !default;
 $shadow-tooltip: 0 5px 10px 0 rgb(48 48 48 / 21%) !default;
 $shadow-contact-more: 0 3px 6px 0 #b6b6b68f !default;
 $shadow-scroll-btn: 0 1px 3px 0 rgb(0 0 0 / 10%) !default;
+$shadow-popup: 0 0 20px 20px rgba(0, 0, 0, 0.05) !default;
+$shadow-grid-item: 0 2px 8px rgba(0, 0, 0, 0.1) !default;
 
 // ---- 圆角 ----
 $radius-avatar: 50% !default;
@@ -107,6 +153,9 @@ $radius-xs: 3px !default;
 $radius-round: 114514px !default;
 $radius-bubble: 10px !default;
 $radius-notice: 15px !default;
+$radius-lg: 12px !default;
+$radius-progress: 2px !default;
+$radius-progress-bar: 3px !default;
 
 // ---- 间距 ----
 $spacing-xs: 4px !default;
@@ -134,6 +183,10 @@ $sidebar-max-width: 335px !default;
 
 $navigation-bar-height: 52px !default;
 $chat-area-head-height: 52px !default;
+
+// ---- 关闭按钮尺寸 ----
+$close-btn-size: 20px !default;
+$close-btn-size-sm: 25px !default;
 
 // ---- 加载动画 ----
 $spinner-size: 36px !default;

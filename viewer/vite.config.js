@@ -111,7 +111,7 @@ export default defineConfig(({ mode }) => {
       iconifyOffline({
         scanDir: "src",
         verbose: false,
-        exclude: ["12"], // 直接屏蔽 12 这个不存在的图标集前缀
+        exclude: ["12", "sass"], // 直接屏蔽 12 这个不存在的图标集前缀
         icons: [] // 没有遗漏图标留空即可，缺图标再手动填 ["tabler:xxx"]
       }),
     ],

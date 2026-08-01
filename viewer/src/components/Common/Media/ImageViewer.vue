@@ -570,7 +570,7 @@ export default defineComponent({
 }
 
 .image-viewer-counter {
-  color: #fff;
+  color: $color-text-white;
   font-size: 14px;
   user-select: none;
   pointer-events: auto;
@@ -591,7 +591,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #fff;
+  color: $color-text-white;
   z-index: 889;
   border-radius: 50%;
   transition: background-color 0.2s;
@@ -666,7 +666,7 @@ export default defineComponent({
   justify-content: center;
   cursor: pointer;
   z-index: 890;
-  color: #fff;
+  color: $color-text-white;
   opacity: 0.75;
   transition: opacity 0.2s, background-color 0.2s;
   backdrop-filter: blur(6px);
@@ -718,7 +718,7 @@ export default defineComponent({
 .image-viewer-toolbar-icon {
   width: 24px;
   height: 24px;
-  color: #fff;
+  color: $color-text-white;
   cursor: pointer;
   opacity: 0.75;
   transition: opacity 0.2s;
@@ -732,7 +732,7 @@ export default defineComponent({
 }
 
 .image-viewer-zoom-percent {
-  color: #fff;
+  color: $color-text-white;
   font-size: 13px;
   min-width: 48px;
   text-align: center;
@@ -787,7 +787,7 @@ export default defineComponent({
   background-color: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  color: #fff;
+  color: $color-text-white;
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 4px;

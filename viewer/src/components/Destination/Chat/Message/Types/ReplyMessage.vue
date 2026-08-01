@@ -95,7 +95,7 @@ export default {
   <div
     class="reply-message no-user-select"
     v-if="!isEmptyObject(msg)"
-    style="color: #5a5a5a"
+    style="color: var(--color-text-reply)"
     @click="scrollToMidway(msg)"
     ref="container"
   >
