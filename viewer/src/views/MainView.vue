@@ -52,11 +52,11 @@ const wsInited = ref(false);
 const groupUsers = ref(null)
 provide("groupUsers", groupUsers)
 
-const changeDestView = (key, callback) => {
+const changeDestView = (key, active) => {
   if (![DestKey.CHAT_AREA, DestKey.BLANK].includes(key)) {
     activeContact.value = null
   }
-  destinationView?.value?.changeView(key, callback)
+  destinationView?.value?.changeView(key, active)
 }
 provide("changeDestView", changeDestView)
 
@@ -102,9 +102,11 @@ const selectContact = contact => {
     contact = null;
   }
   // 切换视图到 Chat Area
-  changeDestView(DestKey.CHAT_AREA, () => {
+  changeDestView(DestKey.CHAT_AREA, !!contact);
+  if (contact) {
     activeContact.value = contact
-  });
+  }
+  // 为空在 DestinationView 中处理
 }
 provide("selectContact", selectContact)
 
@@ -265,10 +267,12 @@ const getMessages = async (
         fetchEssenceMessagesWrapper(params.group_id, true),
         fetchGroupMemberList(params.group_id),
       ])
+      if (!activeContact.value) return;
       activeContact.value.essence_real_seq_list = essence_real_seq_list
     } else {
       response = await fetchMessages(params)
     }
+    if (!activeContact.value) return;
 
     messages = response.messages
     // activeContact.value.max_id = response.max_id

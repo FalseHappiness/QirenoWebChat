@@ -379,6 +379,14 @@ function hasEnglish(str) {
   return /[a-zA-Z]/.test(str)
 }
 
+/**
+ * 一次性判断屏幕宽度是否 ≤ 570px
+ * @returns {boolean} true=宽度≤570，false=大于570
+ */
+function isScreenMobile() {
+  return window.matchMedia('(max-width: 570px)').matches;
+}
+
 export {
   hasMouseSupport,
   formatRelativeTime,
@@ -390,6 +398,5 @@ export {
   trimTrailingSlash,
   nowSecondTimestamp,
   hasEnglish,
-
-
+  isScreenMobile,
 }

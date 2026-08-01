@@ -1,18 +1,21 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, inject } from 'vue'
 import ChatArea from './Chat/ChatArea.vue'
 import LicenseView from "./License/LicenseView.vue";
 import { DestKey } from "@/scripts/view-keys.js";
-import { isFunction } from "@/scripts/types-util.js";
+import { isUndefined } from "@/scripts/types-util.js";
+import { isScreenMobile } from "@/scripts/util.js";
 
 const viewActive = ref(false);
 const currentView = ref(DestKey.CHAT_AREA)
 const chatArea = ref(null)
+const activeContact = inject("activeContact")
 const isView = key => currentView.value === key
 const isChatAreaView = computed(() => isView(DestKey.CHAT_AREA))
 const isLicenseView = computed(() => isView(DestKey.LICENSE))
+
 let changeTimer = null;
-const changeView = (key, callback) => {
+const changeView = (key, active) => {
   clearTimeout(changeTimer)
   changeTimer = null
   if (!key) {
@@ -20,16 +23,19 @@ const changeView = (key, callback) => {
   }
   const change = () => {
     currentView.value = key
-    if (isFunction(callback)) {
-      callback(key)
+    if (key === DestKey.CHAT_AREA && !active) {
+      activeContact.value = null
     }
   }
-  if (!isView(DestKey.BLANK) && key === DestKey.BLANK) {
+  if (isUndefined(active)) {
+    active = key !== DestKey.BLANK
+  }
+  if (isScreenMobile() && viewActive.value && !active) {
     changeTimer = setTimeout(change, 200)
   } else {
     change()
   }
-  viewActive.value = key !== DestKey.BLANK
+  viewActive.value = !!active
 }
 
 defineExpose({
