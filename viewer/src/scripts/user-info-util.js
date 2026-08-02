@@ -556,6 +556,10 @@ const getContactNameRef = async (contact, nameRef, errorRef, loadingRef) => {
   }
 }
 
+const getCacheGroupUserName = (group_id, user_id) => {
+  return getCacheName([group_id, user_id], CacheNameKey.GROUP_USER)
+}
+
 export {
   fetchDisplayName,
   getCacheName,
@@ -567,4 +571,5 @@ export {
   setCacheName,
   CacheNameKey,
   getContactNameRef,
+  getCacheGroupUserName,
 };

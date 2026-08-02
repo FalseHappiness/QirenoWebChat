@@ -4,30 +4,31 @@ import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
 import SimpleBar from "simplebar-vue";
 import 'simplebar-vue/dist/simplebar.min.css';
 import Tooltip from "../../../Common/Overlay/Tooltip.vue";
-import { useGlobalStore } from "../../../../store/global.js";
+import { useGlobalStore } from "@/store/global.js";
 import {
   fetchForwardSingleMsg,
   fetchRemainGroupAtAll,
   fetchSendFiles,
   fetchSendFileStream,
   fetchSendMessage
-} from "../../../../scripts/backend-api.js";
+} from "@/scripts/backend-api.js";
 import InputQuote from "./InputQuote.vue";
 import VirtualScroller from "../../../Common/Scrolling/VirtualScroller.vue";
 import { pinyin } from "pinyin-pro";
 import FilesConfirm from "./FilesConfirm.vue";
 import FilesUploadTasksViewer from "./FilesUploadTasksViewer.vue";
 import ContactsPicker from "./ContactsPicker.vue";
-import { Emitter } from "../../../../composables/useEventBus.js";
+import { Emitter } from "@/composables/useEventBus.js";
 import { nanoid } from "nanoid";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
-import { showErrorToast, showWarningToast } from "../../../../scripts/toast.js";
+import { showErrorToast, showWarningToast } from "@/scripts/toast.js";
 import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
-import { getPokeDescription } from "../../../../scripts/faces-config.js";
-import { qqAppPoke, qqSystemEmoji } from "../../../../composables/useBase.js";
-import { isBoolean, isObject } from "../../../../scripts/types-util.js";
+import { getPokeDescription } from "@/scripts/faces-config.js";
+import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js";
+import { isArray, isBoolean, isObject } from "@/scripts/types-util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
+import { getCacheGroupUserName } from "@/scripts/user-info-util.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -115,6 +116,7 @@ export default defineComponent({
     this.handleUnmounted()
   },
   methods: {
+    getCacheGroupUserName,
     handleUnmounted() {
       this.$refs.editor?.removeEventListener('compositionstart', this.handleCompositionStart)
       this.$refs.editor?.removeEventListener('compositionend', this.handleCompositionEnd)
@@ -2318,10 +2320,15 @@ export default defineComponent({
       return this.activeContact?.type === 'private'
     },
     filteredAtGroupUsers() {
-      if (!this.groupUsers) {
+      if (!isArray(this.groupUsers)) {
         return null;
       }
-      const atGroupUsers = [...this.groupUsers]
+      const atGroupUsers = this.groupUsers.map(
+        item => ({
+          ...item,
+          name: getCacheGroupUserName(item.group_id, item.user_id) || item.card || item.nickname
+        })
+      )
 
       if (this.remainGroupAtAll?.can_at_all) {
         atGroupUsers.unshift({ user_id: 'all', name: '全体成员' })
