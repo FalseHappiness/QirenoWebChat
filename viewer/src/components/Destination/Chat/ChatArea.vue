@@ -691,7 +691,7 @@ defineExpose({
       </template>
       <template #scroll-to-bottom-btn="{ scrollToBottom }">
         <div class="scroll-to-bottom-btn" @click="scrollToBottom">
-          <QIcon name="arrow_down_mini_16" style="transform: translateY(-8%); color: var(--color-primary-light);"/>
+          <QIcon name="arrow_down_mini_16" style="transform: translateY(-8%); color: var(--color-primary-mid);"/>
           <QIcon name="arrow_down_mini_16" style="transform: translateY(-80%); color: var(--color-primary);"/>
         </div>
       </template>
