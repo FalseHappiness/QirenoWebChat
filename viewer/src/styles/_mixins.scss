@@ -166,17 +166,6 @@
   position: relative;
 }
 
-// ---- 弹窗右上角关闭按钮 ----
-@mixin dialog-close-btn {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: $close-btn-size;
-  height: $close-btn-size;
-  cursor: pointer;
-}
-
 // ---- 文本溢出省略 ----
 @mixin text-ellipsis {
   overflow: hidden;

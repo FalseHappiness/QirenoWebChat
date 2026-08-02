@@ -341,7 +341,7 @@ export default defineComponent({
 }
 
 .contacts-picker-contacts-area-search:focus-within {
-  border-color: $color-bg-contact-picker-focus;
+  border-color: $color-primary;
 }
 
 .contacts-picker-contacts-area-search-input {

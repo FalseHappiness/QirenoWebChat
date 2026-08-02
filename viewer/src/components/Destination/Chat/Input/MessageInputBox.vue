@@ -2472,7 +2472,7 @@ export default defineComponent({
     <GroupAiRecordEditor
       v-if="showGroupAiRecordEditor && isGroup"
       :group_id="activeContact?.contact_id"
-      :onClose="handleCloseGroupAiRecordEditor"
+      @close="handleCloseGroupAiRecordEditor"
     />
     <vue-resizable
       class="message-input-resizeable"

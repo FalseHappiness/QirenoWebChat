@@ -21,7 +21,7 @@ export default defineComponent({
     <ForwardMessageContentsViewer
       :messages="messages"
       v-if="isShowMessagesViewer && messages"
-      :on-close="()=>{isShowMessagesViewer = false}"/>
+      @close="() => isShowMessagesViewer = false"/>
     <div class="top-side">
       <p class="title text-truncate">
         <slot name="source"></slot>

@@ -23,6 +23,10 @@ export default defineComponent({
     fillMobile: {
       default: true,
       type: Boolean
+    },
+    backgroundColor: {
+      default: "var(--color-bg-page)",
+      type: String
     }
   },
   // vue3 顶层组件自动透传，不用额外转发
@@ -55,7 +59,7 @@ export default defineComponent({
                  :on-cancel="close"
                  :on-confirm="close"
                  :container-styles="[$style['simple-window-popup-container'], fillMobile ? $style['fill-mobile'] : '' ]"
-                 :inline-styles="{ '--width': widthString, '--height': heightString }">
+                 :inline-styles="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }">
       <div class="window-title">
         {{ title }}
         <QIcon name="close_fill_24" class="window-close-btn cannot-drag"
@@ -68,11 +72,7 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .window-title {
-  text-align: center;
-  font-size: 16px;
-  padding: 0 0 2px 0;
-  border-bottom: 1px solid $color-border-divider;
-  position: relative;
+  @include dialog-title;
 }
 
 .window-close-btn {
@@ -92,7 +92,7 @@ export default defineComponent({
   height: var(--height);
   padding: 4px 2px;
   @include box-fit();
-  background-color: $color-bg-section;
+  background-color: var(--bg);
   overflow: hidden;
   position: relative;
 }

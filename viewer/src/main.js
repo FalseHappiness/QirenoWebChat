@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import './styles/global.css'
+import './styles/global.scss'
 import './styles/css-var.scss'
 import './styles/vite-env.scss'
 // import App from './Test.vue'

@@ -5,20 +5,16 @@ import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import { fetchAiRecordCharacters, fetchSendGroupAiRecord } from "@/scripts/backend-api.js";
 import { showToast } from "@/scripts/toast.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
+import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 
 export default defineComponent({
   name: "GroupAiRecordEditor",
-  components: { QIcon, SimplePopUp, CustomScrollBar },
+  components: { SimpleWindow, QIcon, SimplePopUp, CustomScrollBar },
   props: {
     group_id: {
       type: [Number, String],
       default: null
     },
-    onClose: {
-      type: Function,
-      default: () => {
-      }
-    }
   },
   data() {
     return {
@@ -115,7 +111,7 @@ export default defineComponent({
         const result = await fetchSendGroupAiRecord(this.group_id, this.selectedCharacter.character_id, this.text.trim())
         if (result.status === 'ok') {
           showToast('success', 'AI语音已发送')
-          this.$refs.popUp.confirm(false)
+          this.$refs.window.close()
         } else {
           showToast('error', '发送失败: ' + (result.message || '未知错误'))
         }
@@ -126,126 +122,98 @@ export default defineComponent({
         this.sending = false
       }
     },
-    close() {
-      this.$refs.popUp.confirm(false)
-    }
   }
 })
 </script>
 
 <template>
-  <div class="group-ai-record-editor">
-    <SimplePopUp ref="popUp"
-                 :on-confirm="onClose"
-                 :on-cancel="onClose"
-                 :container-styles="$style['group-ai-record-editor-container']">
-      <div class="group-ai-record-editor-title">
-        AI 语音
-        <QIcon name="close_fill_24" class="group-ai-record-editor-close-btn cannot-drag"
-               @click="close"/>
-      </div>
-
-      <div class="group-ai-record-editor-body">
-        <!-- 角色选择区域 -->
-        <div class="group-ai-record-editor-characters-section">
-          <div class="group-ai-record-editor-section-label">选择角色</div>
-          <CustomScrollBar class="group-ai-record-editor-characters-list">
-            <template v-if="loading">
-              <div class="group-ai-record-editor-loading">加载中...</div>
-            </template>
-            <template v-else-if="!categories?.length">
-              <div class="group-ai-record-editor-empty">暂无可用角色</div>
-            </template>
-            <template v-else>
-              <div v-for="(category, catIndex) in categories" :key="catIndex" class="group-ai-record-editor-category">
-                <div class="group-ai-record-editor-category-title">{{ category.type }}</div>
-                <div class="group-ai-record-editor-category-characters">
-                  <div v-for="character in category.characters"
-                       :key="character.character_id"
-                       class="group-ai-record-editor-character-card"
-                       :class="{ 'selected': selectedCharacter?.character_id === character.character_id }"
-                       @click="selectCharacter(character)">
-                    <div class="group-ai-record-editor-character-avatar"
-                         :style="{ backgroundColor: getAvatarColor(character.character_id) }">
-                      {{ character.character_name.charAt(0) }}
-                    </div>
-                    <div class="group-ai-record-editor-character-name overflow-ellipsis">
-                      {{ character.character_name }}
-                    </div>
-                    <div class="group-ai-record-editor-character-preview"
-                         @click.stop="previewAudio(character)"
-                         :title="isPlaying(character.character_id) ? '停止播放' : '预览声音'">
-                      <QIcon v-if="isPlaying(character.character_id)"
-                             name="pause_24"
-                             class="group-ai-record-editor-preview-icon"/>
-                      <QIcon v-else
-                             name="play_fill_24"
-                             class="group-ai-record-editor-preview-icon"
-                             style="margin-left: 2px;"/>
-                    </div>
+  <SimpleWindow
+    :width="480"
+    :height="520"
+    title="AI 语音"
+    ref="window"
+    class="group-ai-record-editor">
+    <div class="group-ai-record-editor-body">
+      <!-- 角色选择区域 -->
+      <div class="group-ai-record-editor-characters-section">
+        <div class="group-ai-record-editor-section-label">选择角色</div>
+        <CustomScrollBar class="group-ai-record-editor-characters-list">
+          <template v-if="loading">
+            <div class="group-ai-record-editor-loading">加载中...</div>
+          </template>
+          <template v-else-if="!categories?.length">
+            <div class="group-ai-record-editor-empty">暂无可用角色</div>
+          </template>
+          <template v-else>
+            <div v-for="(category, catIndex) in categories" :key="catIndex" class="group-ai-record-editor-category">
+              <div class="group-ai-record-editor-category-title">{{ category.type }}</div>
+              <div class="group-ai-record-editor-category-characters">
+                <div v-for="character in category.characters"
+                     :key="character.character_id"
+                     class="group-ai-record-editor-character-card"
+                     :class="{ 'selected': selectedCharacter?.character_id === character.character_id }"
+                     @click="selectCharacter(character)">
+                  <div class="group-ai-record-editor-character-avatar"
+                       :style="{ backgroundColor: getAvatarColor(character.character_id) }">
+                    {{ character.character_name.charAt(0) }}
+                  </div>
+                  <div class="group-ai-record-editor-character-name overflow-ellipsis">
+                    {{ character.character_name }}
+                  </div>
+                  <div class="group-ai-record-editor-character-preview"
+                       @click.stop="previewAudio(character)"
+                       :title="isPlaying(character.character_id) ? '停止播放' : '预览声音'">
+                    <QIcon v-if="isPlaying(character.character_id)"
+                           name="pause_24"
+                           class="group-ai-record-editor-preview-icon"/>
+                    <QIcon v-else
+                           name="play_fill_24"
+                           class="group-ai-record-editor-preview-icon"
+                           style="margin-left: 2px;"/>
                   </div>
                 </div>
               </div>
-            </template>
-          </CustomScrollBar>
-        </div>
-
-        <!-- 文本输入区域 -->
-        <div class="group-ai-record-editor-input-section">
-          <div class="group-ai-record-editor-section-label">输入文本</div>
-          <textarea
-            v-model="text"
-            class="group-ai-record-editor-textarea"
-            placeholder="请输入要转换为语音的文本..."
-            :disabled="sending"
-          ></textarea>
-        </div>
+            </div>
+          </template>
+        </CustomScrollBar>
       </div>
 
-      <!-- 底部操作栏 -->
-      <div class="group-ai-record-editor-footer">
-        <div class="group-ai-record-editor-selected-info" v-if="selectedCharacter">
-          <span class="group-ai-record-editor-selected-label">已选角色：</span>
-          <span class="group-ai-record-editor-selected-name">{{ selectedCharacter.character_name }}</span>
-        </div>
-        <div class="group-ai-record-editor-selected-info" v-else>
-          <span class="group-ai-record-editor-selected-label">请选择一个角色</span>
-        </div>
-        <button class="group-ai-record-editor-send-btn"
-                :disabled="sending || !text.trim() || !selectedCharacter"
-                @click="send">
-          {{ sending ? '发送中...' : '发送 AI 语音' }}
-        </button>
+      <!-- 文本输入区域 -->
+      <div class="group-ai-record-editor-input-section">
+        <div class="group-ai-record-editor-section-label">输入文本</div>
+        <textarea
+          v-model="text"
+          class="group-ai-record-editor-textarea"
+          placeholder="请输入要转换为语音的文本..."
+          :disabled="sending"
+        ></textarea>
       </div>
-    </SimplePopUp>
-  </div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div class="group-ai-record-editor-footer">
+      <div class="group-ai-record-editor-selected-info" v-if="selectedCharacter">
+        <span class="group-ai-record-editor-selected-label">已选角色：</span>
+        <span class="group-ai-record-editor-selected-name">{{ selectedCharacter.character_name }}</span>
+      </div>
+      <div class="group-ai-record-editor-selected-info" v-else>
+        <span class="group-ai-record-editor-selected-label">请选择一个角色</span>
+      </div>
+      <button class="group-ai-record-editor-send-btn"
+              :disabled="sending || !text.trim() || !selectedCharacter"
+              @click="send">
+        {{ sending ? '发送中...' : '发送 AI 语音' }}
+      </button>
+    </div>
+  </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
-.group-ai-record-editor-title {
-  text-align: center;
-  font-weight: bold;
-  font-size: 16px;
-  padding: 10px 0;
-  border-bottom: 1px solid $color-border-faint;
-  user-select: none;
-  position: relative;
-}
-
-.group-ai-record-editor-close-btn {
-  float: right;
-  width: 25px;
-  height: 25px;
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  cursor: pointer;
-}
-
 .group-ai-record-editor-body {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 95px);
+  flex: 1;
+  overflow: hidden;
   padding: 0 10px;
 }
 
@@ -267,10 +235,10 @@ export default defineComponent({
 .group-ai-record-editor-characters-list {
   flex: 1;
   overflow: auto;
-  border: 1px solid $color-border-faint;
+  border: 1px solid $color-border;
   border-radius: 4px;
   padding: 4px 6px;
-  background-color: $color-bg-section;
+  background-color: $color-bg-card;
 }
 
 .group-ai-record-editor-loading,
@@ -373,7 +341,7 @@ export default defineComponent({
 .group-ai-record-editor-textarea {
   width: 100%;
   height: 70px;
-  border: 1px solid $color-border-ai-input;
+  border: 1px solid $color-border;
   border-radius: $radius-sm;
   padding: 8px;
   font-size: 13px;
@@ -434,16 +402,5 @@ export default defineComponent({
 .group-ai-record-editor-send-btn:disabled {
   background-color: $color-border-hover;
   cursor: not-allowed;
-}
-</style>
-
-<style module lang="scss">
-.group-ai-record-editor-container {
-  width: 480px;
-  height: 520px;
-  padding: 4px 2px;
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
-  background-color: $color-bg-page;
 }
 </style>

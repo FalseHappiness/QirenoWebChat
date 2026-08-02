@@ -7,10 +7,12 @@ import SimplePopUp from "../../../../../Common/Overlay/SimplePopUp.vue";
 import CustomScrollBar from "../../../../../Common/Scrolling/CustomScrollBar.vue";
 import { isObject, isString } from "@/scripts/types-util.js";
 import QIcon from "../../../../../Common/Icons/QIcon.vue";
+import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 
 export default defineComponent({
   name: "ForwardMessageContentsViewer",
   components: {
+    SimpleWindow,
     QIcon,
     SimplePopUp,
     CustomScrollBar,
@@ -30,11 +32,6 @@ export default defineComponent({
       type: Array,
       default: null
     },
-    onClose: {
-      type: Function,
-      default: () => {
-      }
-    }
   },
   data() {
     return {
@@ -69,6 +66,18 @@ export default defineComponent({
   computed: {
     displayMessages() {
       return this.messages || this.loadedMessages
+    },
+    windowTitle() {
+      const type = this.message_type
+      // 默认未知
+      let title = '未知'
+      // 群聊
+      if (type === 'group') title = '群聊'
+      // 私聊 + private_users 是对象
+      if (type === 'private' && this.isObject(this.private_users)) {
+        title = Object.values(this.private_users).join("和")
+      }
+      return title + '的聊天记录'
     }
   },
   methods: {
@@ -102,9 +111,6 @@ export default defineComponent({
         return h('div', '消息解析失败')
       }
     },
-    close() {
-      this.$refs.popUp?.confirm(false)
-    },
     async loadMessages() {
       if (this.messages) return
       if (!this.id) return
@@ -127,120 +133,71 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="forward-message-viewer">
-    <SimplePopUp ref="popUp"
-                 :on-confirm="onClose"
-                 :on-cancel="onClose"
-                 :container-styles="$style['forward-viewer-container']">
-      <!-- 标题栏 -->
-      <div class="fv-head">
-          <span class="fv-head-name">
-            <span v-if="message_type === 'group'">群聊</span>
-            <span v-else-if="message_type === 'private' && isObject(private_users)">{{
-                Object.values(private_users).join("和")
-              }}</span>
-            <span v-else>未知</span>
-            <span>的聊天记录</span>
-          </span>
-        <QIcon name="close_fill_24" class="fv-close-btn" @click="close"/>
+  <SimpleWindow
+    :width="620"
+    :height="700"
+    :title="windowTitle"
+    class="forward-message-viewer">
+    <!-- 主体区域 -->
+    <div class="fv-body">
+      <!-- 加载中 -->
+      <div v-if="loading" class="fv-loading text-muted">
+        加载中...
       </div>
 
-      <!-- 主体区域 -->
-      <div class="fv-body">
-        <!-- 加载中 -->
-        <div v-if="loading" class="fv-loading text-muted">
-          加载中...
-        </div>
+      <!-- 错误提示 -->
+      <div v-else-if="error" class="fv-error">
+        {{ error }}
+      </div>
 
-        <!-- 错误提示 -->
-        <div v-else-if="error" class="fv-error">
-          {{ error }}
+      <!-- 消息列表 (仿 ChatArea 聊天气泡布局 / 使用 CustomScrollBar) -->
+      <CustomScrollBar v-else class="fv-messages-wrapper">
+        <div v-if="displayMessages.length === 0" class="fv-empty text-muted">
+          暂无消息
         </div>
-
-        <!-- 消息列表 (仿 ChatArea 聊天气泡布局 / 使用 CustomScrollBar) -->
-        <CustomScrollBar v-else class="fv-messages-wrapper">
-          <div v-if="displayMessages.length === 0" class="fv-empty text-muted">
-            暂无消息
-          </div>
-          <div
-            v-for="(msg, idx) in displayMessages"
-            :key="idx"
-            class="fv-message-container"
-            :class="[
+        <div
+          v-for="(msg, idx) in displayMessages"
+          :key="idx"
+          class="fv-message-container"
+          :class="[
                 msg.self_id === msg.user_id ? 'fv-message-out' : 'fv-message-in',
                 msg.message_type === 'group' ? 'fv-group' : 'fv-private'
               ]"
-          >
-            <!-- 头像 -->
-            <img
-              class="fv-message-avatar"
-              alt=""
-              :src="getUserLogo(msg.user_id)"
-            />
+        >
+          <!-- 头像 -->
+          <img
+            class="fv-message-avatar"
+            alt=""
+            :src="getUserLogo(msg.user_id)"
+          />
 
-            <!-- 消息侧 -->
-            <div class="fv-message-msg-side">
-              <!-- 上方信息：群聊显示名称 + 时间 -->
-              <div class="fv-message-before">
-                <div class="fv-message-name-title">
-                  <span class="fv-message-name-title-display-name">{{ getDisplayName(msg) }}</span>
-                </div>
-                <span class="fv-message-send-time">{{ formatTime(msg.time) }}</span>
+          <!-- 消息侧 -->
+          <div class="fv-message-msg-side">
+            <!-- 上方信息：群聊显示名称 + 时间 -->
+            <div class="fv-message-before">
+              <div class="fv-message-name-title">
+                <span class="fv-message-name-title-display-name">{{ getDisplayName(msg) }}</span>
               </div>
+              <span class="fv-message-send-time">{{ formatTime(msg.time) }}</span>
+            </div>
 
-              <!-- 消息气泡 -->
-              <div class="fv-message">
-                <RenderVNode :vnode="getMessageContent(msg)"/>
-              </div>
+            <!-- 消息气泡 -->
+            <div class="fv-message">
+              <RenderVNode :vnode="getMessageContent(msg)"/>
             </div>
           </div>
-        </CustomScrollBar>
-      </div>
-    </SimplePopUp>
-  </div>
+        </div>
+      </CustomScrollBar>
+    </div>
+  </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
-/* ===== 标题栏 (仿 ChatArea 头部风格) ===== */
-.fv-head {
-  @include flex-row-center;
-  justify-content: center;
-  border-bottom: 1px solid $color-border;
-  flex-shrink: 0;
-  background: $color-bg-chat;
-  padding: 4px 0;
-}
-
-.fv-head-name {
-  @include flex-row-center;
-  font-size: 14px;
-}
-
-.fv-close-btn {
-  width: $close-btn-size;
-  height: $close-btn-size;
-  position: absolute;
-  right: 6px;
-  top: 4px;
-  cursor: pointer;
-  padding: 2px;
-  border-radius: $radius-card;
-}
-
-.fv-close-btn:hover {
-  @include hover-light;
-}
-
-.fv-close-btn:active {
-  @include active-light;
-}
-
 /* ===== 主体区域 ===== */
 .fv-body {
   flex: 1;
   @include flex-column;
   overflow: hidden;
-  background: $color-bg-chat;
 }
 
 /* ===== 加载/错误/空状态 ===== */
@@ -256,7 +213,6 @@ export default defineComponent({
 /* ===== 消息列表容器 (CustomScrollBar 接管滚动) ===== */
 .fv-messages-wrapper {
   min-height: 0;
-  background: $color-bg-chat;
 }
 
 .fv-messages-wrapper:deep(.simplebar-content) {
@@ -497,30 +453,5 @@ export default defineComponent({
 
 .fv-message:deep(.message-box-less.message-image) {
   margin: unset;
-}
-</style>
-
-<style module lang="scss">
-.forward-viewer-container {
-  width: 620px;
-  height: 700px;
-  padding: 0;
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
-  background-color: $color-bg-chat;
-  display: flex;
-  flex-direction: column;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-@media (max-width: 480px) {
-  .forward-viewer-container {
-    max-width: 100%;
-    max-height: 100%;
-    height: 100%;
-    width: 100%;
-    border-radius: 0;
-  }
 }
 </style>

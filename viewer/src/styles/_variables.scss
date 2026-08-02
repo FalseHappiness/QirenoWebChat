@@ -72,7 +72,6 @@ $color-bg-notice: rgb(255 255 255 / 50%) !default; // 通知条背景
 $color-bg-quote: rgb(0 0 0 / 5%) !default; // 引用消息背景
 $color-bg-scroll-btn-hover: #ececec !default; // 滚动按钮悬停边框
 $color-bg-scroll-btn-active: #dddddd !default; // 滚动按钮激活边框/背景
-$color-bg-section: #FAFAFA !default; // 分区背景（群文件/相册/AI语音）
 $color-bg-legal: #f0f7ff !default; // 法律声明背景（许可证）
 $color-bg-code: #f6f8fa !default; // 代码块背景（许可证文本/Markdown）
 $color-bg-error: #fef0f0 !default; // 错误提示背景
@@ -86,14 +85,13 @@ $color-bg-ai-selected: #f0f8ff !default; // AI角色选中背景
 $color-bg-ai-active: #e6f4ff !default; // AI角色激活背景
 $color-bg-contact-picker-border: $color-bg-active-alt !default; // 联系人选择器边框（已合并：使用 $color-bg-active-alt）
 $color-bg-contact-picker-checkbox: #d9d9d9 !default; // 联系人选择器复选框
-$color-bg-contact-picker-focus: #0077ed !default; // 联系人选择器搜索聚焦
 
 // ---- 边框色 ----
 $color-border: #dee2e6 !default;
 $color-border-light: #e1e1e3 !default;
 $color-border-hover: #ccc !default;
 $color-border-cancel: #c4c4c4 !default; // 取消按钮边框
-$color-border-divider: #EDEDED !default; // 弹窗标题分割线
+$color-border-divider: $color-bg-hover !default; // 弹窗标题分割线
 $color-border-faint: #f0f0f0 !default; // 极淡边框（卡片/网格）
 $color-border-tooltip: $color-bg-button-default-hover !default; // Tooltip 边框
 $color-border-legal: #d0e3f7 !default; // 法律声明边框（许可证）
@@ -106,7 +104,6 @@ $color-border-markdown-heading: #eaecef !default; // Markdown标题边框
 $color-border-markdown-table: #dfe2e5 !default; // Markdown表格边框
 $color-border-markdown-table-header: #c6cbd1 !default; // Markdown表格头边框
 $color-border-markdown-hr: #f5f5f5 !default; // Markdown分割线
-$color-border-ai-input: #ddd !default; // AI编辑器输入框边框
 
 // ---- 功能色 ----
 $color-error: #dc3545 !default;

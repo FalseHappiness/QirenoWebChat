@@ -6,4 +6,5 @@
   --color-primary: #{$color-primary};
   --color-primary-light: #{color.adjust($color-primary, $lightness: 15%)};
   --color-text-reply: #{$color-text-reply};
+  --color-bg-page: #{$color-bg-page};
 }

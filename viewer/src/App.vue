@@ -4,6 +4,7 @@ import './App.css';
 import AccountsView from "./views/AccountsView.vue";
 import MainView from "./views/MainView.vue";
 import LoadingSpinner from "./components/Common/Widgets/LoadingSpinner.vue";
+import { ConfigProvider as AConfigProvider } from "ant-design-vue"
 
 const currentView = ref('loading') // 'loading' | 'accounts' | 'main'
 const selectedAccount = ref(null)
@@ -49,17 +50,19 @@ provide("disconnect", onMainViewDisconnect)
 </script>
 
 <template>
-  <LoadingSpinner v-if="currentView === 'loading'"/>
+  <AConfigProvider :theme="{ token: { colorPrimary: '#0099ff' } }">
+    <LoadingSpinner v-if="currentView === 'loading'"/>
 
-  <AccountsView
-    v-else-if="currentView === 'accounts'"
-    :force-show-welcome="forceShowWelcome"
-    @account-selected="onAccountSelected"
-  />
-  <MainView
-    v-else-if="currentView === 'main' && selectedAccount"
-    :account="selectedAccount"
-  />
+    <AccountsView
+      v-else-if="currentView === 'accounts'"
+      :force-show-welcome="forceShowWelcome"
+      @account-selected="onAccountSelected"
+    />
+    <MainView
+      v-else-if="currentView === 'main' && selectedAccount"
+      :account="selectedAccount"
+    />
+  </AConfigProvider>
 </template>
 
 <style lang="scss">

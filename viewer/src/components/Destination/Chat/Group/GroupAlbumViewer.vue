@@ -602,7 +602,7 @@ export default defineComponent({
   height: 100%;
   color: $color-text-muted;
   font-size: 13px;
-  background: $color-bg-page;
+  background: $color-bg-image-placeholder;
 }
 
 .gav-grid-item-count {
