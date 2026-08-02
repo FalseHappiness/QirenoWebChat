@@ -215,7 +215,7 @@
 @mixin input-focus($color: $color-primary) {
   &:focus {
     border-color: $color;
-    box-shadow: 0 0 0 2px rgba($color, 0.1);
+    box-shadow: 0 0 0 2px color-mix(in srgb, $color 10%, transparent);
   }
 }
 

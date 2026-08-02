@@ -399,7 +399,7 @@ export default defineComponent({
 }
 
 .retry-btn:hover {
-  background: color.adjust($color-retry, $lightness: -8%);
+  background: color-mix(in srgb, $color-retry, black 8%);
 }
 </style>
 

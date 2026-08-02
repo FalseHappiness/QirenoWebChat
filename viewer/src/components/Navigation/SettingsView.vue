@@ -13,6 +13,9 @@ const changeDestView = inject("changeDestView")
 const handleEnterLicense = () => {
   changeDestView(DestKey.LICENSE)
 }
+const handleEnterThemeSelector = () => {
+  changeDestView(DestKey.THEME_SELECTOR)
+}
 </script>
 
 <template>
@@ -31,6 +34,11 @@ const handleEnterLicense = () => {
             selfInfo?.long_nick || selfInfo?.longNick || '暂无个性签名'
           }}</span>
       </div>
+    </div>
+
+    <div class="settings-actions-area enter-view" @click="handleEnterThemeSelector">
+      <span class="overflow-ellipsis">主题设置</span>
+      <EnterArrow/>
     </div>
 
     <div class="settings-actions-area enter-view" @click="handleEnterLicense">

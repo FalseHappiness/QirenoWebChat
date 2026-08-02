@@ -1,0 +1,19 @@
+[data-theme="light-black"] {
+  --color-primary: #3d3d3d;
+  --color-primary-light: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  --color-primary-mid: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  --color-bg-page: #ffffff;
+  --color-text-primary: #0a0a0a;
+  --color-text-regular: #1f1f1f;
+  --color-text-secondary: #444444;
+  --color-text-muted: #777777;
+  --color-bg-card: #fafafa;
+  --color-bg-hover: #e2e2e2;
+  --color-bg-active: #d1d1d1;
+  --color-bg-message-out: #eeeeee;
+  --color-bg-primary-hover: #222222;
+  --color-bg-primary-active: #333333;
+  --color-border: #cccccc;
+  --color-border-light: #dddddd;
+  --shadow-card: 0 4px 24px rgb(0 0 0 / 12%);
+}

@@ -1,129 +1,135 @@
 // ============================================================
 // 基础配色变量 — 便于全局主题调整
+// 所有颜色值已迁移至 base.css 的 CSS 变量，此处引用
+// 尺寸/间距/圆角/过渡等非颜色变量保持不变
 // ============================================================
 
 // ---- 主色调 ----
-$color-primary: #0099ff !default;
-$color-primary-light: rgba($color-primary, 0.1) !default;
-$color-primary-mid: rgba($color-primary, 0.4) !default;
+$color-primary: var(--color-primary) !default;
+$color-primary-light: var(--color-primary-light) !default;
+$color-primary-mid: var(--color-primary-mid) !default;
 
 // ---- 文字颜色 ----
-$color-text-primary: #1a1a1a !default;
-$color-text-regular: #333 !default; // 正文主色
-$color-text-secondary: #666 !default;
-$color-text-muted: #999 !default; // 弱化辅助文字
-$color-text-white: #fff !default;
-$color-text-meta: #888 !default; // 元信息文字（日期/速度）
-$color-text-meta-secondary: #7A7A7A !default; // 次级元信息（群文件上传者）
-$color-text-soft: #4a4a4a !default; // 柔和正文（ConfirmBox内容）
-$color-text-info: #3a5a7a !default; // 信息说明文字（许可证QQ声明）
-$color-text-note: #555 !default; // 描述/说明文字
-$color-text-link: #4A90D9 !default; // 链接色（转发消息/面包屑）
-$color-text-link-hover: #2A6CB0 !default; // 链接悬停色
-$color-text-link-markdown: #0f9fff !default; // Markdown 链接色
-$color-text-at-link: #007bff !default; // @提及链接
-$color-text-record-cancel: #2D77E5 !default; // 录音取消/通知命令链接
-$color-text-danger: #e74c3c !default; // 危险/错误文字
-$color-text-error-bright: #ff4d4f !default; // 高亮错误（上传任务）
-$color-text-warning: #FF6B6B !default; // 警告提示（转发/群文件加载失败）
-$color-text-success: #52c41a !default; // 成功状态文字
-$color-text-red-tip: #b90000 !default; // 红色提示（已撤回）
-$color-text-red-tip-icon: #900000 !default; // 红色提示图标
-$color-text-error-soft: #ff8894 !default; // 柔和错误（联系人列表）
-$color-text-reply: #5a5a5a !default; // 回复消息引用文字
+$color-text-primary: var(--color-text-primary) !default;
+$color-text-regular: var(--color-text-regular) !default; // 正文主色
+$color-text-secondary: var(--color-text-secondary) !default;
+$color-text-muted: var(--color-text-muted) !default; // 弱化辅助文字
+$color-text-white: var(--color-text-white) !default;
+$color-text-meta: var(--color-text-meta) !default; // 元信息文字（日期/速度）
+$color-text-meta-secondary: var(--color-text-meta-secondary) !default; // 次级元信息（群文件上传者）
+$color-text-soft: var(--color-text-soft) !default; // 柔和正文（ConfirmBox内容）
+$color-text-info: var(--color-text-info) !default; // 信息说明文字（许可证QQ声明）
+$color-text-note: var(--color-text-note) !default; // 描述/说明文字
+$color-text-link: var(--color-text-link) !default; // 链接色（转发消息/面包屑）
+$color-text-link-hover: var(--color-text-link-hover) !default; // 链接悬停色
+$color-text-link-markdown: var(--color-text-link-markdown) !default; // Markdown 链接色
+$color-text-at-link: var(--color-text-at-link) !default; // @提及链接
+$color-text-record-cancel: var(--color-text-record-cancel) !default; // 录音取消/通知命令链接
+$color-text-danger: var(--color-text-danger) !default; // 危险/错误文字
+$color-text-error-bright: var(--color-text-error-bright) !default; // 高亮错误（上传任务）
+$color-text-warning: var(--color-text-warning) !default; // 警告提示（转发/群文件加载失败）
+$color-text-success: var(--color-text-success) !default; // 成功状态文字
+$color-text-red-tip: var(--color-text-red-tip) !default; // 红色提示（已撤回）
+$color-text-red-tip-icon: var(--color-text-red-tip-icon) !default; // 红色提示图标
+$color-text-error-soft: var(--color-text-error-soft) !default; // 柔和错误（联系人列表）
+$color-text-reply: var(--color-text-reply) !default; // 回复消息引用文字
 
 // ---- 标签色 ----
-$color-tag-green-bg: #e8f5e9 !default; // 绿色标签背景（许可证自身）
-$color-tag-green-text: #2e7d32 !default; // 绿色标签文字（许可证自身）
-$color-tag-blue-bg: #e3f2fd !default; // 蓝色标签背景（许可证依赖）
-$color-tag-blue-text: #1565c0 !default; // 蓝色标签文字（许可证依赖）
+$color-tag-green-bg: var(--color-tag-green-bg) !default; // 绿色标签背景（许可证自身）
+$color-tag-green-text: var(--color-tag-green-text) !default; // 绿色标签文字（许可证自身）
+$color-tag-blue-bg: var(--color-tag-blue-bg) !default; // 蓝色标签背景（许可证依赖）
+$color-tag-blue-text: var(--color-tag-blue-text) !default; // 蓝色标签文字（许可证依赖）
 
 // ---- 背景色 ----
-$color-bg-page: #f5f5f5 !default;
-$color-bg-card: #fff !default;
-$color-bg-hover: #EBEBEB !default;
-$color-bg-active: #e0e0e0 !default;
-$color-bg-sidebar: $color-bg-page !default; // 已合并：使用 $color-bg-page
-$color-bg-chat: $color-bg-page !default; // 已合并：使用 $color-bg-page
-$color-bg-message-in: #fff !default;
-$color-bg-message-out: #CCEBFF !default;
-$color-bg-mask: rgba(0, 0, 0, 0.48) !default;
-$color-bg-toolbar: rgba(0, 0, 0, 0.55) !default;
-$color-bg-tooltip: rgba(0, 0, 0, 0.65) !default;
-$color-bg-card-alt: #f2f2f2 !default;
-$color-bg-light: rgba(255, 255, 255, 0.72) !default;
-$color-bg-input: rgba(255, 255, 255, 0.6) !default;
-$color-bg-blur: rgba(255, 255, 255, 0.95) !default;
-$color-bg-hover-alt: #efefef !default; // 轻悬停（表情面板/取消按钮）
-$color-bg-active-alt: #e6e6e6 !default; // 轻激活（表情面板/滚动按钮）
-$color-bg-active-contact: #E2E2E2 !default; // 联系栏选中
-$color-bg-active-contact-pressed: #D7D7D7 !default; // 联系栏选中按下
-$color-bg-nav-active: #E7E7E7 !default; // 导航按钮激活
-$color-bg-nav-active-svg: #B9B9B9 !default; // 导航按钮激活图标
-$color-bg-hover-light: rgb(200 200 200 / 25%) !default; // 轻量悬停（头部控制按钮）
-$color-bg-active-light: rgb(200 200 200 / 50%) !default; // 轻量激活（头部控制按钮）
-$color-bg-primary-hover: #008be6 !default; // 主色悬停（确认按钮）
-$color-bg-primary-active: #0076c5 !default; // 主色激活（确认按钮）
-$color-bg-image-placeholder: #e7eaf1 !default; // 图片占位符
-$color-bg-search: #f1f1f1 !default; // 搜索框背景
-$color-bg-red-tip: rgb(255 0 0 / 25%) !default; // 红色提示背景
-$color-bg-tip: rgba(158, 158, 158, 0.2) !default; // 通用提示标签背景
-$color-bg-notice: rgb(255 255 255 / 50%) !default; // 通知条背景
-$color-bg-quote: rgb(0 0 0 / 5%) !default; // 引用消息背景
-$color-bg-scroll-btn-hover: #ececec !default; // 滚动按钮悬停边框
-$color-bg-scroll-btn-active: #dddddd !default; // 滚动按钮激活边框/背景
-$color-bg-legal: #f0f7ff !default; // 法律声明背景（许可证）
-$color-bg-code: #f6f8fa !default; // 代码块背景（许可证文本/Markdown）
-$color-bg-error: #fef0f0 !default; // 错误提示背景
-$color-bg-hover-danger: #fff1f0 !default; // 危险按钮悬停背景（上传取消）
-$color-bg-active-danger: #ffccc7 !default; // 危险按钮激活背景（上传取消）
-$color-bg-notice-warning: #fffbe6 !default; // 警告通知背景
-$color-bg-highlight: #80808030 !default; // 高亮动画背景（消息搜索）
-$color-bg-button-default: #e8e8e8 !default; // 默认按钮背景
-$color-bg-button-default-hover: #d5d5d5 !default; // 默认按钮悬停
-$color-bg-ai-selected: #f0f8ff !default; // AI角色选中背景
-$color-bg-ai-active: #e6f4ff !default; // AI角色激活背景
-$color-bg-contact-picker-border: $color-bg-active-alt !default; // 联系人选择器边框（已合并：使用 $color-bg-active-alt）
-$color-bg-contact-picker-checkbox: #d9d9d9 !default; // 联系人选择器复选框
+$color-bg-page: var(--color-bg-page) !default;
+$color-bg-card: var(--color-bg-card) !default;
+$color-bg-hover: var(--color-bg-hover) !default;
+$color-bg-active: var(--color-bg-active) !default;
+$color-bg-sidebar: var(--color-bg-sidebar) !default; // 已合并：使用 $color-bg-page
+$color-bg-chat: var(--color-bg-chat) !default; // 已合并：使用 $color-bg-page
+$color-bg-message-in: var(--color-bg-message-in) !default;
+$color-bg-message-out: var(--color-bg-message-out) !default;
+$color-bg-mask: var(--color-bg-mask) !default;
+$color-bg-toolbar: var(--color-bg-toolbar) !default;
+$color-bg-tooltip: var(--color-bg-tooltip) !default;
+$color-bg-card-alt: var(--color-bg-card-alt) !default;
+$color-bg-light: var(--color-bg-light) !default;
+$color-bg-input: var(--color-bg-input) !default;
+$color-bg-blur: var(--color-bg-blur) !default;
+$color-bg-hover-alt: var(--color-bg-hover-alt) !default; // 轻悬停（表情面板/取消按钮）
+$color-bg-active-alt: var(--color-bg-active-alt) !default; // 轻激活（表情面板/滚动按钮）
+$color-bg-active-contact: var(--color-bg-active-contact) !default; // 联系栏选中
+$color-bg-active-contact-pressed: var(--color-bg-active-contact-pressed) !default; // 联系栏选中按下
+$color-bg-nav-active: var(--color-bg-nav-active) !default; // 导航按钮激活
+$color-bg-nav-active-svg: var(--color-bg-nav-active-svg) !default; // 导航按钮激活图标
+$color-bg-hover-light: var(--color-bg-hover-light) !default; // 轻量悬停（头部控制按钮）
+$color-bg-active-light: var(--color-bg-active-light) !default; // 轻量激活（头部控制按钮）
+$color-bg-primary-hover: var(--color-bg-primary-hover) !default; // 主色悬停（确认按钮）
+$color-bg-primary-active: var(--color-bg-primary-active) !default; // 主色激活（确认按钮）
+$color-bg-image-placeholder: var(--color-bg-image-placeholder) !default; // 图片占位符
+$color-bg-search: var(--color-bg-search) !default; // 搜索框背景
+$color-bg-red-tip: var(--color-bg-red-tip) !default; // 红色提示背景
+$color-bg-tip: var(--color-bg-tip) !default; // 通用提示标签背景
+$color-bg-notice: var(--color-bg-notice) !default; // 通知条背景
+$color-bg-quote: var(--color-bg-quote) !default; // 引用消息背景
+$color-bg-scroll-btn-hover: var(--color-bg-scroll-btn-hover) !default; // 滚动按钮悬停边框
+$color-bg-scroll-btn-active: var(--color-bg-scroll-btn-active) !default; // 滚动按钮激活边框/背景
+$color-bg-legal: var(--color-bg-legal) !default; // 法律声明背景（许可证）
+$color-bg-code: var(--color-bg-code) !default; // 代码块背景（许可证文本/Markdown）
+$color-bg-error: var(--color-bg-error) !default; // 错误提示背景
+$color-bg-hover-danger: var(--color-bg-hover-danger) !default; // 危险按钮悬停背景（上传取消）
+$color-bg-active-danger: var(--color-bg-active-danger) !default; // 危险按钮激活背景（上传取消）
+$color-bg-notice-warning: var(--color-bg-notice-warning) !default; // 警告通知背景
+$color-bg-highlight: var(--color-bg-highlight) !default; // 高亮动画背景（消息搜索）
+$color-bg-button-default: var(--color-bg-button-default) !default; // 默认按钮背景
+$color-bg-button-default-hover: var(--color-bg-button-default-hover) !default; // 默认按钮悬停
+$color-bg-ai-selected: var(--color-bg-ai-selected) !default; // AI角色选中背景
+$color-bg-ai-active: var(--color-bg-ai-active) !default; // AI角色激活背景
+$color-bg-contact-picker-border: var(--color-bg-contact-picker-border) !default; // 联系人选择器边框（已合并：使用 $color-bg-active-alt）
+$color-bg-contact-picker-checkbox: var(--color-bg-contact-picker-checkbox) !default; // 联系人选择器复选框
 
 // ---- 边框色 ----
-$color-border: #dee2e6 !default;
-$color-border-light: #e1e1e3 !default;
-$color-border-hover: #ccc !default;
-$color-border-cancel: #c4c4c4 !default; // 取消按钮边框
-$color-border-divider: $color-bg-hover !default; // 弹窗标题分割线
-$color-border-faint: #f0f0f0 !default; // 极淡边框（卡片/网格）
-$color-border-tooltip: $color-bg-button-default-hover !default; // Tooltip 边框
-$color-border-legal: #d0e3f7 !default; // 法律声明边框（许可证）
-$color-border-code: #e1e4e8 !default; // 代码块边框（许可证文本）
-$color-border-notice: #fff3cd !default; // 通知边框（许可证警告）
-$color-border-item: #f9f9f9 !default; // 列表项分割线（群文件）
-$color-border-essence: $color-bg-active !default; // 精华消息分割线（已合并：使用 $color-bg-active）
-$color-border-essence-item: $color-bg-hover !default; // 精华消息项边框（已合并：使用 $color-bg-hover）
-$color-border-markdown-heading: #eaecef !default; // Markdown标题边框
-$color-border-markdown-table: #dfe2e5 !default; // Markdown表格边框
-$color-border-markdown-table-header: #c6cbd1 !default; // Markdown表格头边框
-$color-border-markdown-hr: #f5f5f5 !default; // Markdown分割线
+$color-border: var(--color-border) !default;
+$color-border-light: var(--color-border-light) !default;
+$color-border-hover: var(--color-border-hover) !default;
+$color-border-cancel: var(--color-border-cancel) !default; // 取消按钮边框
+$color-border-divider: var(--color-border-divider) !default; // 弹窗标题分割线
+$color-border-faint: var(--color-border-faint) !default; // 极淡边框（卡片/网格）
+$color-border-tooltip: var(--color-border-tooltip) !default; // Tooltip 边框
+$color-border-legal: var(--color-border-legal) !default; // 法律声明边框（许可证）
+$color-border-code: var(--color-border-code) !default; // 代码块边框（许可证文本）
+$color-border-notice: var(--color-border-notice) !default; // 通知边框（许可证警告）
+$color-border-item: var(--color-border-item) !default; // 列表项分割线（群文件）
+$color-border-essence: var(--color-border-essence) !default; // 精华消息分割线（已合并：使用 $color-bg-active）
+$color-border-essence-item: var(--color-border-essence-item) !default; // 精华消息项边框（已合并：使用 $color-bg-hover）
+$color-border-markdown-heading: var(--color-border-markdown-heading) !default; // Markdown标题边框
+$color-border-markdown-table: var(--color-border-markdown-table) !default; // Markdown表格边框
+$color-border-markdown-table-header: var(--color-border-markdown-table-header) !default; // Markdown表格头边框
+$color-border-markdown-hr: var(--color-border-markdown-hr) !default; // Markdown分割线
 
 // ---- 功能色 ----
-$color-error: #dc3545 !default;
-$color-warning: #e67e22 !default;
-$color-success: #4facfe !default;
-$color-retry: #f0ad4e !default;
-$color-link-url: #06c !default; // URL链接色（下载弹窗）
+$color-error: var(--color-error) !default;
+$color-warning: var(--color-warning) !default;
+$color-success: var(--color-success) !default;
+$color-retry: var(--color-retry) !default;
+$color-link-url: var(--color-link-url) !default; // URL链接色（下载弹窗）
 
 // ---- 主题色（PageScroller等） ----
-$color-theme-green: #4CAF50 !default; // 绿色主题
-$color-theme-green-hover: #45a049 !default; // 绿色主题悬停
-$color-theme-green-light: $color-bg-active !default; // 绿色主题边框（已合并：使用 $color-bg-active）
+$color-theme-green: var(--color-theme-green) !default; // 绿色主题
+$color-theme-green-hover: var(--color-theme-green-hover) !default; // 绿色主题悬停
+$color-theme-green-light: var(--color-theme-green-light) !default; // 绿色主题边框（已合并：使用 $color-bg-active）
 
 // ---- 阴影 ----
-$shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06) !default;
-$shadow-tooltip: 0 5px 10px 0 rgb(48 48 48 / 21%) !default;
-$shadow-contact-more: 0 3px 6px 0 #b6b6b68f !default;
-$shadow-scroll-btn: 0 1px 3px 0 rgb(0 0 0 / 10%) !default;
-$shadow-popup: 0 0 20px 20px rgba(0, 0, 0, 0.05) !default;
-$shadow-grid-item: 0 2px 8px rgba(0, 0, 0, 0.1) !default;
+$shadow-card: var(--shadow-card) !default;
+$shadow-tooltip: var(--shadow-tooltip) !default;
+$shadow-contact-more: var(--shadow-contact-more) !default;
+$shadow-scroll-btn: var(--shadow-scroll-btn) !default;
+$shadow-popup: var(--shadow-popup) !default;
+$shadow-grid-item: var(--shadow-grid-item) !default;
+
+// ============================================================
+// 以下为非颜色变量（尺寸/间距/圆角/过渡），保持 SCSS 常量不变
+// ============================================================
 
 // ---- 圆角 ----
 $radius-avatar: 50% !default;

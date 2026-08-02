@@ -4,11 +4,11 @@ import LoadingSpinner from '../../Common/Widgets/LoadingSpinner.vue'
 import CustomScrollBar from '../../Common/Scrolling/CustomScrollBar.vue'
 import LicenseItemCard from './LicenseItemCard.vue'
 import QIcon from "../../Common/Icons/QIcon.vue";
-import { DestKey } from "@/scripts/view-keys.js";
+import SimpleDest from "@/components/Destination/SimpleDest.vue";
 
 export default defineComponent({
   name: "LicenseView",
-  components: { QIcon, LoadingSpinner, CustomScrollBar, LicenseItemCard },
+  components: { SimpleDest, QIcon, LoadingSpinner, CustomScrollBar, LicenseItemCard },
   data() {
     return {
       licenses: [],
@@ -19,7 +19,6 @@ export default defineComponent({
       expandedKeys: new Set()
     }
   },
-  inject: ['changeDestView'],
   computed: {
     projectSelf() {
       return this.licenses.find(item => item.self === true) || null
@@ -68,19 +67,12 @@ export default defineComponent({
       if (license.author?.name) return license.author.name
       return null
     },
-    goBack() {
-      this.changeDestView(DestKey.BLANK)
-    }
   }
 })
 </script>
 
 <template>
-  <div class="license-view">
-    <div class="license-view-header">
-      <QIcon name="arrow_left_24" class="license-view-return" @click="goBack"/>
-      开放源代码许可证
-    </div>
+  <SimpleDest class="license-view" title="开放源代码许可证">
     <!-- 加载状态 -->
     <div v-if="loading" class="license-loading-area">
       <LoadingSpinner text="正在加载许可证信息..."/>
@@ -146,41 +138,10 @@ export default defineComponent({
         </div>
       </div>
     </CustomScrollBar>
-  </div>
+  </SimpleDest>
 </template>
 
 <style scoped lang="scss">
-.license-view {
-  display: flex;
-  flex-direction: column;
-}
-
-.license-view-header {
-  text-align: left;
-  border-bottom: 1px solid $color-border;
-  padding: 6px 10px;
-}
-
-.license-view-return {
-  display: none;
-}
-
-@media (max-width: 570px) {
-  .license-view-header {
-    text-align: center;
-  }
-
-  .license-view-return {
-    position: absolute;
-    display: block;
-    left: 8px;
-    top: 8px;
-    height: 20px;
-    width: 20px;
-    cursor: pointer;
-  }
-}
-
 .license-view-container {
   font-size: 15px;
   padding: 12px;

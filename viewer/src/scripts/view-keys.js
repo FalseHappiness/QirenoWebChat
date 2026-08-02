@@ -6,5 +6,6 @@ export const NavKey = {
 export const DestKey = {
   CHAT_AREA: 'chat_area',
   LICENSE: 'license',
-  BLANK: 'blank'
+  BLANK: 'blank',
+  THEME_SELECTOR: "theme_selector"
 }

@@ -562,7 +562,7 @@ const clearAndReselect = () => {
     background: rgba(224, 238, 255, 0.8);
     border-color: $color-primary;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba($color-primary, 0.1);
+    box-shadow: 0 4px 12px color-mix(in srgb, $color-primary 10%, transparent);
   }
 
   &:active {

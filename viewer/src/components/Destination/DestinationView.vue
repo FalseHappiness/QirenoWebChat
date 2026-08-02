@@ -5,6 +5,7 @@ import LicenseView from "./License/LicenseView.vue";
 import { DestKey } from "@/scripts/view-keys.js";
 import { isUndefined } from "@/scripts/types-util.js";
 import { isScreenMobile } from "@/scripts/util.js";
+import ThemeSelector from "@/components/Destination/ThemeSelector.vue";
 
 const viewActive = ref(false);
 const currentView = ref(DestKey.CHAT_AREA)
@@ -13,6 +14,7 @@ const activeContact = inject("activeContact")
 const isView = key => currentView.value === key
 const isChatAreaView = computed(() => isView(DestKey.CHAT_AREA))
 const isLicenseView = computed(() => isView(DestKey.LICENSE))
+const isThemeSelectorView = computed(() => isView(DestKey.THEME_SELECTOR))
 
 let changeTimer = null;
 const changeView = (key, active) => {
@@ -56,6 +58,10 @@ defineExpose({
     />
     <LicenseView
       v-else-if="isLicenseView"
+      class="dest-view-component"
+    />
+    <ThemeSelector
+      v-else-if="isThemeSelectorView"
       class="dest-view-component"
     />
   </div>

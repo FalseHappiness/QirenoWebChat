@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { reactive } from 'vue';
+import { reactive, ref } from 'vue';
 import { otherFacesDescribes, secretEmojiids } from "../scripts/faces-config.js";
 import emojiFiles from '../assets/emoji_files.json';
 import emojiFaceConfig from '../QQ/EmojiConfig/face_config.json'
@@ -147,6 +147,8 @@ export const useGlobalStore = defineStore(
 
     const responseCacheMap = reactive(new Map());
 
+    const theme = ref('default')
+
     return {
       normalEmojiids,
       superEmojiids,
@@ -159,6 +161,15 @@ export const useGlobalStore = defineStore(
       apiVersionInfo: {
         app_name: "NapCat.Onebot"
       },
+      theme,
     };
   },
+  // 持久化配置
+  {
+    persist: {
+      key: 'store-global', // 本地存储键名
+      storage: localStorage,
+      pick: ['theme'], // 只持久化 theme
+    }
+  }
 );

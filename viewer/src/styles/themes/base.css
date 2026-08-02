@@ -1,0 +1,140 @@
+/* ============================================================
+   基础配色变量 — 通过 CSS 自定义属性实现运行时主题切换
+   原 SCSS 运算（rgba/color.adjust）已替换为 CSS 原生：
+   - color-mix() 替代 rgba()
+   - oklch 色彩空间
+   ============================================================ */
+
+:root, [data-theme="default"] {
+    /* ---- 主色调 ---- */
+    --color-primary: #0099ff;
+    /* rgba($color-primary, 0.1) → 10% 透明度混合 */
+    --color-primary-light: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    /* rgba($color-primary, 0.4) → 40% 透明度混合 */
+    --color-primary-mid: color-mix(in srgb, var(--color-primary) 40%, transparent);
+
+    /* ---- 文字颜色 ---- */
+    --color-text-primary: #1a1a1a;
+    --color-text-regular: #333; /* 正文主色 */
+    --color-text-secondary: #666;
+    --color-text-muted: #999; /* 弱化辅助文字 */
+    --color-text-white: #fff;
+    --color-text-meta: #888; /* 元信息文字（日期/速度） */
+    --color-text-meta-secondary: #7A7A7A; /* 次级元信息（群文件上传者） */
+    --color-text-soft: #4a4a4a; /* 柔和正文（ConfirmBox 内容） */
+    --color-text-info: #3a5a7a; /* 信息说明文字（许可证 QQ 声明） */
+    --color-text-note: #555; /* 描述/说明文字 */
+    --color-text-link: #4A90D9; /* 链接色（转发消息/面包屑） */
+    --color-text-link-hover: #2A6CB0; /* 链接悬停色 */
+    --color-text-link-markdown: #0f9fff; /* Markdown 链接色 */
+    --color-text-at-link: #007bff; /* @提及链接 */
+    --color-text-record-cancel: #2D77E5; /* 录音取消/通知命令链接 */
+    --color-text-danger: #e74c3c; /* 危险/错误文字 */
+    --color-text-error-bright: #ff4d4f; /* 高亮错误（上传任务） */
+    --color-text-warning: #FF6B6B; /* 警告提示（转发/群文件加载失败） */
+    --color-text-success: #52c41a; /* 成功状态文字 */
+    --color-text-red-tip: #b90000; /* 红色提示（已撤回） */
+    --color-text-red-tip-icon: #900000; /* 红色提示图标 */
+    --color-text-error-soft: #ff8894; /* 柔和错误（联系人列表） */
+    --color-text-reply: #5a5a5a; /* 回复消息引用文字 */
+
+    /* ---- 标签色 ---- */
+    --color-tag-green-bg: #e8f5e9; /* 绿色标签背景（许可证自身） */
+    --color-tag-green-text: #2e7d32; /* 绿色标签文字（许可证自身） */
+    --color-tag-blue-bg: #e3f2fd; /* 蓝色标签背景（许可证依赖） */
+    --color-tag-blue-text: #1565c0; /* 蓝色标签文字（许可证依赖） */
+
+    /* ---- 背景色 ---- */
+    --color-bg-page: #f5f5f5;
+    --color-bg-card: #fff;
+    --color-bg-hover: #EBEBEB;
+    --color-bg-active: #e0e0e0;
+    --color-bg-sidebar: var(--color-bg-page); /* 已合并：使用 --color-bg-page */
+    --color-bg-chat: var(--color-bg-page); /* 已合并：使用 --color-bg-page */
+    --color-bg-message-in: #fff;
+    --color-bg-message-out: #CCEBFF;
+    /* rgba(0, 0, 0, 0.48) → 半透明黑色混合 */
+    --color-bg-mask: rgb(0 0 0 / 48%);
+    /* rgba(0, 0, 0, 0.55) → 半透明黑色混合 */
+    --color-bg-toolbar: rgb(0 0 0 / 55%);
+    /* rgba(0, 0, 0, 0.65) → 半透明黑色混合 */
+    --color-bg-tooltip: rgb(0 0 0 / 65%);
+    --color-bg-card-alt: #f2f2f2;
+    /* rgba(255, 255, 255, 0.72) → 半透明白色混合 */
+    --color-bg-light: rgb(255 255 255 / 72%);
+    /* rgba(255, 255, 255, 0.6) → 半透明白色混合 */
+    --color-bg-input: rgb(255 255 255 / 60%);
+    /* rgba(255, 255, 255, 0.95) → 半透明白色混合 */
+    --color-bg-blur: rgb(255 255 255 / 95%);
+    --color-bg-hover-alt: #efefef; /* 轻悬停（表情面板/取消按钮） */
+    --color-bg-active-alt: #e6e6e6; /* 轻激活（表情面板/滚动按钮） */
+    --color-bg-active-contact: #E2E2E2; /* 联系栏选中 */
+    --color-bg-active-contact-pressed: #D7D7D7; /* 联系栏选中按下 */
+    --color-bg-nav-active: #E7E7E7; /* 导航按钮激活 */
+    --color-bg-nav-active-svg: #B9B9B9; /* 导航按钮激活图标 */
+    --color-bg-hover-light: rgb(200 200 200 / 25%); /* 轻量悬停（头部控制按钮） */
+    --color-bg-active-light: rgb(200 200 200 / 50%); /* 轻量激活（头部控制按钮） */
+    --color-bg-primary-hover: #008be6; /* 主色悬停（确认按钮） */
+    --color-bg-primary-active: #0076c5; /* 主色激活（确认按钮） */
+    --color-bg-image-placeholder: #e7eaf1; /* 图片占位符 */
+    --color-bg-search: #f1f1f1; /* 搜索框背景 */
+    --color-bg-red-tip: rgb(255 0 0 / 25%); /* 红色提示背景 */
+    /* rgba(158, 158, 158, 0.2) → 半透明灰色混合 */
+    --color-bg-tip: rgb(158 158 158 / 20%); /* 通用提示标签背景 */
+    --color-bg-notice: rgb(255 255 255 / 50%); /* 通知条背景 */
+    --color-bg-quote: rgb(0 0 0 / 5%); /* 引用消息背景 */
+    --color-bg-scroll-btn-hover: #ececec; /* 滚动按钮悬停边框 */
+    --color-bg-scroll-btn-active: #dddddd; /* 滚动按钮激活边框/背景 */
+    --color-bg-legal: #f0f7ff; /* 法律声明背景（许可证） */
+    --color-bg-code: #f6f8fa; /* 代码块背景（许可证文本/Markdown） */
+    --color-bg-error: #fef0f0; /* 错误提示背景 */
+    --color-bg-hover-danger: #fff1f0; /* 危险按钮悬停背景（上传取消） */
+    --color-bg-active-danger: #ffccc7; /* 危险按钮激活背景（上传取消） */
+    --color-bg-notice-warning: #fffbe6; /* 警告通知背景 */
+    --color-bg-highlight: #80808030; /* 高亮动画背景（消息搜索） */
+    --color-bg-button-default: #e8e8e8; /* 默认按钮背景 */
+    --color-bg-button-default-hover: #d5d5d5; /* 默认按钮悬停 */
+    --color-bg-ai-selected: #f0f8ff; /* AI 角色选中背景 */
+    --color-bg-ai-active: #e6f4ff; /* AI 角色激活背景 */
+    --color-bg-contact-picker-border: var(--color-bg-active-alt); /* 联系人选择器边框（已合并：使用 --color-bg-active-alt） */
+    --color-bg-contact-picker-checkbox: #d9d9d9; /* 联系人选择器复选框 */
+
+    /* ---- 边框色 ---- */
+    --color-border: #dee2e6;
+    --color-border-light: #e1e1e3;
+    --color-border-hover: #ccc;
+    --color-border-cancel: #c4c4c4; /* 取消按钮边框 */
+    --color-border-divider: var(--color-bg-hover); /* 弹窗标题分割线 */
+    --color-border-faint: #f0f0f0; /* 极淡边框（卡片/网格） */
+    --color-border-tooltip: var(--color-bg-button-default-hover); /* Tooltip 边框 */
+    --color-border-legal: #d0e3f7; /* 法律声明边框（许可证） */
+    --color-border-code: #e1e4e8; /* 代码块边框（许可证文本） */
+    --color-border-notice: #fff3cd; /* 通知边框（许可证警告） */
+    --color-border-item: #f9f9f9; /* 列表项分割线（群文件） */
+    --color-border-essence: var(--color-bg-active); /* 精华消息分割线（已合并：使用 --color-bg-active） */
+    --color-border-essence-item: var(--color-bg-hover); /* 精华消息项边框（已合并：使用 --color-bg-hover） */
+    --color-border-markdown-heading: #eaecef; /* Markdown 标题边框 */
+    --color-border-markdown-table: #dfe2e5; /* Markdown 表格边框 */
+    --color-border-markdown-table-header: #c6cbd1; /* Markdown 表格头边框 */
+    --color-border-markdown-hr: #f5f5f5; /* Markdown 分割线 */
+
+    /* ---- 功能色 ---- */
+    --color-error: #dc3545;
+    --color-warning: #e67e22;
+    --color-success: #4facfe;
+    --color-retry: #f0ad4e;
+    --color-link-url: #06c; /* URL 链接色（下载弹窗） */
+
+    /* ---- 主题色（PageScroller 等） ---- */
+    --color-theme-green: #4CAF50; /* 绿色主题 */
+    --color-theme-green-hover: #45a049; /* 绿色主题悬停 */
+    --color-theme-green-light: var(--color-bg-active); /* 绿色主题边框（已合并：使用 --color-bg-active） */
+
+    /* ---- 阴影 ---- */
+    --shadow-card: 0 4px 24px rgb(0 0 0 / 6%);
+    --shadow-tooltip: 0 5px 10px 0 rgb(48 48 48 / 21%);
+    --shadow-contact-more: 0 3px 6px 0 #b6b6b68f;
+    --shadow-scroll-btn: 0 1px 3px 0 rgb(0 0 0 / 10%);
+    --shadow-popup: 0 0 20px 20px rgb(0 0 0 / 5%);
+    --shadow-grid-item: 0 2px 8px rgb(0 0 0 / 10%);
+}
