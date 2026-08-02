@@ -883,6 +883,14 @@ const fetchBackendBots = async () => {
   }
 };
 
+async function fetchSetGroupSign(group_id) {
+  return await fetchAction('set_group_sign', { group_id })
+}
+
+async function fetchGroupSignedList(group_id) {
+  return await fetchActionData('get_group_signed_list', { group_id })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -940,4 +948,6 @@ export {
   fetchFriendList,
   fetchUserInfo,
   checkResponseOK,
+  fetchSetGroupSign,
+  fetchGroupSignedList,
 }

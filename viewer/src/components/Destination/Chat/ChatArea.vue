@@ -27,6 +27,7 @@ import { isEmptyObject, isObject, isString } from "@/scripts/types-util.js";
 import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../Common/Icons/QIcon.vue";
 import { getContactNameRef } from "@/scripts/user-info-util.js";
+import GroupSignView from "@/components/Destination/Chat/Group/GroupSignView.vue";
 
 const activeContact = inject("activeContact")
 const selfInfo = inject("selfInfo")
@@ -450,6 +451,9 @@ const changeShowGroupFiles = createChangeView(showGroupFilesViewer)
 const showGroupAlbumViewer = ref(false)
 const changeShowGroupAlbum = createChangeView(showGroupAlbumViewer)
 
+const showGroupSignView = ref(false)
+const changeShowGroupSign = createChangeView(showGroupSignView)
+
 const initContactInfo = () => {
   // 组件挂载时获取名称
   getName()
@@ -540,6 +544,10 @@ defineExpose({
     />
     <ImageViewer ref="imageViewer"/>
     <VideoPlayer ref="videoPlayer"/>
+    <GroupSignView
+      v-if="showGroupSignView && isGroup"
+      @close="() => changeShowGroupSign(false)"
+    />
 
     <div v-if="activeContact" class="border-bottom chat-area-head">
       <span class="chat-area-head-name" :class="{'text-error': isError}">
@@ -592,7 +600,7 @@ defineExpose({
         群聊成员
       </div>
 
-      <div class="chat-area-contact-more-area">
+      <div class="chat-area-contact-more-area container-inline-size">
         群应用
         <div class="group-applications-list">
           <div @click="changeShowGroupFiles()" class="group-app-list-app-container">
@@ -606,6 +614,10 @@ defineExpose({
           <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">
             <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')" class="group-app-icon"/>
             群精华
+          </div>
+          <div @click="changeShowGroupSign()" class="group-app-list-app-container">
+            <QIcon name="calendar_24" class="group-app-icon"/>
+            群打卡
           </div>
         </div>
       </div>
@@ -864,7 +876,13 @@ defineExpose({
 .group-applications-list {
   padding: 8px 10px 0 10px;
   display: flex;
+  flex-wrap: wrap;
   gap: 15px;
+  justify-content: flex-start;
+
+  @container (max-width: 360px) {
+    justify-content: space-between;
+  }
 }
 
 .group-app-list-app-container {

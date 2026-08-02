@@ -8,6 +8,7 @@
 $color-primary: var(--color-primary) !default;
 $color-primary-light: var(--color-primary-light) !default;
 $color-primary-mid: var(--color-primary-mid) !default;
+$color-primary-mid-light: var(--color-primary-mid-light) !default;
 
 // ---- 文字颜色 ----
 $color-text-primary: var(--color-text-primary) !default;
@@ -118,6 +119,11 @@ $color-link-url: var(--color-link-url) !default; // URL链接色（下载弹窗�
 $color-theme-green: var(--color-theme-green) !default; // 绿色主题
 $color-theme-green-hover: var(--color-theme-green-hover) !default; // 绿色主题悬停
 $color-theme-green-light: var(--color-theme-green-light) !default; // 绿色主题边框（已合并：使用 $color-bg-active）
+
+// ---- 打卡排名圆圈色 ----
+$color-rank-gold-bg: var(--color-rank-gold-bg) !default;
+$color-rank-silver-bg: var(--color-rank-silver-bg) !default;
+$color-rank-bronze-bg: var(--color-rank-bronze-bg) !default;
 
 // ---- 阴影 ----
 $shadow-card: var(--shadow-card) !default;

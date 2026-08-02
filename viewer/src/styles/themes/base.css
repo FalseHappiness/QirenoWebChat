@@ -12,6 +12,7 @@
     --color-primary-light: color-mix(in srgb, var(--color-primary) 10%, transparent);
     /* rgba($color-primary, 0.4) → 40% 透明度混合 */
     --color-primary-mid: color-mix(in srgb, var(--color-primary) 40%, transparent);
+    --color-primary-mid-light: color-mix(in srgb, var(--color-primary) 20%, transparent);
 
     /* ---- 文字颜色 ---- */
     --color-text-primary: #1a1a1a;
@@ -137,4 +138,9 @@
     --shadow-scroll-btn: 0 1px 3px 0 rgb(0 0 0 / 10%);
     --shadow-popup: 0 0 20px 20px rgb(0 0 0 / 5%);
     --shadow-grid-item: 0 2px 8px rgb(0 0 0 / 10%);
+
+    /* ---- 打卡排名圆圈色 ---- */
+    --color-rank-gold-bg: #f5a623;
+    --color-rank-silver-bg: #a8b0b8;
+    --color-rank-bronze-bg: #cd7f32;
 }
