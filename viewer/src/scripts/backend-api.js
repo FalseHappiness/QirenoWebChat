@@ -891,6 +891,15 @@ async function fetchGroupSignedList(group_id) {
   return await fetchActionData('get_group_signed_list', { group_id })
 }
 
+async function fetchProfileLikeInfo(user_id) {
+  return await fetchActionData("get_profile_like", { user_id })
+}
+
+async function fetchSendProfileLike(user_id, times = 1) {
+  return await fetchAction("send_like", { user_id, times })
+}
+
+
 export {
   fetchContacts,
   fetchMessages,
@@ -950,4 +959,6 @@ export {
   checkResponseOK,
   fetchSetGroupSign,
   fetchGroupSignedList,
+  fetchProfileLikeInfo,
+  fetchSendProfileLike
 }

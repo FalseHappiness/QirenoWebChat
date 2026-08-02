@@ -3,20 +3,23 @@ import { defineComponent } from 'vue'
 import Tooltip from "./Tooltip.vue";
 import { Emitter } from "@/composables/useEventBus.js";
 import {
+  checkResponseOK,
   fetchGroupInfo,
   fetchGroupMemberInfo,
-  fetchGroupNotice,
+  fetchGroupNotice, fetchProfileLikeInfo, fetchSendProfileLike,
   fetchStrangerInfo,
   getGroupLogo,
   getUserLogo
 } from "@/scripts/backend-api.js";
 import { nanoid } from "nanoid";
 import EnterArrow from "../Widgets/EnterArrow.vue";
-import { isString } from "@/scripts/types-util.js";
+import { isNumber, isString } from "@/scripts/types-util.js";
+import QIcon from "@/components/Common/Icons/QIcon.vue";
+import { showErrorToast } from "@/scripts/toast.js";
 
 export default defineComponent({
   name: "ContactInfoTooltip",
-  components: { EnterArrow, Tooltip },
+  components: { QIcon, EnterArrow, Tooltip },
   data() {
     return {
       group_user: null,
@@ -28,7 +31,8 @@ export default defineComponent({
       showId: null,
       showTime: null,
       latestGroupNotice: null,
-      remarkModel: null
+      remarkModel: null,
+      profileLike: null
     }
   },
   inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark"],
@@ -38,7 +42,7 @@ export default defineComponent({
     getUserLogo,
     disappear() {
       this.group_user = this.user = this.group = this.group_id = this.user_id =
-        this.position = this.showId = this.showTime = this.latestGroupNotice = this.remarkModel = null
+        this.position = this.showId = this.showTime = this.latestGroupNotice = this.remarkModel = this.profileLike = null
     },
     showContactInfo(options) {
       this.disappear()
@@ -75,7 +79,8 @@ export default defineComponent({
       }
       if (user_id) {
         this.user = user
-        fetchStrangerInfo((user_id)).then(setter("user"))
+        fetchStrangerInfo(user_id).then(setter("user"))
+        fetchProfileLikeInfo(user_id).then(setter("profileLike"))
       }
       if (group_id && !user_id) {
         this.group = group
@@ -110,6 +115,24 @@ export default defineComponent({
         }
       }
     },
+    async sendProfileLike() {
+      if (!this.user_id || !this.notSelf) return
+      const showId = this.showId
+      const result = await fetchSendProfileLike(this.user_id)
+      if (checkResponseOK(result)) {
+        if (showId !== this.showId) return
+        if (isNumber(this.profileLike?.voteInfo?.total_count)) {
+          this.profileLike.voteInfo.total_count++
+        }
+        const info = await fetchProfileLikeInfo(this.user_id)
+        if (showId === this.showId) {
+          this.profileLike = info
+        }
+      } else {
+        showErrorToast(`点赞失败: ${result?.message}`)
+        console.log("点赞个人配置失败:", result)
+      }
+    }
   },
   mounted() {
     document.addEventListener("click", this.documentClick)
@@ -126,6 +149,10 @@ export default defineComponent({
     },
     userNickname() {
       return this.group_user?.nickname ?? this.user?.nickname
+    },
+    notSelf() {
+      if (!this.user_id) return true
+      return this.user_id !== this.selfId
     }
   },
   watch: {
@@ -161,13 +188,18 @@ export default defineComponent({
               <span class="contact-info-name">{{ userNickname }}</span>
               <span class="contact-info-id">QQ {{ user_id }}</span>
             </div>
+            <div class="contact-profile-like" :class="{ clickable: notSelf }" v-if="profileLike"
+                 @click="sendProfileLike">
+              <QIcon name="like_outline_24"/>
+              {{ profileLike?.voteInfo?.total_count }}
+            </div>
           </div>
           <div class="contact-info-details">
             <div class="row" v-if="user?.qqLevel">
               <div class="label">等级</div>
               <div class="value">{{ user.qqLevel }}</div>
             </div>
-            <div class="row" v-if="user_id !== selfId && isString(userRemark)">
+            <div class="row" v-if="notSelf && isString(userRemark)">
               <div class="label">备注</div>
               <input class="value clickable overflow-ellipsis" :placeholder="userNickname" v-model="remarkModel"
                      @blur="handleRemarkBlur">
@@ -239,6 +271,7 @@ export default defineComponent({
   margin: 8px 0;
   display: flex;
   flex-direction: row;
+  align-items: center;
 }
 
 .contact-info-logo {
@@ -249,7 +282,27 @@ export default defineComponent({
   @extend %flex-column;
   justify-content: center;
   margin-left: 16px;
-  gap: 8px;
+  gap: 2px;
+  flex: 1;
+  line-height: normal;
+}
+
+.contact-profile-like {
+  @extend %flex-column;
+  @extend %flex-center-children;
+  float: right;
+  border-radius: $radius-sm;
+  padding: 4px 6px;
+
+  &.clickable {
+    cursor: pointer;
+    @extend %hover-active-bg;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .contact-info-name {
