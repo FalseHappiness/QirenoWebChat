@@ -79,7 +79,7 @@ export default defineComponent({
   },
   methods: {
     open(url) {
-      this.currentImageUrl = url
+      this.currentImageUrl = '' // 先清空src
       this.closed = false
       this.closing = false
       this.userScale = 1
@@ -94,11 +94,13 @@ export default defineComponent({
       this.isDragging = false
       this.isPinching = false
       this.isRotating = false
-      this.pendingSnap = false // 重置吸附标志
+      this.pendingSnap = false
       const mask = this.$refs.imageViewerMask
-      if (mask) {
-        mask.style.display = ''
-      }
+      if (mask) mask.style.display = ''
+      // 下一帧再赋值原图，触发onload
+      this.$nextTick(() => {
+        this.currentImageUrl = url
+      })
     },
     close() {
       if (this.closing) return
