@@ -268,6 +268,7 @@ const fetchForwardMessage = async (id) => {
  */
 const fetchSendMessageOptions = async ({ contact, message, signal, timeout = undefined }) => {
   const isGroup = contact.type === 'group';
+  const { contact_id } = contact
 
   // 字符串JSON解析
   message = parseJSON(message);
@@ -298,20 +299,34 @@ const fetchSendMessageOptions = async ({ contact, message, signal, timeout = und
       }
     }
 
-    // 群文件特殊逻辑
     if (message.length === 1) {
       const msg = message[0]
-      if (msg?.type === 'file') {
-        const data = msg?.data
+      if (isObject(msg)) {
+        const { type, data } = msg
         if (isObject(data)) {
-          const { file, name, folder_id } = data
-          if (isString(folder_id)) {
-            return await fetchAction("upload_group_file", {
-              group_id: contact.contact_id,
-              file,
-              name,
-              folder_id
-            })
+          // 群文件特殊逻辑
+          if (type === 'file') {
+            const { file, name, folder_id } = data
+            if (isString(folder_id)) {
+              return await fetchAction("upload_group_file", {
+                group_id: contact_id,
+                file,
+                name,
+                folder_id
+              })
+            }
+          }
+          // 群相册特殊逻辑
+          if (type === 'image') {
+            const { album_id, album_name, file } = data
+            if (isString(album_id)) {
+              return await fetchAction("upload_image_to_qun_album", {
+                group_id: contact_id,
+                file,
+                album_id,
+                album_name
+              })
+            }
           }
         }
       }
@@ -320,7 +335,7 @@ const fetchSendMessageOptions = async ({ contact, message, signal, timeout = und
 
   // 组装普通消息请求参数
   const reqData = { message };
-  reqData[isGroup ? 'group_id' : 'user_id'] = contact.contact_id
+  reqData[isGroup ? 'group_id' : 'user_id'] = contact_id
   // 拼接接口 endpoint
   const endpoint = isGroup ? "send_group_msg" : "send_private_msg";
 
@@ -463,7 +478,7 @@ function calcFileSafeTTL(fileBytes, minUploadMbps = 1, bufferMs = 30000) {
  * @returns {Promise<object>} 上传完成后的消息响应
  */
 const fetchSendFileStream = async (task) => {
-  const { contact, file, controller } = task
+  const { contact, file, controller, attachInfo } = task
   const CHUNK_SIZE = 64 * 1024; // 64KB
   const streamId = nanoid();
   const fileName = file.name;
@@ -575,13 +590,18 @@ const fetchSendFileStream = async (task) => {
       }
       // 现在发送文件到聊天
       const message = [{
-        type: 'file',
+        type: task.type,
         data
       }];
 
-      const folder_id = task.attachInfo?.folder_id
-      if (isString(folder_id)) {
-        data.folder_id = folder_id
+      if (isObject(attachInfo)) {
+        const { folder_id, album_name, album_id } = attachInfo
+        if (isString(folder_id)) {
+          data.folder_id = folder_id
+        } else if (isString(album_id)) {
+          data.album_name = album_name
+          data.album_id = album_id
+        }
       }
 
       return await fetchSendMessage(contact, message, controller, timeout)

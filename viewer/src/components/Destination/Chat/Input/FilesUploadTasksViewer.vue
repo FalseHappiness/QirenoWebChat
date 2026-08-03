@@ -123,6 +123,8 @@ export default defineComponent({
       const type = task.type || 'file'
       if (type === 'file') {
         return task.type === 'group' ? "群文件" : "文件"
+      } else if (type === 'image' && task.attachInfo) {
+        return "群照片"
       }
       return ({
         record: "语音消息"
@@ -171,6 +173,10 @@ export default defineComponent({
             <!-- 合并文件中 -->
             <template v-else-if="task.is_backend_uploading">
               <span class="status-hashing">后端上传中...</span>
+            </template>
+            <!-- 转换图片中 -->
+            <template v-else-if="task.is_converting_image">
+              <span class="status-hashing">转换图片中...</span>
             </template>
             <!-- 分片上传中 -->
             <template v-else-if="task.chunked">

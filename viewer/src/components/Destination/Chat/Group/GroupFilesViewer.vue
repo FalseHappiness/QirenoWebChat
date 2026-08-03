@@ -591,14 +591,8 @@ export default defineComponent({
 }
 
 .gv-btn-refresh, .gv-btn-upload-tasks {
-  @extend %hover-active-bg;
-  border-radius: $radius-sm;
-  padding: 5px;
-  height: 30px;
-  width: 30px;
+  @include btn-svg();
   margin: 0 4px;
-  cursor: pointer;
-  color: $color-text-muted;
 }
 
 .gv-btn-create-folder, .gv-btn-upload-file {

@@ -634,3 +634,13 @@
   max-width: calc(100% - $gap);
   max-height: calc(100% - $gap);
 }
+
+@mixin btn-svg($size: 30px, $padding: 5px, $color: $color-text-muted, $radius: $radius-sm) {
+  @include hover-active-bg();
+  border-radius: $radius;
+  padding: $padding;
+  height: $size;
+  width: $size;
+  color: $color;
+  cursor: pointer;
+}

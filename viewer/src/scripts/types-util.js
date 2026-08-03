@@ -58,8 +58,15 @@ const isNumber = variable => {
   return isType(variable, 'number')
 }
 
-function isString(variable) {
-  return isType(variable, 'string')
+function allIsType(type, ...variables) {
+  for (const variable of variables) {
+    if (!isType(variable, type)) return false
+  }
+  return true
+}
+
+function isString(...variables) {
+  return allIsType('string', ...variables)
 }
 
 function isUndefined(variable) {
