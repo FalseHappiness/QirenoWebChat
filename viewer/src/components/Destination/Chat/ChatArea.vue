@@ -26,8 +26,9 @@ import ImageViewer from "../../Common/Media/ImageViewer.vue";
 import { isEmptyObject, isObject, isString } from "@/scripts/types-util.js";
 import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../Common/Icons/QIcon.vue";
-import { getContactNameRef } from "@/scripts/user-info-util.js";
+import { CacheNameKey, getCacheName, getContactNameRef } from "@/scripts/user-info-util.js";
 import GroupSignView from "@/components/Destination/Chat/Group/GroupSignView.vue";
+import { checkSameContact } from "@/scripts/contacts-util.js";
 
 const activeContact = inject("activeContact")
 const selfInfo = inject("selfInfo")
@@ -501,7 +502,10 @@ provide("openVideoPlayer", src => {
 
 // 联系人更改时获取名称
 watch(() => activeContact.value, (newVal, oldVal) => {
-  if (newVal?.contact_id !== oldVal?.contact_id || newVal?.type !== oldVal?.type) {
+  if (newVal?.name) {
+    displayName.value = newVal.name
+  }
+  if (!checkSameContact(newVal, oldVal)) {
     showGroupAnnounceViewer.value = false
     showContactMore.value = false
     clearPeerStatus()

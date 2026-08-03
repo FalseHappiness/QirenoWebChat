@@ -98,6 +98,7 @@ const cache = new ResponseCache();
 
 const CacheKey = {
   FRIEND_LIST: 'friend_list',
+  GROUP_LIST: 'group_list',
   GROUP_INFO: 'group_info',
   GROUP_MEMBER_INFO: 'group_member_info',
   GROUP_MEMBER_LIST: 'group_member_list',
@@ -117,6 +118,10 @@ const setCache = (key, value, arg) => {
 
 const setFriendListCache = value => {
   return setCache(CacheKey.FRIEND_LIST, value)
+}
+
+const setGroupListCache = value => {
+  return setCache(CacheKey.GROUP_LIST, value)
 }
 
 const setGroupInfoCache = (group_id, value) => {
@@ -155,8 +160,20 @@ const getFriendInfoCache = user_id => {
   return getFriendListCache()?.find?.(user => user.user_id === user_id)
 }
 
+const getFriendInfoCacheByList = user_id => {
+  return getFriendListCache()?.find?.(user => user.user_id === user_id)
+}
+
+const getGroupListCache = group_id => {
+  return getCache(CacheKey.GROUP_LIST, { group_id })
+}
+
 const getGroupInfoCache = group_id => {
   return getCache(CacheKey.GROUP_INFO, { group_id })
+}
+
+const getGroupInfoCacheByList = group_id => {
+  return getGroupListCache()?.find?.(group => group.group_id === group_id)
 }
 
 const getGroupMemberInfoCache = (group_id, user_id) => {
@@ -171,7 +188,7 @@ const getGroupMemberInfoCacheByList = (group_id, user_id) => {
   return getGroupMemberListCache(group_id)?.find?.(user => user.user_id === user_id)
 }
 
-const getStrangerInfoCache = (user_id) => {
+const getStrangerInfoCache = user_id => {
   return getCache(CacheKey.STRANGER_INFO, { user_id })
 }
 
@@ -317,7 +334,10 @@ const getCacheName = function (idList, type) {
     user_id
   } = parseCacheArg(idList, type)
   if (isGroupInfo) {
-    const groupInfo = getGroupInfoCache(group_id)
+    let groupInfo = getGroupInfoCacheByList(group_id)
+    if (!groupInfo) {
+      groupInfo = getGroupInfoCache(group_id)
+    }
     if (isObject(groupInfo)) {
       if (isGroup) {
         return groupInfo.group_remark || groupInfo.group_name;
@@ -326,7 +346,10 @@ const getCacheName = function (idList, type) {
       }
     }
   } else {
-    let userInfo = getFriendInfoCache(user_id);
+    let userInfo = getFriendInfoCacheByList(user_id);
+    if (!userInfo) {
+      userInfo = getFriendInfoCache(user_id);
+    }
     if (!userInfo) {
       userInfo = getStrangerInfoCache(user_id)
     }
@@ -384,14 +407,21 @@ function setCacheName(idList, type, name) {
     return
   }
   if (isGroupInfo) {
-    const groupInfo = getGroupInfoCache()
-    if (isObject(groupInfo)) {
-      if (isGroupRemark) {
-        groupInfo.group_remark = name
-      } else if (isGroupName) {
-        groupInfo.group_name = name
+    const update = group => {
+      if (isObject(group)) {
+        if (isGroupRemark) {
+          group.group_remark = name
+        } else if (isGroupName) {
+          group.group_name = name
+        }
       }
     }
+    update(
+      getGroupInfoCache(group_id)
+    )
+    update(
+      getGroupInfoCacheByList(group_id)
+    )
   } else if (isGroupUserInfo) {
     const update = user => {
       if (isObject(user)) {
@@ -422,6 +452,9 @@ function setCacheName(idList, type, name) {
     }
     update(
       getFriendInfoCache(user_id)
+    )
+    update(
+      getFriendInfoCacheByList(user_id)
     )
     update(
       getStrangerInfoCache(user_id)
@@ -574,6 +607,7 @@ export {
   fetchDisplayName,
   getCacheName,
   setFriendListCache,
+  setGroupListCache,
   setGroupInfoCache,
   setGroupMemberInfoCache,
   setGroupMemberListCache,

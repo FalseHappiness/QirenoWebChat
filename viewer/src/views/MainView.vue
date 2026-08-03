@@ -121,6 +121,10 @@ const updateContactRemark = (contact, remark) => {
       }
     }
   }
+  if (checkSameContact(contact, activeContact.value)) {
+    activeContact.value.remark = remark
+    activeContact.value.name = remark || activeContact.value.real_name || activeContact.value.name
+  }
 }
 
 const changeGroupContactRemark = async (contact_id, remark) => {

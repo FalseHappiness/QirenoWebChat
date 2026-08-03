@@ -21,7 +21,7 @@ import {
   CacheNameKey,
   setCacheName,
   setFriendListCache,
-  setGroupInfoCache,
+  setGroupInfoCache, setGroupListCache,
   setGroupMemberInfoCache,
   setGroupMemberListCache,
   setStrangerInfoCache
@@ -620,7 +620,9 @@ const fetchCategoricalFriends = async () => {
 }
 
 const fetchGroupList = async () => {
-  return await fetchActionData('get_group_list')
+  return setGroupListCache(
+    await fetchActionData('get_group_list')
+  )
 }
 
 const fetchForwardSingleMsg = async (message_id, contact) => {
