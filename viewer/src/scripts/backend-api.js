@@ -16,11 +16,12 @@ import {
 } from "./snow-luma-translator.js";
 import { parseJSON, trimTrailingSlash } from "./util.js";
 
-import { isObject, isString, objectHasKey } from "./types-util.js";
+import { isArray, isObject, isString, objectHasKey } from "./types-util.js";
 import {
   CacheNameKey,
   setCacheName,
-  setFriendListCache, setGroupInfoCache,
+  setFriendListCache,
+  setGroupInfoCache,
   setGroupMemberInfoCache,
   setGroupMemberListCache,
   setStrangerInfoCache
@@ -271,26 +272,47 @@ const fetchSendMessageOptions = async ({ contact, message, signal, timeout = und
   // 字符串JSON解析
   message = parseJSON(message);
 
-  // 戳一戳特殊逻辑
-  if (Array.isArray(message) && message.length > 0) {
-    const firstSeg = message[0];
-    if (firstSeg.type === 'poke' && firstSeg.data) {
-      const pokeData = firstSeg.data;
-      if (!objectHasKey(pokeData, "id") && !objectHasKey(pokeData, "type")) { // 不是窗口抖动
-        const pokeUser = pokeData.user_id ?? -1;
-        const pokeGroup = pokeData.group_id ?? -1;
-        const pokeTarget = pokeData.target_id ?? -1;
+  if (isArray(message)) {
+    // 戳一戳特殊逻辑
+    if (message.length > 0) {
+      const firstSeg = message[0];
+      if (firstSeg.type === 'poke' && firstSeg.data) {
+        const pokeData = firstSeg.data;
+        if (!objectHasKey(pokeData, "id") && !objectHasKey(pokeData, "type")) { // 不是窗口抖动
+          const pokeUser = pokeData.user_id ?? -1;
+          const pokeGroup = pokeData.group_id ?? -1;
+          const pokeTarget = pokeData.target_id ?? -1;
 
-        const reqData = {
-          user_id: pokeUser || pokeTarget,
-          target_id: pokeTarget || pokeUser,
-        };
-        if (pokeGroup !== -1) {
-          reqData.group_id = pokeGroup;
+          const reqData = {
+            user_id: pokeUser || pokeTarget,
+            target_id: pokeTarget || pokeUser,
+          };
+          if (pokeGroup !== -1) {
+            reqData.group_id = pokeGroup;
+          }
+
+          if (pokeUser !== -1) {
+            return await fetchAction("send_poke", reqData, signal, timeout);
+          }
         }
+      }
+    }
 
-        if (pokeUser !== -1) {
-          return await fetchAction("send_poke", reqData, signal, timeout);
+    // 群文件特殊逻辑
+    if (message.length === 1) {
+      const msg = message[0]
+      if (msg?.type === 'file') {
+        const data = msg?.data
+        if (isObject(data)) {
+          const { file, name, folder_id } = data
+          if (isString(folder_id)) {
+            return await fetchAction("upload_group_file", {
+              group_id: contact.contact_id,
+              file,
+              name,
+              folder_id
+            })
+          }
         }
       }
     }
@@ -306,8 +328,8 @@ const fetchSendMessageOptions = async ({ contact, message, signal, timeout = und
 }
 
 
-const fetchSendMessage = async (contact, message, signal) => {
-  return await fetchSendMessageOptions({ contact, message, signal })
+const fetchSendMessage = async (contact, message, signal, timeout) => {
+  return await fetchSendMessageOptions({ contact, message, signal, timeout })
 }
 
 const fetchEssenceMessages = async (group_id, only_real_seq) => {
@@ -399,6 +421,30 @@ export async function calcFileSha256(file, chunkSize = 2 * 1024 * 1024, onProgre
 }
 
 /**
+ * 根据文件字节大小，计算需要保留多少毫秒才足够上传
+ * @param {number} fileBytes File.size 原始字节
+ * @param {number} minUploadMbps 保底上传带宽 Mbps，默认1Mbps（移动端弱网）
+ * @param {number} bufferMs 额外缓冲毫秒，默认30000(30s)
+ * @returns {number} 文件保留TTL毫秒
+ */
+function calcFileSafeTTL(fileBytes, minUploadMbps = 1, bufferMs = 30000) {
+  if (fileBytes <= 0) return bufferMs
+
+  const bitPerByte = 8
+  const bitPerMbps = 1_000_000
+  const efficiency = 0.7 // 网络损耗系数
+
+  // 1. 文件总比特
+  const totalBits = fileBytes * bitPerByte
+  // 2. 每秒有效比特
+  const effectiveBitPerSec = minUploadMbps * bitPerMbps * efficiency
+  // 3. 纯传输耗时 毫秒
+  const transferMs = (totalBits / effectiveBitPerSec) * 1000
+  // 4. 总保留时间 = 传输耗时 + 缓冲
+  return Math.ceil(transferMs + bufferMs)
+}
+
+/**
  * 通过 sendAction 分块上传大文件（每块 64KB）
  * 参考 test_upload_stream.py 的 upload_file_stream_batch 实现
  *
@@ -411,6 +457,8 @@ export async function calcFileSha256(file, chunkSize = 2 * 1024 * 1024, onProgre
  * @param {number} task.chunk_index
  * @param {number} task.total_chunks
  * @param {boolean} task.is_calc_hash
+ * @param {boolean} task.is_merging
+ * @param {boolean} task.is_backend_uploading
  * @param {string} [task.type='file'] - 发送消息类型
  * @returns {Promise<object>} 上传完成后的消息响应
  */
@@ -419,12 +467,14 @@ const fetchSendFileStream = async (task) => {
   const CHUNK_SIZE = 64 * 1024; // 64KB
   const streamId = nanoid();
   const fileName = file.name;
+  const fileSize = file.size;
+  const timeout = calcFileSafeTTL(fileSize);
   const sha256 = await calcFileSha256(file);
   const startTimestamp = Date.now();
   const uploadName = `${fileName}-${sha256}`;
 
   // console.log(`[fetchSendFileStream] 开始上传文件: ${fileName}`);
-  // console.log(`[fetchSendFileStream] 文件大小: ${file.size} 字节`);
+  // console.log(`[fetchSendFileStream] 文件大小: ${fileSize} 字节`);
   // console.log(`[fetchSendFileStream] 分块大小: ${CHUNK_SIZE} 字节 (64KB)`);
   // console.log(`[fetchSendFileStream] 流ID: ${streamId}`);
 
@@ -473,7 +523,7 @@ const fetchSendFileStream = async (task) => {
         total_chunks: totalChunks,
         file_size: totalSize,
         filename: uploadName,
-        file_retention: 3 * 60 * 1000, // ms = 3 min
+        file_retention: timeout,
         expected_sha256: sha256
       };
 
@@ -491,6 +541,8 @@ const fetchSendFileStream = async (task) => {
 
     // 所有分片发送完成，发送完成信号
     console.log(`[fetchSendFileStream] ${fileName} 所有分片发送完成, 请求文件合并...`);
+    task.is_calc_hash = false
+    task.is_merging = true
 
     const completeParams = {
       stream_id: streamId,
@@ -508,6 +560,8 @@ const fetchSendFileStream = async (task) => {
     const result = completeResponse || {};
 
     if (result.status === 'file_complete') {
+      task.is_merging = false
+      task.is_backend_uploading = true
       // const elapsed = ((Date.now() - startTimestamp) / 1000).toFixed(1);
       // console.log(`[fetchSendFileStream] ✅ 文件上传成功!`);
       // console.log(`[fetchSendFileStream]    - 文件路径: ${result.file_path}`);
@@ -515,16 +569,22 @@ const fetchSendFileStream = async (task) => {
       // console.log(`[fetchSendFileStream]    - SHA256: ${result.sha256}`);
       // console.log(`[fetchSendFileStream]    - 总计耗时: ${elapsed}s`);
 
+      const data = {
+        file: result.file_path,
+        name: fileName
+      }
       // 现在发送文件到聊天
       const message = [{
         type: 'file',
-        data: {
-          file: result.file_path,
-          name: fileName
-        }
+        data
       }];
 
-      return await fetchSendMessage(contact, message, controller)
+      const folder_id = task.attachInfo?.folder_id
+      if (isString(folder_id)) {
+        data.folder_id = folder_id
+      }
+
+      return await fetchSendMessage(contact, message, controller, timeout)
     } else {
       throw new Error(`文件状态异常: ${JSON.stringify(result)}`);
     }
@@ -592,7 +652,7 @@ const fetchGroupRootFiles = async (group_id) => {
 }
 
 const fetchGroupFolderFiles = async (group_id, folder_id) => {
-  if (!folder_id || folder_id === 'root') {
+  if (!folder_id || folder_id === 'root' || folder_id === '/') {
     return await fetchGroupRootFiles(group_id)
   }
   return convertGroupFilesSL(await fetchActionData("get_group_files_by_folder", {
@@ -899,6 +959,27 @@ async function fetchSendProfileLike(user_id, times = 1) {
   return await fetchAction("send_like", { user_id, times })
 }
 
+async function fetchCreateGroupFolder(group_id, name) {
+  return await fetchAction("create_group_file_folder", { group_id, name })
+}
+
+async function fetchDeleteGroupFolder(group_id, folder_id) {
+  return await fetchAction("delete_group_folder", { group_id, folder_id })
+}
+
+async function fetchDeleteGroupFile(group_id, file_id) {
+  return await fetchAction("delete_group_file", { group_id, file_id })
+}
+
+async function fetchRenameGroupFile(group_id, file_id, current_parent_directory, new_name) {
+  return await fetchAction("rename_group_file", {
+    group_id, file_id, current_parent_directory, new_name
+  })
+}
+
+async function fetchRenameGroupFolder(group_id, folder_id, name) {
+  return await fetchAction("rename_group_file_folder", { group_id, folder_id, name })
+}
 
 export {
   fetchContacts,
@@ -960,5 +1041,10 @@ export {
   fetchSetGroupSign,
   fetchGroupSignedList,
   fetchProfileLikeInfo,
-  fetchSendProfileLike
+  fetchSendProfileLike,
+  fetchCreateGroupFolder,
+  fetchDeleteGroupFolder,
+  fetchDeleteGroupFile,
+  fetchRenameGroupFile,
+  fetchRenameGroupFolder,
 }

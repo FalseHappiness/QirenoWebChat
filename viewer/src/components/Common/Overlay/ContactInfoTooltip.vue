@@ -130,7 +130,7 @@ export default defineComponent({
         }
       } else {
         showErrorToast(`点赞失败: ${result?.message}`)
-        console.log("点赞个人配置失败:", result)
+        console.error("点赞个人配置失败:", result)
       }
     }
   },

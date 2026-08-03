@@ -26,9 +26,10 @@ import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
 import { getPokeDescription } from "@/scripts/faces-config.js";
 import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js";
-import { isArray, isBoolean, isObject } from "@/scripts/types-util.js";
+import { isArray, isBoolean, isFunction, isObject, isUndefined } from "@/scripts/types-util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { getCacheGroupUserName } from "@/scripts/user-info-util.js";
+import { checkSameContact } from "@/scripts/contacts-util.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -46,7 +47,7 @@ export default defineComponent({
     SimpleBar,
     Icon,
   },
-  inject: ['activeContact', "groupUsers"],
+  inject: ['activeContact', "groupUsers", "filesUploadTasks"],
   data() {
     return {
       lastCaretPosition: null,
@@ -65,10 +66,8 @@ export default defineComponent({
       atMentionText: '',
       atMentionRange: null,
       selectedAtIndex: 0,
-      draggedFiles: [],
       messageIdToForward: undefined,
       messageContentToForward: undefined,
-      filesUploadTasks: [],
       showFilesUploadTasks: false,
       remainGroupAtAll: undefined,
       isShowRecordPanel: false,
@@ -81,10 +80,15 @@ export default defineComponent({
       recordShouldCancel: false,
       recordStream: null,
       isHoveringCancel: false,
-      isDropRecordFiles: false,
       isRecordLocked: false,   // 录音锁定状态
       isRecordPaused: false,   // 录音暂停状态
       showGroupAiRecordEditor: false,  // AI语音编辑器显示状态
+      pendingUploadInfo: {
+        files: [],
+        confirming: false,
+        type: null,
+        attachInfo: null
+      }
     }
   },
   mounted() {
@@ -108,6 +112,8 @@ export default defineComponent({
 
     Emitter.on('forward-single-msg', this.handleForwardSingleMsg)
     Emitter.on('input-at-somebody', this.handleInputAtSomebody)
+    Emitter.on('select-upload-group-files', this.handleSelectUploadGroupFiles)
+    Emitter.on('show-files-upload-tasks', this.handleFilesUploadTasksViewer)
   },
   beforeDestroy() {
     this.handleUnmounted()
@@ -129,6 +135,8 @@ export default defineComponent({
 
       Emitter.off('forward-single-msg')
       Emitter.off('input-at-somebody')
+      Emitter.off('select-upload-group-files')
+      Emitter.off('show-files-upload-tasks')
     },
     // 用户在编辑后调用此方法记录状态
     recordHistory() {
@@ -314,33 +322,103 @@ export default defineComponent({
       e.dataTransfer.effectAllowed = 'move';
     },
 
+    parseDragTarget(e) {
+      const target = e?.target
+      if (isFunction(target?.closest)) {
+        const closest = (...selectors) => {
+          for (const selector of selectors) {
+            const element = target.closest(selector)
+            if (element) return element
+          }
+          return false
+        }
+        const isEditor = this.$refs.editor?.contains(target)
+        const isChatContainer = closest('.chat-container')
+        const isRecord = closest(".message-input-record-panel", ".message-input-ctrl-icon-microphone")
+        const isGroupFilesViewer = closest(".group-files-viewer-container")
+        return {
+          target,
+          isEditor,
+          isChatContainer,
+          isRecord,
+          isGroupFilesViewer,
+          shouldHandle: isEditor || isChatContainer || isRecord || isGroupFilesViewer
+        }
+      }
+      return {
+        isEditor: false,
+        isChatContainer: false,
+        isRecord: false,
+        isGroupFilesViewer: false,
+        shouldHandle: false
+      }
+    },
+
     async handleDocumentDragover(e) {
-      if (e.target?.closest('.chat-container')) {
+      if (this.parseDragTarget(e).shouldHandle) {
         e.preventDefault();
       }
     },
 
     async handleDocumentDrop(e) {
-      const target = e.target
-      if (!target) {
-        return;
-      }
-      const isEditor = this.$refs.editor?.contains(target)
-      const isChatContainer = target?.closest('.chat-container')
-      const isRecord = target?.closest(".message-input-record-panel") || target?.closest(".message-input-ctrl-icon-microphone")
-      // 检查是否是在编辑器内发生的拖放
-      if (isEditor || isChatContainer || isRecord) {
-        this.isDropRecordFiles = false
+      const {
+        isEditor, isChatContainer, isRecord, isGroupFilesViewer, shouldHandle, target
+      } = this.parseDragTarget(e)
+      if (shouldHandle) {
         e.preventDefault();
         if (isEditor) {
           await this.handleDrop(e);
-        } else if (isChatContainer || isRecord) {
-          await this.handleDropFiles(e, isRecord)
+        } else if (isChatContainer) {
+          await this.handleDropFiles(e, 'file')
+        } else if (isRecord) {
+          await this.handleDropFiles(e, 'record')
+        } else if (isGroupFilesViewer) {
+          await this.handleDropFiles(e, 'file', { folder_id: isGroupFilesViewer.dataset?.folderId })
         }
       }
     },
 
-    async handleDropFiles(e, isRecord) {
+    formatPendingUploadType(pendingUploadInfo) {
+      const { type, attachInfo } = (isObject(pendingUploadInfo) ? pendingUploadInfo : this.pendingUploadInfo)
+
+      if (type === 'record') {
+        return "语音消息"
+      } else if (type === 'file') {
+        if (!attachInfo) {
+          return "文件"
+        }
+        if (isObject(attachInfo)) {
+          if (attachInfo.folder_id) {
+            return "群文件"
+          }
+        }
+      }
+      return "未知类型"
+    },
+
+    clearPendingFilesUpload() {
+      this.pendingUploadInfo = {
+        files: [],
+        confirming: false,
+        type: null,
+        attachInfo: null
+      }
+    },
+
+    createPendingFilesUpload(files, type = 'file', attachInfo = null) {
+      if (!files?.length) {
+        this.clearPendingFilesUpload()
+        return
+      }
+      this.pendingUploadInfo = {
+        files,
+        confirming: true,
+        type,
+        attachInfo
+      }
+    },
+
+    async handleDropFiles(e, type = 'file', attachInfo = null) {
       let files = await this.processDataTransferItems(e.dataTransfer.items)
       files = files
         .filter(item => item.kind === 'file')
@@ -350,27 +428,26 @@ export default defineComponent({
         if (filteredFiles.length !== files.length) {
           showToast('info', '已自动过滤空文件/文件夹')
         }
-        // ✅ isRecord 额外过滤：只保留音频文件
-        if (isRecord) {
+        // 语音消息额外过滤：只保留音频文件
+        if (type === 'record') {
           const audioFiles = filteredFiles.filter(file => file.type.startsWith('audio/'))
           if (audioFiles.length !== filteredFiles.length) {
             showToast('info', '已自动过滤非音频文件')
           }
-          this.isDropRecordFiles = true
-          this.draggedFiles = audioFiles
+          this.createPendingFilesUpload(audioFiles, type, attachInfo)
         } else {
           // 聊天面板保持原样
-          this.draggedFiles = filteredFiles
+          this.createPendingFilesUpload(filteredFiles, type, attachInfo)
         }
       }
     },
 
     handleFilesConfirm() {
-      const type = this.isDropRecordFiles ? "record" : 'file'
-      const files = toRaw(this.draggedFiles)
-      this.draggedFiles = []
+      const { type, files, attachInfo } = this.pendingUploadInfo
+      this.clearPendingFilesUpload()
       const maxSize = 20 * 1024 * 1024; // 20MB
-      const minFiles = files.filter(f => f.size <= maxSize);
+      const folder_id = this.isGroup ? attachInfo?.folder_id : undefined
+      const minFiles = isUndefined(folder_id) ? files.filter(f => f.size <= maxSize) : [];
       const bigFiles = files.filter(f => !minFiles.includes(f))
       const contact = toRaw(this.activeContact)
       const handleResult = task => {
@@ -400,6 +477,7 @@ export default defineComponent({
           cancelled: false,
           create_time: Date.now(),
           type,
+          attachInfo,
         })
         const task = this.filesUploadTasks.find(t => t.task_id === task_id)
         controller.signal.onabort = () => {
@@ -425,8 +503,9 @@ export default defineComponent({
           chunk_index: undefined,
           completed: false,
           cancelled: false,
-          is_calc_hash: true,
-          type
+          is_calc_hash: true, is_merging: false, is_backend_uploading: false,
+          type,
+          attachInfo,
         })
         // 获取 Proxy 对象
         const task = this.filesUploadTasks.find(t => t.task_id === task_id)
@@ -440,7 +519,7 @@ export default defineComponent({
     },
 
     async handleFilesConfirmCancel() {
-      this.draggedFiles = []
+      this.clearPendingFilesUpload()
     },
 
     // 转化非 jpg png gif 的图片为 png
@@ -542,7 +621,7 @@ export default defineComponent({
             .filter(item => item.kind === 'file' && (!item.type.startsWith('image/') || item.errorImage))
             .map(item => item.data)
           if (fileKinds?.length) {
-            this.draggedFiles = files.filter(item => item.kind === 'file').map(item => item.data)
+            this.createPendingFilesUpload(files.filter(item => item.kind === 'file').map(item => item.data))
           } else {
             files = await this.convertDataTransferImageItems(filteredFiles)
             await this.insertDataTransferItemsAtCursor(files)
@@ -1815,7 +1894,7 @@ export default defineComponent({
     },
 
     // 选择任意普通文件
-    async handleMessageInputSelectFiles() {
+    async handleMessageInputSelectFiles(attachInfo = null) {
       const pickerOpts = {
         types: [
           {
@@ -1826,7 +1905,7 @@ export default defineComponent({
         excludeAcceptAllOption: false
       };
 
-      this.draggedFiles = await this.openFilePicker(pickerOpts);
+      this.createPendingFilesUpload(await this.openFilePicker(pickerOpts), 'file', attachInfo)
     },
 
     // 新增：选择音频文件
@@ -1851,8 +1930,7 @@ export default defineComponent({
       if (audioFiles.length !== files.length) {
         showToast('info', '已自动过滤非音频文件')
       }
-      this.isDropRecordFiles = true
-      this.draggedFiles = audioFiles
+      this.createPendingFilesUpload(audioFiles, 'record')
     },
 
     handleFilesUploadTasksViewer() {
@@ -1860,6 +1938,15 @@ export default defineComponent({
     },
     handleFilesUploadTasksViewerClose() {
       this.showFilesUploadTasks = false
+    },
+
+    handleSelectUploadGroupFiles(files, folder_id) {
+      const attachInfo = { folder_id }
+      if (isUndefined(files)) {
+        this.handleMessageInputSelectFiles(attachInfo)
+      } else if (files?.length) {
+        this.createPendingFilesUpload(files, 'file', attachInfo)
+      }
     },
 
     // ====== 录音功能 ======
@@ -2371,10 +2458,7 @@ export default defineComponent({
 
     currentFilesUploadTasks() {
       return this.filesUploadTasks
-        .filter(task => {
-          const { type, contact_id } = task.contact;
-          return type === this.activeContact?.type && contact_id === this.activeContact?.contact_id;
-        })
+        .filter(({ contact }) => checkSameContact(contact, this.activeContact))
         .sort((a, b) => {
           // create_time 是 Date.now() 格式（毫秒时间戳，数字）
           return b.create_time - a.create_time;
@@ -2427,15 +2511,15 @@ export default defineComponent({
     <FilesUploadTasksViewer
       v-if="showFilesUploadTasks && currentFilesUploadTasks?.length"
       :tasks="currentFilesUploadTasks"
-      :on-close="handleFilesUploadTasksViewerClose"
+      @close="handleFilesUploadTasksViewerClose"
     />
     <FilesConfirm
-      v-if="this.draggedFiles.length"
-      :files="this.draggedFiles"
+      v-if="this.pendingUploadInfo.confirming && this.pendingUploadInfo.files?.length"
+      :files="this.pendingUploadInfo.files"
       :contact-name="activeContact?.name"
       :on-confirm="handleFilesConfirm"
       :on-cancel="handleFilesConfirmCancel"
-      :type-name="isDropRecordFiles ? '语音消息' : undefined"
+      :type-name="formatPendingUploadType()"
     />
     <ContactsPicker v-if="messageIdToForward?.length"
                     :on-confirm="handleContactsPickerConfirm"
@@ -2561,7 +2645,7 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <QIcon @click="handleMessageInputSelectFiles" class="message-input-ctrl-icon" name="folder_24"/>
+                <QIcon @click="handleMessageInputSelectFiles()" class="message-input-ctrl-icon" name="folder_24"/>
               </template>
             </Tooltip>
 

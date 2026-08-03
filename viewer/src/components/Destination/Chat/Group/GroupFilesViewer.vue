@@ -4,6 +4,11 @@ import {
   fetchGroupFolderFiles,
   fetchGroupFileSysInfo,
   getGroupFileProxyUrl,
+  fetchCreateGroupFolder,
+  checkResponseOK,
+  fetchDeleteGroupFolder,
+  fetchDeleteGroupFile,
+  fetchRenameGroupFolder, fetchRenameGroupFile, isSnowLuma,
 } from "@/scripts/backend-api.js";
 import { formatTimeOptions } from "@/scripts/util.js";
 import { getFileIcon, formatFileSize } from "../Message/Types/FileMessage.vue";
@@ -13,6 +18,13 @@ import TruncatedText from "../../../Common/Widgets/TruncatedText.vue";
 import { qqFileIcon } from "@/composables/useBase.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
+import { showConfirmBox, showPromptBox } from "@/scripts/popup-box-api.js";
+import { showErrorToast, showSuccessToast } from "@/scripts/toast.js";
+import { basicContextItem, formatBasicContextItems, vCustomMenu } from "@/directives/context-menu.js";
+import { isGroupOperator } from "@/scripts/user-info-util.js";
+import { Emitter } from "@/composables/useEventBus.js";
+import { checkSameContact, createGroupContact } from "@/scripts/contacts-util.js";
+import { isString } from "@/scripts/types-util.js";
 
 export default defineComponent({
   name: "GroupFilesViewer",
@@ -23,6 +35,7 @@ export default defineComponent({
       required: true
     },
   },
+  directives: { customMenu: vCustomMenu },
   data() {
     return {
       // 当前文件夹路径栈，每个元素 { folder_id, folder_name }
@@ -43,11 +56,24 @@ export default defineComponent({
       error: null
     }
   },
+  inject: ['groupUsers', 'selfId', 'filesUploadTasks'],
   computed: {
+    isRootPath() {
+      return this.pathStack.length === 0
+    },
+    currentFolder() {
+      if (this.isRootPath) return {
+        folder_id: "/",
+        folder_name: "根目录"
+      }
+      return this.pathStack[this.pathStack.length - 1]
+    },
     // 当前文件夹名称
     currentFolderName() {
-      if (this.pathStack.length === 0) return '根目录'
-      return this.pathStack[this.pathStack.length - 1].folder_name
+      return this.currentFolder.folder_name
+    },
+    currentFolderId() {
+      return this.currentFolder.folder_id
     },
     // 存储空间使用百分比
     storagePercent() {
@@ -122,6 +148,14 @@ export default defineComponent({
     },
     isSizeBasedSortBy() {
       return ['large_first', 'small_first'].includes(this.sortBy)
+    },
+    isAdmin() {
+      return isGroupOperator(this.groupUsers?.find?.(user => user.user_id === this.selfId))
+    },
+    filteredUploadTasks() {
+      return this.filesUploadTasks.filter(
+        task => checkSameContact(task.contact, createGroupContact(this.group_id)) && isString(task.attachInfo?.folder_id)
+      )
     }
   },
   methods: {
@@ -141,6 +175,8 @@ export default defineComponent({
     async loadFolder(folder_id) {
       this.loading = true
       this.error = null
+      // noinspection ES6MissingAwait
+      this.loadFileSysInfo()
       try {
         const data = await fetchGroupFolderFiles(this.group_id, folder_id)
         this.files = data.files || []
@@ -171,23 +207,158 @@ export default defineComponent({
     goBack() {
       if (this.pathStack.length > 0) {
         this.pathStack.pop()
-        const prevFolderId = this.pathStack.length > 0
-          ? this.pathStack[this.pathStack.length - 1].folder_id
-          : 'root'
+        const prevFolderId = this.currentFolderId
         this.loadFolder(prevFolderId)
       }
     },
     goToRoot() {
       this.pathStack = []
-      this.loadFolder('root')
+      this.loadFolder('/')
     },
     getFileDownloadUrl(fileItem) {
       return getGroupFileProxyUrl(fileItem.raw.group_id, fileItem.id, fileItem.name)
     },
+    /**
+     * 生成无重复文件夹名称
+     * @param {string} baseName 基础名称，如 "新建文件夹"
+     * @param {Array} folderList 已有文件夹数组 [{folder_name:xxx}, ...]
+     * @returns {string} 不重复的最终名称
+     */
+    getUniqueFolderName(baseName, folderList) {
+      if (!folderList?.length) return baseName
+      // 提取所有已存在的文件夹名称集合，方便快速查找
+      const existNames = new Set(folderList.map(item => item.folder_name));
+      let targetName = baseName;
+      let serialNum = 1;
+
+      // 循环判断是否重名，重名就拼接 (序号)
+      while (existNames.has(targetName)) {
+        targetName = `${baseName}(${serialNum})`;
+        serialNum++;
+      }
+      return targetName;
+    },
+    async createFolder() {
+      const name = await showPromptBox(
+        "新建文件夹",
+        "请输入文件夹名称",
+        "文件夹名称",
+        this.getUniqueFolderName("新建文件夹", this.folders)
+      )
+      if (name !== null) {
+        if (name) {
+          const result = await fetchCreateGroupFolder(this.group_id, name)
+          if (checkResponseOK(result)) {
+            showSuccessToast("文件夹创建成功")
+            if (this.isRootPath) {
+              this.refreshFolder()
+            }
+          } else {
+            console.error("新建群文件夹错误:", result)
+            showErrorToast(`新建文件夹错误: ${result?.message}`)
+          }
+        } else {
+          showErrorToast("文件夹名称不能为空")
+        }
+      }
+    },
+    refreshFolder() {
+      this.loadFolder(this.currentFolderId)
+    },
+    handleItemContextMenu(item) {
+      return () => {
+        const isFolder = item.type === 'folder'
+        const typeText = isFolder ? "文件夹" : "文件"
+        const currentFolderId = this.currentFolderId
+        const refreshCurrentFolder = () => {
+          if (this.currentFolderId === currentFolderId) {
+            this.refreshFolder()
+          }
+        }
+        return formatBasicContextItems([
+          basicContextItem(
+            "下载",
+            () => window.location.open(this.getFileDownloadUrl(item))
+            ,
+            "download_new_24",
+            !isFolder
+          ),
+          basicContextItem(
+            "打开",
+            () => this.enterFolder(item.raw)
+            ,
+            "folder_24",
+            isFolder
+          ),
+          basicContextItem(
+            "重命名",
+            async () => {
+              const name = await showPromptBox(
+                "重命名",
+                `请输入${typeText}名称`,
+                `${typeText}名称`,
+                item.name
+              );
+              if (name !== null) {
+                if (name) {
+                  const result = isFolder ? await fetchRenameGroupFolder(
+                    this.group_id,
+                    item.id,
+                    name
+                  ) : await fetchRenameGroupFile(
+                    this.group_id,
+                    item.id,
+                    this.currentFolderId,
+                    name
+                  );
+                  if (checkResponseOK(result)) {
+                    showSuccessToast("重命名成功")
+                    refreshCurrentFolder()
+                  } else {
+                    console.error(`重命名${typeText}错误:`, item, result)
+                    showErrorToast(`重命名${typeText} “${item.name}” 错误: ${result?.message}`)
+                  }
+                } else {
+                  showErrorToast(`${typeText}名不能为空`)
+                }
+              }
+            },
+            "edit_24",
+            this.isAdmin && (!isFolder || isSnowLuma())
+          ),
+          basicContextItem(
+            "删除",
+            async () => {
+              const confirm = await showConfirmBox(
+                "删除" + typeText,
+                `删除后不可恢复，你确定要删除${typeText} “${item.name}” 吗？`
+              );
+              if (confirm) {
+                const result = await (isFolder ? fetchDeleteGroupFolder : fetchDeleteGroupFile)(this.group_id, item.id)
+                if (checkResponseOK(result)) {
+                  showSuccessToast("已成功删除")
+                  refreshCurrentFolder()
+                } else {
+                  console.error(`删除${typeText}错误:`, item, result)
+                  showErrorToast(`删除${typeText} “${item.name}” 错误: ${result?.message}`)
+                }
+              }
+            },
+            "delete_new_24",
+            this.isAdmin
+          )
+        ])
+      }
+    },
+    selectUploadGroupFiles() {
+      Emitter.emit("select-upload-group-files", undefined, this.currentFolderId)
+    },
+    showFilesUploadTasks() {
+      Emitter.emit("show-files-upload-tasks")
+    }
   },
   mounted() {
-    this.loadFolder('root')
-    this.loadFileSysInfo()
+    this.loadFolder('/')
   }
 })
 </script>
@@ -198,116 +369,139 @@ export default defineComponent({
     :width="1000"
     :height="700"
     title="群文件">
-    <!-- 工具栏 -->
-    <div class="gv-toolbar">
-      <!-- 面包屑导航 -->
-      <div class="gv-breadcrumb no-scrollbar">
-        <span class="gv-breadcrumb-item" @click="goToRoot">全部文件</span>
-        <template v-for="(p, idx) in pathStack" :key="idx">
-          <span class="gv-breadcrumb-sep">/</span>
-          <span class="gv-breadcrumb-item" @click="goBack">{{ p.folder_name }}</span>
-        </template>
-      </div>
-
-      <!-- 排序和选项 -->
-      <div class="gv-controls">
-        <select v-model="sortBy" class="gv-select" title="排序方式">
-          <option value="new_first">从新到旧</option>
-          <option value="old_first">从旧到新</option>
-          <option value="large_first">从大到小</option>
-          <option value="small_first">从小到大</option>
-        </select>
-        <select v-model="folderOrder" class="gv-select" title="文件夹排列" v-if="pathStack.length === 0">
-          <option value="before">文件夹在前</option>
-          <option value="mixed">{{ isSizeBasedSortBy ? "隐藏文件夹" : "混合排序" }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- 文件系统信息 -->
-    <div v-if="fileSysInfo" class="gv-sys-info">
-      <div class="gv-sys-info-text">
-        共 {{ fileSysInfo.file_count || 0 }} 个文件
-        <template v-if="fileSysInfo.limit_count">
-          ，上限 {{ fileSysInfo.limit_count }} 个
-        </template>
-      </div>
-      <div class="gv-storage-bar-wrapper">
-        <div class="gv-storage-bar">
-          <div class="gv-storage-bar-used" :style="{ width: storagePercent + '%' }"></div>
+    <div class="group-files-viewer-container" :data-folder-id="currentFolderId">
+      <!-- 工具栏 -->
+      <div class="gv-toolbar">
+        <!-- 面包屑导航 -->
+        <div class="gv-breadcrumb no-scrollbar">
+          <span class="gv-breadcrumb-item" @click="goToRoot">全部文件</span>
+          <template v-for="(p, idx) in pathStack" :key="idx">
+            <span class="gv-breadcrumb-sep">/</span>
+            <span class="gv-breadcrumb-item" @click="goBack">{{ p.folder_name }}</span>
+          </template>
         </div>
-        <span class="gv-storage-text">
+
+        <!-- 排序和选项 -->
+        <div class="gv-controls">
+          <select v-model="sortBy" class="gv-select" title="排序方式">
+            <option value="new_first">从新到旧</option>
+            <option value="old_first">从旧到新</option>
+            <option value="large_first">从大到小</option>
+            <option value="small_first">从小到大</option>
+          </select>
+          <select v-model="folderOrder" class="gv-select" title="文件夹排列" v-if="isRootPath">
+            <option value="before">文件夹在前</option>
+            <option value="mixed">{{ isSizeBasedSortBy ? "隐藏文件夹" : "混合排序" }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 文件系统信息 -->
+      <div class="gv-sys-info container-inline-size">
+        <div class="gv-sys-info-first-line">
+          <div class="gv-sys-info-text" v-if="fileSysInfo">
+            共 {{ fileSysInfo.file_count || 0 }} 个文件
+            <template v-if="fileSysInfo.limit_count">
+              ，上限 {{ fileSysInfo.limit_count }} 个
+            </template>
+          </div>
+          <div v-else class="flex-1"/>
+          <div class="gv-btn-container">
+            <QIcon class="gv-btn-upload-tasks" name="upload_24" v-if="filteredUploadTasks?.length"
+                   @click="showFilesUploadTasks"/>
+            <QIcon class="gv-btn-refresh" name="refresh_24" @click="refreshFolder"/>
+            <div
+              class="gv-btn-create-folder"
+              v-if="isRootPath"
+              @click="createFolder"
+            >新建文件夹
+            </div>
+            <div class="gv-btn-upload-file" @click="selectUploadGroupFiles">上传文件</div>
+          </div>
+        </div>
+        <div class="gv-storage-bar-wrapper" v-if="fileSysInfo">
+          <div class="gv-storage-bar">
+            <div class="gv-storage-bar-used" :style="{ width: storagePercent + '%' }"></div>
+          </div>
+          <span class="gv-storage-text">
               {{ formatFileSize(fileSysInfo.used_space) }} / {{ formatFileSize(fileSysInfo.total_space) }}
             </span>
-      </div>
-    </div>
-
-    <!-- 加载中 -->
-    <div v-if="loading" class="gv-loading">
-      加载中...
-    </div>
-
-    <!-- 错误提示 -->
-    <div v-else-if="error" class="gv-error">
-      {{ error }}
-    </div>
-
-    <!-- 文件列表 -->
-    <CustomScrollBar v-else class="gv-list">
-      <div v-if="sortedItems.length === 0" class="gv-empty">
-        暂无文件
-      </div>
-      <a
-        v-for="(item, idx) in sortedItems"
-        :key="item.type + '-' + item.id + '-' + idx"
-        class="gv-item"
-        :class="{ 'gv-item--folder': item.type === 'folder', 'gv-item--file': item.type === 'file' }"
-        @click="item.type === 'folder' ? enterFolder(item.raw) : undefined"
-        :href="item.type === 'file' ? getFileDownloadUrl(item) : undefined"
-        target="_blank"
-      >
-        <!-- 图标 -->
-        <img
-          v-if="item.type === 'folder'"
-          :src="qqFileIcon('folder.png')"
-          alt=""
-          class="gv-item-icon"
-        >
-        <img
-          v-else
-          :src="qqFileIcon(getFileIcon(item.name))"
-          alt=""
-          class="gv-item-icon"
-        >
-
-        <!-- 信息 -->
-        <div class="gv-item-info">
-          <TruncatedText :content="item.name" one-line class="gv-item-name"/>
-          <div class="gv-item-meta two-lines" v-if="item.type === 'folder'">
-            <span class="gv-item-meta-text">{{ item.total_file_count }} 个文件</span>
-            <span class="gv-item-meta-text">{{ item.creator_name }} 创建于 {{ formatTime(item.create_time) }}</span>
-          </div>
-          <div class="gv-item-meta" v-else>
-            <span class="gv-item-meta-text">{{ formatFileSize(item.file_size) }}</span>
-          </div>
         </div>
+      </div>
 
-        <div class="gv-item-meta-upload-info">
-          <template v-if="item.type === 'file'">
-            <span class="gv-item-meta-text">{{ formatTime(item.modify_time) }}</span>
-            <span class="gv-item-meta-text">来自: {{ item.uploader_name || item.uploader }}</span>
-          </template>
-          <template v-else>
-            <span class="gv-item-meta-text">{{ formatTime(item.last_upload_time) }}</span>
-            <span class="gv-item-meta-text">更新: {{ item.last_uploader_name || item.last_uploader }}</span>
-          </template>
+      <!-- 加载中 -->
+      <div v-if="loading" class="gv-loading">
+        加载中...
+      </div>
+
+      <!-- 错误提示 -->
+      <div v-else-if="error" class="gv-error">
+        {{ error }}
+      </div>
+
+      <!-- 文件列表 -->
+      <CustomScrollBar v-else class="gv-list">
+        <div v-if="sortedItems.length === 0" class="gv-empty">
+          暂无文件
         </div>
-      </a>
-    </CustomScrollBar>
+        <a
+          v-for="(item, idx) in sortedItems"
+          :key="item.type + '-' + item.id + '-' + idx"
+          class="gv-item"
+          :class="{ 'gv-item--folder': item.type === 'folder', 'gv-item--file': item.type === 'file' }"
+          @click="item.type === 'folder' ? enterFolder(item.raw) : undefined"
+          :href="item.type === 'file' ? getFileDownloadUrl(item) : undefined"
+          target="_blank"
+          v-custom-menu="handleItemContextMenu(item)"
+        >
+          <!-- 图标 -->
+          <img
+            v-if="item.type === 'folder'"
+            :src="qqFileIcon('folder.png')"
+            alt=""
+            class="gv-item-icon"
+          >
+          <img
+            v-else
+            :src="qqFileIcon(getFileIcon(item.name))"
+            alt=""
+            class="gv-item-icon"
+          >
+
+          <!-- 信息 -->
+          <div class="gv-item-info">
+            <TruncatedText :content="item.name" one-line class="gv-item-name"/>
+            <div class="gv-item-meta two-lines" v-if="item.type === 'folder'">
+              <span class="gv-item-meta-text">{{ item.total_file_count }} 个文件</span>
+              <span class="gv-item-meta-text">{{ item.creator_name }} 创建于 {{ formatTime(item.create_time) }}</span>
+            </div>
+            <div class="gv-item-meta" v-else>
+              <span class="gv-item-meta-text">{{ formatFileSize(item.file_size) }}</span>
+            </div>
+          </div>
+
+          <div class="gv-item-meta-upload-info">
+            <template v-if="item.type === 'file'">
+              <span class="gv-item-meta-text">{{ formatTime(item.modify_time) }}</span>
+              <span class="gv-item-meta-text">来自: {{ item.uploader_name || item.uploader }}</span>
+            </template>
+            <template v-else>
+              <span class="gv-item-meta-text">{{ formatTime(item.last_upload_time) }}</span>
+              <span class="gv-item-meta-text">更新: {{ item.last_uploader_name || item.last_uploader }}</span>
+            </template>
+          </div>
+        </a>
+      </CustomScrollBar>
+    </div>
   </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
+.group-files-viewer-container {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* 工具栏 */
 .gv-toolbar {
   padding: 8px 20px 0 20px;
@@ -370,6 +564,54 @@ export default defineComponent({
   padding: 6px 20px;
   font-size: 12px;
   color: $color-text-muted;
+}
+
+.gv-sys-info-first-line {
+  display: flex;
+  margin: 5px 0;
+
+  @container (max-width: 400px) {
+    flex-direction: column-reverse;
+    margin: 0;
+
+    .gv-btn-container {
+      justify-content: flex-end;
+    }
+  }
+}
+
+.gv-sys-info-text {
+  flex: 1;
+  @extend %flex-row-center
+}
+
+.gv-btn-container {
+  @extend %flex-row-center;
+}
+
+.gv-btn-refresh, .gv-btn-upload-tasks {
+  @extend %hover-active-bg;
+  border-radius: $radius-sm;
+  padding: 5px;
+  height: 30px;
+  width: 30px;
+  margin: 0 4px;
+  cursor: pointer;
+  color: $color-text-muted;
+}
+
+.gv-btn-create-folder, .gv-btn-upload-file {
+  @include btn-base;
+  padding: 5px 8px;
+  margin: 0 4px;
+}
+
+.gv-btn-create-folder {
+  @include btn-cancel;
+}
+
+.gv-btn-upload-file {
+  @include btn-primary;
 }
 
 .gv-storage-bar-wrapper {

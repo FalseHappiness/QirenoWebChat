@@ -192,7 +192,7 @@ function processEvent(e) {
       if ((Date.now() - last_open_time) < 300) {
         return
       }
-      const items = trigger(triggerElement, e)
+      const items = trigger(triggerElement, e)?.filter(item => !!item)
       if (items) {
         const position = getPosition(e);
         // 显示我们的菜单

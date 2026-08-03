@@ -347,6 +347,9 @@ function handleDownload(info) {
 const contactInfoTooltip = ref(null)
 provide("showContactInfo", options => contactInfoTooltip.value?.showContactInfo(options))
 
+const filesUploadTasks = ref([])
+provide("filesUploadTasks", filesUploadTasks)
+
 // 从 account prop 决定是否是直连模式
 const effectiveIsDirect = computed(() => {
   return props.account.mode === 'direct'
@@ -481,7 +484,7 @@ onUnmounted(destroy)
 
 <template>
   <div class="main-view">
-    <div class="chat-container" v-if="wsInited">
+    <div class="main-view-container" v-if="wsInited">
       <NavigationView/>
       <DestinationView ref="destinationView"/>
       <ContactInfoTooltip ref="contactInfoTooltip"/>
@@ -505,7 +508,7 @@ onUnmounted(destroy)
   color: $color-text-primary;
 }
 
-.chat-container {
+.main-view-container {
   display: flex;
   height: 100%;
   width: 100%;

@@ -26,7 +26,7 @@ import LoadingSpinner from "../../../Common/Widgets/LoadingSpinner.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { isFunction, isString } from "@/scripts/types-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
-import { showConfirmBox } from "@/scripts/confirm-box-api.js";
+import { showConfirmBox } from "@/scripts/popup-box-api.js";
 import { CacheNameKey, fetchDisplayName, getCacheName } from "@/scripts/user-info-util.js";
 
 const props = defineProps({

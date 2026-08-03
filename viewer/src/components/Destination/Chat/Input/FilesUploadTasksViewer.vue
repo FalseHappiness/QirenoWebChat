@@ -8,28 +8,21 @@ import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import { qqFileIcon } from "@/composables/useBase.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
+import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 
 export default defineComponent({
   name: "FilesUploadTasksViewer",
-  components: { QIcon, CustomScrollBar, SimplePopUp, SimpleBar, TruncatedText },
+  components: { SimpleWindow, QIcon, CustomScrollBar, SimplePopUp, SimpleBar, TruncatedText },
   props: {
     tasks: {
       type: Array,
       required: true
     },
-    onClose: {
-      type: Function,
-      default: () => {
-      }
-    }
   },
   methods: {
     qqFileIcon,
     getFileIcon: getFileIcon,
     formatFileSize: formatFileSize,
-    close() {
-      this.$refs.popUp.confirm(false)
-    },
     cancelTask(task) {
       if (task.controller && !task.controller.signal.aborted) {
         task.controller.abort()
@@ -125,102 +118,102 @@ export default defineComponent({
       if (bytesPerSec < 1024) return `${bytesPerSec.toFixed(1)} B/s`
       if (bytesPerSec < 1024 * 1024) return `${(bytesPerSec / 1024).toFixed(1)} KB/s`
       return `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`
+    },
+    formatTaskType(task) {
+      const type = task.type || 'file'
+      if (type === 'file') {
+        return task.type === 'group' ? "群文件" : "文件"
+      }
+      return ({
+        record: "语音消息"
+      })[type] || "文件"
     }
   }
 })
 </script>
 
 <template>
-  <div class="files-upload-tasks-viewer">
-    <SimplePopUp ref="popUp" :on-confirm="onClose" :on-cancel="onClose">
-      <div class="files-upload-tasks-title">
-        文件上传任务
-        <QIcon name="close_fill_24" class="files-upload-tasks-close-btn cannot-drag"
-               @click="close()"/>
-      </div>
-
-      <!-- 任务列表 -->
-      <CustomScrollBar class="files-upload-tasks-list">
-        <div class="files-upload-tasks-item" v-for="(task, index) in tasks" :key="`${index}-${task?.chunk_index}`">
-          <img alt="" :src="qqFileIcon(getFileIcon(task.file.name))" class="files-upload-tasks-item-icon">
-          <div class="files-upload-tasks-item-info">
-            <TruncatedText one-line :content="task.file.name"/>
-            <div class="files-upload-tasks-item-status">
-              <!-- 出错 -->
-              <template v-if="isTaskError(task)">
-                <span class="status-error">出错: {{ task.error }}</span>
-              </template>
-              <!-- 已取消 -->
-              <template v-else-if="isTaskCancelled(task)">
-                <span class="status-cancelled">已取消</span>
-              </template>
-              <!-- 已完成 -->
-              <template v-else-if="isTaskCompleted(task)">
-                <span class="status-completed">已完成</span>
-              </template>
-              <!-- 计算 Hash 中 -->
-              <template v-else-if="task.is_calc_hash">
-                <span class="status-hashing">计算 SHA256 中...</span>
-              </template>
-              <!-- 分片上传中 -->
-              <template v-else-if="task.chunked">
+  <SimpleWindow
+    class="files-upload-tasks-viewer"
+    title="文件上传任务"
+    :width="450"
+    :height="500"
+    background-color="var(--color-bg-card)"
+  >
+    <!-- 任务列表 -->
+    <CustomScrollBar class="files-upload-tasks-list">
+      <div class="files-upload-tasks-item" v-for="(task, index) in tasks" :key="`${index}-${task?.chunk_index}`">
+        <img alt="" :src="qqFileIcon(getFileIcon(task.file.name))" class="files-upload-tasks-item-icon">
+        <div class="files-upload-tasks-item-info">
+          <TruncatedText one-line :content="task.file.name"/>
+          <div class="files-upload-tasks-item-type">类型: {{ formatTaskType(task) }}</div>
+          <div class="files-upload-tasks-item-status">
+            <!-- 出错 -->
+            <template v-if="isTaskError(task)">
+              <span class="status-error">出错: {{ task.error }}</span>
+            </template>
+            <!-- 已取消 -->
+            <template v-else-if="isTaskCancelled(task)">
+              <span class="status-cancelled">已取消</span>
+            </template>
+            <!-- 已完成 -->
+            <template v-else-if="isTaskCompleted(task)">
+              <span class="status-completed">已完成</span>
+            </template>
+            <!-- 计算 Hash 中 -->
+            <template v-else-if="task.is_calc_hash">
+              <span class="status-hashing">计算 SHA256 中...</span>
+            </template>
+            <!-- 合并文件中 -->
+            <template v-else-if="task.is_merging">
+              <span class="status-hashing">合并分片中...</span>
+            </template>
+            <!-- 合并文件中 -->
+            <template v-else-if="task.is_backend_uploading">
+              <span class="status-hashing">后端上传中...</span>
+            </template>
+            <!-- 分片上传中 -->
+            <template v-else-if="task.chunked">
                     <span class="status-uploading">
                       {{ formatFileSize(getTaskUploadedBytes(task)) }} / {{ formatFileSize(task.file.size) }}
                     </span>
-                <span class="status-speed" v-if="getTaskSpeed(task) > 0">
+              <span class="status-speed" v-if="getTaskSpeed(task) > 0">
                       {{ formatSpeed(getTaskSpeed(task)) }}
                     </span>
-                <span class="status-remaining"
-                      v-if="getTaskRemainingTime(task) > 0 && isFinite(getTaskRemainingTime(task))">
+              <span class="status-remaining"
+                    v-if="getTaskRemainingTime(task) > 0 && isFinite(getTaskRemainingTime(task))">
                       剩约 {{ formatTime(getTaskRemainingTime(task)) }}
                     </span>
-                <!-- 单个文件进度条 -->
-                <div class="files-upload-tasks-item-progress-bar-container">
-                  <div class="files-upload-tasks-item-progress-bar"
-                       :style="{ width: getTaskProgress(task) + '%' }"></div>
-                </div>
-              </template>
-              <!-- 普通上传中 -->
-              <template v-else>
-                <span class="status-uploading">上传中...</span>
-              </template>
-            </div>
-          </div>
-          <div class="files-upload-tasks-item-action">
-            <div v-if="!isTaskCompleted(task) && !isTaskCancelled(task)"
-                 class="files-upload-tasks-cancel-btn"
-                 @click="cancelTask(task)">
-              取消
-            </div>
+              <!-- 单个文件进度条 -->
+              <div class="files-upload-tasks-item-progress-bar-container">
+                <div class="files-upload-tasks-item-progress-bar"
+                     :style="{ width: getTaskProgress(task) + '%' }"></div>
+              </div>
+            </template>
+            <!-- 普通上传中 -->
+            <template v-else>
+              <span class="status-uploading">上传中...</span>
+            </template>
           </div>
         </div>
-      </CustomScrollBar>
-    </SimplePopUp>
-  </div>
+        <div class="files-upload-tasks-item-action">
+          <div v-if="!isTaskCompleted(task) && !isTaskCancelled(task)"
+               class="files-upload-tasks-cancel-btn"
+               @click="cancelTask(task)">
+            取消
+          </div>
+        </div>
+      </div>
+    </CustomScrollBar>
+  </SimpleWindow>
 </template>
 
 <style scoped lang="scss">
-.files-upload-tasks-title {
-  text-align: center;
-  font-weight: bold;
-  font-size: 14px;
-  padding: 5px 0;
-}
-
-.files-upload-tasks-close-btn {
-  float: right;
-  width: 25px;
-  height: 25px;
-  position: absolute;
-  right: 5px;
-  top: 5px;
-  cursor: pointer;
-}
-
 .files-upload-tasks-list {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   margin: 5px 0;
+  padding: 0 10px;
 }
 
 .files-upload-tasks-item {
@@ -258,6 +251,12 @@ export default defineComponent({
   align-items: center;
   color: $color-text-meta;
   word-break: break-all;
+}
+
+.files-upload-tasks-item-type {
+  font-size: 10px;
+  margin: 0;
+  color: $color-text-meta;
 }
 
 .status-uploading {
