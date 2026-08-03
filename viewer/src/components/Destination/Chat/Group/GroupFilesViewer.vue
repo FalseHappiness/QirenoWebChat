@@ -500,6 +500,7 @@ export default defineComponent({
 .group-files-viewer-container {
   height: 100%;
   overflow: hidden;
+  @extend %flex-column;
 }
 
 /* 工具栏 */
