@@ -263,12 +263,16 @@
   line-height: 16px;
 }
 
-// ---- 视频播放按钮遮罩 ----
-%video-play-badge {
+%absolute-center {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+// ---- 视频播放按钮遮罩 ----
+%video-play-badge {
+  @extend %absolute-center;
   width: 36px;
   height: 36px;
   background: rgba(0, 0, 0, 0.5);

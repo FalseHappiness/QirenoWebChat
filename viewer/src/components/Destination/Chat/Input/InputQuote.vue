@@ -43,15 +43,12 @@ export default defineComponent({
   emits: ['cancel-quote-message'],
   methods: {
     async get_name() {
-      const This = this;
       const msg = this.msg
 
       const result = await fetchDisplayName(
         [msg.group_id, msg.user_id],
         (this.msg.message_type === 'group') ? CacheNameKey.GROUP_USER : CacheNameKey.PRIVATE,
-        (newName) => {
-          This.name = newName
-        }
+        newName => this.name = newName
       )
       if (!result.error) {
         this.name = result.name

@@ -52,15 +52,12 @@ export default {
       // console.log(msg)
     },
     async get_name() {
-      const This = this;
       const msg = this.msg
 
       const result = await fetchDisplayName(
         [msg.group_id, msg.user_id],
         this.is_group ? CacheNameKey.GROUP_USER : CacheNameKey.PRIVATE,
-        (newName) => {
-          This.name = newName
-        }
+        newName => this.name = newName
       )
       if (!result.error) {
         this.name = result.name

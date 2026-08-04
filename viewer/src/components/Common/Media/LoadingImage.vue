@@ -81,7 +81,6 @@ export default defineComponent({
   methods: {
     qqAppImg,
     loadImage(src) {
-      const This = this
       const imageContainer = this.$refs.imageContainer
 
       // 重置状态
@@ -108,6 +107,7 @@ export default defineComponent({
       const onMediaLoaded = () => {
         imageContainer.innerHTML = ''
         if (this.getDecideMaxWidthElement()) {
+          // 实现效果不好
           const imageSize = this.getRealSize({
             width: image.videoWidth ?? image.width,
             height: image.videoHeight ?? image.height
@@ -126,7 +126,7 @@ export default defineComponent({
           }
         }
         imageContainer.append(image)
-        This.loading = This.failed = false
+        this.loading = this.failed = false
       }
 
       // 图片用 onload
@@ -143,12 +143,12 @@ export default defineComponent({
       image.onerror = () => {
         imageContainer.innerHTML = ''
         if (this.loadedOriginal || !this.fallbackSrc) {
-          This.loading = false
-          This.failed = true
+          this.loading = false
+          this.failed = true
         } else {
           this.loadedOriginal = true
-          image.src = This.fallbackSrc
-          This.loading = true
+          image.src = this.fallbackSrc
+          this.loading = true
         }
       }
     },
@@ -268,10 +268,15 @@ export default defineComponent({
       <p v-if="fallbackSrc"><b>后备链接: </b>{{ fallbackSrc }}</p>
     </div>
     <div class="image-container" ref="imageContainer"></div>
+    <QIcon class="loading-image-video-icon" name="play_circle_filled_24" v-if="videoMode && !failed"/>
   </div>
 </template>
 
 <style scoped lang="scss">
+.loading-image-container {
+  position: relative;
+}
+
 .loading-image-container,
 .loading-image-placeholder,
 .failed-image-placeholder,
@@ -312,5 +317,15 @@ export default defineComponent({
 
 .failed-image-placeholder img, .failed-image-placeholder svg {
   opacity: 0.3;
+}
+
+.loading-image-video-icon {
+  @extend %absolute-center;
+  width: 40px;
+  height: 40px;
+  background: #ffffffb8;
+  border-radius: $radius-avatar;
+  color: #000000b8;
+  backdrop-filter: blur(4px);
 }
 </style>
