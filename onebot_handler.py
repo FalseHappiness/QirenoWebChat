@@ -124,9 +124,14 @@ class OneBotHandler:
             await self._emit_to_frontend(processed)
 
     async def _emit_to_frontend(self, message_data: Dict):  # 发送到前端
-        """通过WebSocket发送消息"""
+        """通过WebSocket发送消息，仅发送给 self_id 对应的前端连接"""
         try:
-            await self.frontend_ws.broadcast(message_data)
+            self_id = message_data.get('self_id')
+            if self_id is not None:
+                await self.frontend_ws.broadcast_to_self_id(int(self_id), message_data)
+            else:
+                # 没有 self_id 时，广播给所有前端（兼容旧数据）
+                await self.frontend_ws.broadcast(message_data)
         except Exception as e:
             print(f"通过WebSocket发送消息失败: {type(e).__name__}: {e}")
 

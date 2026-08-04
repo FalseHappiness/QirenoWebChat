@@ -159,7 +159,7 @@ const checkBackend = async () => {
 const selectBot = (bot) => {
   const account = {
     mode: "backend",
-    self_id: String(bot.self_id || bot.user_id),
+    self_id: bot.self_id || bot.user_id,
     user_id: bot.user_id,
     nickname: bot.nickname,
     autoLogin: autoLoginEnabled.value,

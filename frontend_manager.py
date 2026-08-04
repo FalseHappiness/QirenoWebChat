@@ -14,15 +14,15 @@ class FrontendConnectionManager:
         self.pending_action_tasks: Dict[str, Tuple[WebSocket, asyncio.Task]] = {}
         # req_backend 处理器映射: endpoint -> handler_function(params) -> dict
         self.req_backend_handlers = req_backend_handlers or {}
-        # 存储每个连接的 self_id（前端选择的bot）
-        self.connection_self_id: Dict[WebSocket, Optional[str]] = {}
+        # 存储每个连接的 self_id（前端选择的bot，int 类型）
+        self.connection_self_id: Dict[WebSocket, Optional[int]] = {}
 
     async def connect(self, websocket: WebSocket, self_id: Optional[str] = None):
         """处理新的WebSocket连接"""
         await websocket.accept()
         self.active_connections.add(websocket)
         if self_id:
-            self.connection_self_id[websocket] = self_id
+            self.connection_self_id[websocket] = int(self_id)
         print(f"新前端连接，当前连接数: {len(self.active_connections)}, self_id: {self_id}")
 
         try:
@@ -195,4 +195,15 @@ class FrontendConnectionManager:
         if len(self.active_connections) > 0:
             await asyncio.gather(
                 *[connection.send_json(message) for connection in self.active_connections]
+            )
+
+    async def broadcast_to_self_id(self, self_id: int, message: dict):
+        """仅广播消息给指定 self_id 对应的前端连接"""
+        target_connections = [
+            ws for ws, sid in self.connection_self_id.items()
+            if sid == self_id and ws in self.active_connections
+        ]
+        if target_connections:
+            await asyncio.gather(
+                *[ws.send_json(message) for ws in target_connections]
             )

@@ -24,7 +24,7 @@ def extract_token(auth_header: Optional[str]) -> Optional[str]:
 class OneBotConnectionManager:
     def __init__(self, token: Optional[str] = None):
         self.token = token
-        self.active_connections: Dict[str, WebSocket] = {}  # self_id -> WebSocket
+        self.active_connections: Dict[int, WebSocket] = {}  # self_id (int) -> WebSocket
         self.connection_states: Dict[WebSocket, Dict[str, Any]] = {}  # 连接状态存储
         self.pending_actions: Dict[str, Union[asyncio.Future, asyncio.Queue]] = {}
         self.message_handlers: Set[Callable[[Dict[str, Any]], Any]] = set()
@@ -59,7 +59,7 @@ class OneBotConnectionManager:
             return False
         return True
 
-    async def register_connection(self, websocket: WebSocket, self_id: str) -> bool:
+    async def register_connection(self, websocket: WebSocket, self_id: int) -> bool:
         """注册已验证的连接"""
         if self_id in self.active_connections:
             await websocket.close(code=1008, reason=f"Duplicate self_id: {self_id}")
@@ -117,7 +117,7 @@ class OneBotConnectionManager:
             print(f"OneBot action cancelled (echo: {echo})")
 
     # noinspection PyAsyncCall
-    async def send_action(self, self_id: str, action: str, params: Dict[str, Any], timeout: float = 60.0) -> Any:
+    async def send_action(self, self_id: int, action: str, params: Dict[str, Any], timeout: float = 60.0) -> Any:
         """发送API动作并等待响应"""
         if self_id not in self.active_connections:
             raise ConnectionError(f"No active connection for self_id: {self_id}")
@@ -151,7 +151,7 @@ class OneBotConnectionManager:
             raise e
 
     async def call_stream_action(self, action: str, params: Dict[str, Any],
-                                 self_id: Optional[str] = None,
+                                 self_id: Optional[int] = None,
                                  timeout: float = 30.0) -> AsyncGenerator[Dict[str, Any], None]:
         """发送流式API动作并异步生成响应"""
         if not self.active_connections:
@@ -204,7 +204,7 @@ class OneBotConnectionManager:
                     auth_header = websocket.headers.get("Authorization")
                     if not await self.authenticate(websocket, auth_header):
                         return
-                    if not await self.register_connection(websocket, str(data["self_id"])):
+                    if not await self.register_connection(websocket, int(data["self_id"])):
                         return
 
             # 处理API响应

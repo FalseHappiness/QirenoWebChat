@@ -141,10 +141,10 @@ async def get_messages_core(params: dict):
     group_id = parse_int(params.get('group_id', -1))
     user_id = parse_int(params.get('user_id', -1))
     target_id = parse_int(params.get('target_id', -1))
-    self_id = params.get('self_id')
+    self_id = parse_int(params.get('self_id'))
 
     # 如果没有指定 self_id，使用第一个连接的 bot
-    if self_id is None:
+    if self_id == 0:
         self_id = onebot_manager.get_first_self_id()
 
     filters = {
@@ -336,10 +336,10 @@ async def get_msg_core(params: dict):
     """获取单条消息（核心实现），返回消息数据，未找到时抛出异常"""
     id_val = params.get('id')
     message_id_val = params.get('message_id')
-    self_id = params.get('self_id')
+    self_id = parse_int(params.get('self_id'))
 
     # 如果没有指定 self_id，使用第一个连接的 bot
-    if self_id is None:
+    if self_id == 0:
         self_id = onebot_manager.get_first_self_id()
 
     if id_val is not None:
@@ -369,9 +369,8 @@ async def get_msg_core(params: dict):
 async def sync_messages_core(params: dict):
     """同步新消息（核心实现）"""
     last_id = parse_int(params.get('last_id', 0))
-    self_id = params.get('self_id')
-    if self_id is not None:
-        self_id = parse_int(self_id)
+    self_id = parse_int(params.get('self_id'))
+    self_id = self_id if self_id != 0 else None
     messages = db.get_new_messages(last_id, self_id=self_id)
     return {
         'messages': messages,
@@ -383,8 +382,8 @@ async def get_contacts_core(params: dict = None):
     """获取联系人列表（核心实现，时间较晚数据合并优先）"""
     if params is None:
         params = {}
-    self_id = params.get('self_id')
-    if self_id is None:
+    self_id = parse_int(params.get('self_id'))
+    if self_id == 0:
         self_id = onebot_manager.get_first_self_id()
     db_contacts = db.get_contacts(self_id=self_id)
     api_contacts = await onebot_handler.get_recent_contacts(self_id=self_id)
@@ -580,8 +579,9 @@ async def make_api_request(endpoint, original_params=None, request_params=None, 
         request_data = request_data or {}
         request_data.update(params)
 
-        # 提取 self_id，如果指定则传递给对应的 bot
-        self_id = original_params.get('self_id')
+        # 提取 self_id，如果指定则传递给对应的 bot（HTTP 参数为 str，转为 int）
+        self_id = parse_int(original_params.get('self_id'))
+        self_id = self_id if self_id != 0 else None
         api_data = await onebot_manager.call_action(endpoint, request_data, self_id=self_id)
 
         # 3. 自定义处理或直接返回数据
