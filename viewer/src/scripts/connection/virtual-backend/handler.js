@@ -142,10 +142,9 @@ export async function processAndStoreEvent(event, db) {
  * @param {number} [count=20] - 获取数量
  * @param {string|null} [direction=null] - 'prev' 或 'next'
  * @param {number} [messageId=0] - 起始消息 ID
- * @param {string|null} [selfId=null] - 自身 QQ 号
  * @returns {Promise<Array>} 消息列表
  */
-export async function getMessagesFromOneBot(onebotWS, id, type, count = 20, direction = null, messageId = 0, selfId = null) {
+export async function getMessagesFromOneBot(onebotWS, id, type, count = 20, direction = null, messageId = 0) {
   const params = {
     count,
     message_seq: messageId,
@@ -157,10 +156,10 @@ export async function getMessagesFromOneBot(onebotWS, id, type, count = 20, dire
   }
 
   const action = type === 'group' ? 'get_group_msg_history' : 'get_friend_msg_history';
-  const self_id = selfId || onebotWS.selfId;
+  const self_id = onebotWS.selfId;
 
   try {
-    const apiData = await onebotWS.callAction(action, params);
+    const apiData = await onebotWS.callAction(action, params, null, 60000);
     let messages = apiData?.data?.messages || apiData?.messages || [];
 
     for (const msg of messages) {
@@ -182,7 +181,7 @@ export async function getMessagesFromOneBot(onebotWS, id, type, count = 20, dire
     const nextMsgId = direction === 'prev'
       ? messages[0].message_id
       : messages[messages.length - 1].message_id;
-    const remainingMessages = await getMessagesFromOneBot(onebotWS, id, type, remaining + 1, direction, nextMsgId, selfId);
+    const remainingMessages = await getMessagesFromOneBot(onebotWS, id, type, remaining + 1, direction, nextMsgId);
 
     let combined;
     if (direction === 'prev') {
@@ -213,7 +212,7 @@ export async function getMessagesFromOneBot(onebotWS, id, type, count = 20, dire
  */
 export async function getRecentContacts(onebotWS) {
   try {
-    const apiData = await onebotWS.callAction('get_recent_contact', { count: 114514 });
+    const apiData = await onebotWS.callAction('get_recent_contact', { count: 114514 }, null, 60000);
     return formatRecentContacts(apiData?.data || apiData || []);
   } catch (e) {
     console.warn('[handler] getRecentContacts error:', e);
@@ -232,7 +231,8 @@ export async function getRecentContacts(onebotWS) {
  * @returns {Promise<Array>} 联系人列表
  */
 export async function getContactsCore(db, onebotWS) {
-  const dbContacts = await db.getContacts();
+  const selfId = onebotWS.selfId;
+  const dbContacts = await db.getContacts(selfId);
   const apiContacts = await getRecentContacts(onebotWS);
   const contactMap = new Map();
 
@@ -306,7 +306,7 @@ export async function getMsgCore(params, db, onebotWS) {
 
   if (!msg && messageId) {
     try {
-      const apiData = await onebotWS.callAction('get_msg', { message_id: messageId });
+      const apiData = await onebotWS.callAction('get_msg', { message_id: messageId }, null, 60000);
       const data = apiData?.data || apiData;
       if (data) {
         msg = convertEventToMessageData(data);
@@ -333,7 +333,8 @@ export async function getMsgCore(params, db, onebotWS) {
  */
 export async function syncMessagesCore(params, db) {
   const lastId = parseInt(params.last_id, 10) || 0;
-  const messages = await db.getNewMessages(lastId);
+  const selfId = params.self_id ? parseInt(params.self_id, 10) : null;
+  const messages = await db.getNewMessages(lastId, selfId);
   const newLastId = messages.length > 0
     ? Math.max(...messages.map(m => m.id))
     : lastId;
@@ -373,6 +374,10 @@ export async function getMessagesCore(params, db, onebotWS) {
   // 构建筛选条件
   const filters = [];
   const msgFilter = {};
+  // 从 onebotWS 自动获取 self_id 进行筛选
+  if (onebotWS.selfId) {
+    msgFilter.self_id = parseInt(onebotWS.selfId, 10);
+  }
   if (postType) msgFilter.post_type = postType;
   if (messageType) msgFilter.message_type = messageType;
   if (groupId !== -1) msgFilter.group_id = groupId;

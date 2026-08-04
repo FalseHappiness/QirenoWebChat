@@ -179,8 +179,12 @@ class VirtualDB extends Dexie {
      * 获取联系人列表（从 messages 表派生，对应 Python db.py 的 get_contacts）
      * @returns {Promise<Array>}
      */
-    this.getContacts = async () => {
-      const messages = await this.messages.toArray();
+    this.getContacts = async (selfId = null) => {
+      let messages = await this.messages.toArray();
+      if (selfId !== null) {
+        const selfIdNum = parseInt(selfId, 10);
+        messages = messages.filter(m => m.self_id === selfIdNum);
+      }
       const privateMap = new Map();
       const groupMap = new Map();
 
@@ -287,11 +291,15 @@ class VirtualDB extends Dexie {
      * @param {number} lastId
      * @returns {Promise<Array>}
      */
-    this.getNewMessages = async (lastId = 0) => {
-      return this.messages
+    this.getNewMessages = async (lastId = 0, selfId = null) => {
+      let collection = this.messages
         .where('id')
-        .above(lastId)
-        .sortBy('id');
+        .above(lastId);
+      if (selfId !== null) {
+        const selfIdNum = parseInt(selfId, 10);
+        collection = collection.filter(m => m.self_id === selfIdNum);
+      }
+      return collection.sortBy('id');
     };
 
     /**

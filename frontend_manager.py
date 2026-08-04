@@ -145,6 +145,11 @@ class FrontendConnectionManager:
             endpoint = message.get("endpoint", "")
             params = message.get("params", {})
 
+            # 注入该连接对应的 self_id 到 params 中
+            self_id = self.connection_self_id.get(websocket)
+            if self_id is not None:
+                params['self_id'] = self_id
+
             if endpoint not in self.req_backend_handlers:
                 await websocket.send_json({
                     "type": "req_backend_response",

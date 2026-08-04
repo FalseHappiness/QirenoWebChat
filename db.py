@@ -350,12 +350,20 @@ class Database:
             result['messages'] = messages
             return result
 
-    def get_contacts(self) -> List[Dict]:
+    def get_contacts(self, self_id: Optional[int] = None) -> List[Dict]:
         with self._get_connection() as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
+            # 构建 self_id 筛选条件
+            self_id_condition = ""
+            self_id_params = []
+            if self_id is not None:
+                self_id_condition = "AND self_id = ?"
+                # SQL 中 {self_id_condition} 出现两次（私聊子查询和群聊子查询），需要提供两个参数
+                self_id_params = [self_id, self_id]
+
             # 获取所有联系人（群组和私聊）
-            c.execute('''
+            c.execute(f'''
                       WITH all_raw AS (
                           -- 私聊原始消息
                           SELECT sub.contact_id,
@@ -393,7 +401,9 @@ class Database:
                                   AND sub_type = 'poke'
                                   AND notice_type = 'notify'
                                   AND post_type = 'notice')
-                                    )) AS sub
+                                    )
+                                  {self_id_condition}
+                                ) AS sub
 
                           UNION ALL
 
@@ -438,6 +448,7 @@ class Database:
                           , 'group_msg_emoji_like')
                         AND post_type = 'notice')
                           )
+                        {self_id_condition}
                           )
                       SELECT contact_id,
                              type,
@@ -449,7 +460,7 @@ class Database:
                         AND contact_id IS NOT NULL
                         AND contact_id != 0
                       ORDER BY last_timestamp DESC, last_time DESC;
-                      ''')
+                      ''', self_id_params)
             rows = c.fetchall()  # 获取所有行数据
 
             result_list = []
@@ -459,21 +470,30 @@ class Database:
 
             return result_list
 
-    def get_new_messages(self, last_received_id: int = 0) -> List[Dict]:
+    def get_new_messages(self, last_received_id: int = 0, self_id: Optional[int] = None) -> List[Dict]:
         """
         获取比指定ID更新的消息
         :param last_received_id: 客户端最后收到的消息ID
+        :param self_id: 可选，按 self_id 筛选
         :return: 新消息列表
         """
         with self._get_connection() as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
-            c.execute('''
-                      SELECT *
-                      FROM messages
-                      WHERE id > ?
-                      ORDER BY id ASC
-                      ''', (last_received_id,))
+            if self_id is not None:
+                c.execute('''
+                          SELECT *
+                          FROM messages
+                          WHERE id > ? AND self_id = ?
+                          ORDER BY id ASC
+                          ''', (last_received_id, self_id))
+            else:
+                c.execute('''
+                          SELECT *
+                          FROM messages
+                          WHERE id > ?
+                          ORDER BY id ASC
+                          ''', (last_received_id,))
             return [dict(row) for row in c.fetchall()]
 
     def process_recall_event(self, event: Dict) -> Optional[Dict]:

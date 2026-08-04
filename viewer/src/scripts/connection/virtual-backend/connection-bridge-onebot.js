@@ -213,6 +213,10 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
   // ========== req_backend 本地处理（委托给 handler.js） ==========
 
   async _handleReqBackendLocal(endpoint, params) {
+    // 注入当前连接的 self_id，供 syncMessagesCore 等需要 params 中 self_id 的函数使用
+    if (!params.self_id && this.selfId.value) {
+      params.self_id = this.selfId.value;
+    }
     switch (endpoint) {
       case 'contacts': {
         const contacts = await getContactsCore(virtualDB, this.onebotWS);
@@ -246,7 +250,10 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
 
   async _syncMessages() {
     try {
-      const result = await syncMessagesCore({ last_id: this.lastMessageId.value }, virtualDB);
+      const result = await syncMessagesCore({
+        last_id: this.lastMessageId.value,
+        self_id: this.selfId.value,
+      }, virtualDB);
       if (result.messages) {
         for (const msg of result.messages) this.onReceiveMessage(msg);
       }

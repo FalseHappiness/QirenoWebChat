@@ -108,6 +108,10 @@ export class OneBotWSConnection {
         params,
         echo,
       };
+      // 自动附加 self_id（从 meta_event 中获取的 this.selfId）
+      if (this.selfId) {
+        request.self_id = this.selfId;
+      }
       this.socket.value.send(JSON.stringify(request));
     });
   }

@@ -244,6 +244,9 @@ class OneBotHandler:
 
         return combined
 
-    async def get_recent_contacts(self):
-        contacts = await self.onebot_ws.call_action('get_recent_contact', {'count': 114514})
+    async def get_recent_contacts(self, self_id=None):
+        if self_id is None:
+            if len(self.onebot_ws.active_connections) == 1:
+                self_id = next(iter(self.onebot_ws.active_connections.keys()))
+        contacts = await self.onebot_ws.call_action('get_recent_contact', {'count': 114514}, self_id=self_id)
         return format_recent_contacts(contacts)

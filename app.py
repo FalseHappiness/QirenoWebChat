@@ -141,9 +141,14 @@ async def get_messages_core(params: dict):
     group_id = parse_int(params.get('group_id', -1))
     user_id = parse_int(params.get('user_id', -1))
     target_id = parse_int(params.get('target_id', -1))
+    self_id = params.get('self_id')
+
+    # 如果没有指定 self_id，使用第一个连接的 bot
+    if self_id is None:
+        self_id = onebot_manager.get_first_self_id()
 
     filters = {
-        "self_id": onebot_manager.get_first_self_id()
+        "self_id": self_id
     }
 
     if post_type is not None:
@@ -234,6 +239,7 @@ async def get_messages_core(params: dict):
                     count=limit + 1,
                     direction=direction,
                     message_id=message_id,
+                    self_id=self_id,
                 )
                 api_messages = [convert_event_to_message_data(event) for event in api_messages]
                 if cursor_time is not None:
@@ -330,6 +336,11 @@ async def get_msg_core(params: dict):
     """获取单条消息（核心实现），返回消息数据，未找到时抛出异常"""
     id_val = params.get('id')
     message_id_val = params.get('message_id')
+    self_id = params.get('self_id')
+
+    # 如果没有指定 self_id，使用第一个连接的 bot
+    if self_id is None:
+        self_id = onebot_manager.get_first_self_id()
 
     if id_val is not None:
         id_val = parse_int(id_val)
@@ -344,7 +355,7 @@ async def get_msg_core(params: dict):
 
     if msg is None and message_id_val is not None:
         try:
-            api_data = await onebot_manager.call_action('get_msg', {'message_id': message_id_val})
+            api_data = await onebot_manager.call_action('get_msg', {'message_id': message_id_val}, self_id=self_id)
             msg = convert_event_to_message_data(api_data)
         except Exception as e:
             raise ValueError(f"Failed to get message from API: {e}")
@@ -358,17 +369,25 @@ async def get_msg_core(params: dict):
 async def sync_messages_core(params: dict):
     """同步新消息（核心实现）"""
     last_id = parse_int(params.get('last_id', 0))
-    messages = db.get_new_messages(last_id)
+    self_id = params.get('self_id')
+    if self_id is not None:
+        self_id = parse_int(self_id)
+    messages = db.get_new_messages(last_id, self_id=self_id)
     return {
         'messages': messages,
         'last_id': max([msg['id'] for msg in messages], default=last_id)
     }
 
 
-async def get_contacts_core():
+async def get_contacts_core(params: dict = None):
     """获取联系人列表（核心实现，时间较晚数据合并优先）"""
-    db_contacts = db.get_contacts()
-    api_contacts = await onebot_handler.get_recent_contacts()
+    if params is None:
+        params = {}
+    self_id = params.get('self_id')
+    if self_id is None:
+        self_id = onebot_manager.get_first_self_id()
+    db_contacts = db.get_contacts(self_id=self_id)
+    api_contacts = await onebot_handler.get_recent_contacts(self_id=self_id)
     contact_dict = {}
 
     # 安全获取时间戳
@@ -438,8 +457,8 @@ async def _req_backend_sync(params: dict):
     return await sync_messages_core(params)
 
 
-async def _req_backend_contacts(_):
-    return await get_contacts_core()
+async def _req_backend_contacts(params):
+    return await get_contacts_core(params)
 
 
 frontend_manager.req_backend_handlers = {
@@ -515,8 +534,8 @@ async def clear_messages():
 
 
 @app.api_route("/api/contacts", methods=["GET", "POST"])
-async def get_contacts():
-    result = await get_contacts_core()
+async def get_contacts(params: dict = Depends(get_request_params)):
+    result = await get_contacts_core(params)
     return {"status": "success", "code": 200, "data": result}
 
 
@@ -561,7 +580,9 @@ async def make_api_request(endpoint, original_params=None, request_params=None, 
         request_data = request_data or {}
         request_data.update(params)
 
-        api_data = await onebot_manager.call_action(endpoint, request_data)
+        # 提取 self_id，如果指定则传递给对应的 bot
+        self_id = original_params.get('self_id')
+        api_data = await onebot_manager.call_action(endpoint, request_data, self_id=self_id)
 
         # 3. 自定义处理或直接返回数据
         if custom_handler:
