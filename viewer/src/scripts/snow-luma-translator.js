@@ -1,6 +1,6 @@
 import { parseJSON, stringifyJSON } from "./util.js";
 import { getStreamFileDataUrl } from "./backend-api.js";
-import { isObject, objectHasKey } from "./types-util.js";
+import { isArray, isObject, objectHasKey } from "./types-util.js";
 
 const convertNoticeSL = event => {
   event = parseJSON(event);
@@ -88,6 +88,7 @@ const convertContactsSL = contacts => {
 
 /**
  * 将原始 msg_content 数组转为和 parseMessage 兼容的 message 结构
+ * SnowLuma v1.13.0 已修复
  * @param {Array} msgContent 原始消息内容数组
  * @returns {Array} 兼容格式的 message 数组
  */
@@ -319,6 +320,19 @@ const convertStrangerInfoSL = data => {
   })
 }
 
+// SnowLuma v1.12.2 已修复
+const convertCategoricalFriendsSL = list => {
+  if (!isArray(list?.[0]?.buddyList) && isArray(list)) {
+    return [{
+      categoryId: 1,
+      categoryName: "私聊",
+      categoryMbCount: list?.length,
+      buddyList: list
+    }]
+  }
+  return list
+}
+
 export {
   convertWrappedMsgSL,
   convertEssenceMsgListSL,
@@ -327,4 +341,5 @@ export {
   convertGroupFilesSL,
   convertContactsSL,
   convertStrangerInfoSL,
+  convertCategoricalFriendsSL,
 }

@@ -6,6 +6,7 @@ import { createSHA256 } from 'hash-wasm';
 import { nanoid } from 'nanoid';
 import { CalledEmitter } from "../composables/useEventBus.js";
 import {
+  convertCategoricalFriendsSL,
   convertContactsSL,
   convertEssenceMsgListSL,
   convertGroupAlbumListSL,
@@ -616,7 +617,7 @@ const fetchSendFileStream = async (task) => {
 };
 
 const fetchCategoricalFriends = async () => {
-  return await fetchActionData('get_friends_with_category')
+  return convertCategoricalFriendsSL(await fetchActionData('get_friends_with_category'))
 }
 
 const fetchGroupList = async () => {
