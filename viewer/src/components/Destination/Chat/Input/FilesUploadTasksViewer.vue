@@ -123,11 +123,13 @@ export default defineComponent({
       const type = task.type || 'file'
       if (type === 'file') {
         return task.type === 'group' ? "群文件" : "文件"
-      } else if (type === 'image' && task.attachInfo) {
-        return "群照片"
+      } else if (["image", "video"].includes(type) && task.attachInfo) {
+        return "群相片"
       }
       return ({
-        record: "语音消息"
+        record: "语音消息",
+        image: "图片",
+        video: "视频"
       })[type] || "文件"
     }
   }

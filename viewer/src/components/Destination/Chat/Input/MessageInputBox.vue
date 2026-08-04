@@ -327,20 +327,16 @@ export default defineComponent({
     parseDragTarget(e) {
       const target = e?.target
       if (isFunction(target?.closest)) {
-        const closest = (...selectors) => {
-          for (const selector of selectors) {
-            const element = target.closest(selector)
-            if (element) return element
-          }
-          return false
+        const closest = selectors => {
+          return target.closest(selectors)
         }
         const isEditor = this.$refs.editor?.contains(target)
         const isChatContainer = closest('.chat-container')
-        const isRecord = closest(".message-input-record-panel", ".message-input-ctrl-icon-microphone")
+        const isRecord = closest(".message-input-record-panel, .message-input-ctrl-icon-microphone")
         const isGroupFilesViewer = closest(".group-files-viewer-container")
         let isGroupAlbumViewer = closest(".group-album-viewer-container")
         let groupAlbumAttachInfo;
-        if (isObject(isGroupAlbumViewer.dataset)) {
+        if (isObject(isGroupAlbumViewer?.dataset)) {
           const { albumId, albumName } = isGroupAlbumViewer.dataset
           if (isString(albumId)) {
             groupAlbumAttachInfo = {
@@ -393,7 +389,7 @@ export default defineComponent({
         } else if (isGroupAlbumViewer) {
           await this.handleDropFiles(
             e,
-            'image',
+            'media',
             groupAlbumAttachInfo
           )
         }
@@ -414,12 +410,17 @@ export default defineComponent({
             return "群文件"
           }
         }
-      } else if (type === 'image') {
+      } else if (type === 'media') {
         if (attachInfo.album_id) {
-          return "群照片"
+          return "群相片"
         }
+        return "图片/视频"
       }
-      return "未知类型"
+      return ({
+        record: "语音消息",
+        image: "图片",
+        video: "视频",
+      })[type] || "未知类型"
     },
 
     clearPendingFilesUpload() {
@@ -465,28 +466,31 @@ export default defineComponent({
             showInfoToast('已自动过滤非音频文件')
           }
           this.createPendingFilesUpload(audioFiles, type, attachInfo)
-        } else if (type === 'image') {
-          // 处理图片
-          const imageFiles = filteredFiles.filter(file => file.type.startsWith('image/'))
-          const hasOtherFiles = imageFiles.length !== filteredFiles.length
+        } else if (type === 'media') {
+          // 处理图片和视频
+          const mediaFiles = filteredFiles.filter(file => file.type.startsWith('image/') || file.type.startsWith('video/'))
+          const otherFiles = filteredFiles.filter(file => !mediaFiles.includes(file))
           if (isObject(attachInfo)) {
-            if (hasOtherFiles) {
-              showInfoToast('已自动过滤非图片文件')
+            // 群相册上传：只处理图片/视频
+            if (otherFiles.length !== 0) {
+              showInfoToast('已自动过滤非图片/视频文件')
             }
             this.createPendingFilesUpload(
-              imageFiles,
+              mediaFiles,
               type,
               attachInfo
             )
-          } else if (hasOtherFiles) {
+          } else if (otherFiles.length > 0) {
+            // 有非图片/视频文件，全部作为文件上传
             this.createPendingFilesUpload(
               filteredFiles,
               'file'
             )
           } else {
+            // 纯图片+视频，插入编辑器
             await this.insertDataTransferItemsAtCursor(
               await this.convertDataTransferImageItems(
-                this.processSelectedFiles(imageFiles)
+                this.processSelectedFiles(mediaFiles)
               )
             )
           }
@@ -568,15 +572,20 @@ export default defineComponent({
         const send = () => fetchSendFileStream(task)
           .then(handleResult(task))
           .catch(handleError(task))
-        if (type === 'image') {
-          task.is_converting_image = true
-          this.convertImageToSafeType(file)
-            .then(file => {
-              task.is_converting_image = false
-              task.file = file
-              send()
-            })
-            .catch(handleError(task))
+        if (type === 'media') {
+          task.type = file.type.startsWith("image/") ? "image" : "video"
+          if (task.type === 'image') {
+            task.is_converting_image = true
+            this.convertImageToSafeType(file)
+              .then(file => {
+                task.is_converting_image = false
+                task.file = file
+                send()
+              })
+              .catch(handleError(task))
+          } else {
+            send()
+          }
         } else {
           send()
         }
@@ -592,15 +601,6 @@ export default defineComponent({
       const single = !isArray(files)
       if (single) files = [files]
       const convertedFiles = []
-
-      // 辅助函数：读取文件为DataURL
-      function readFileAsDataURL(file) {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target.result);
-          reader.readAsDataURL(file);
-        });
-      }
 
       // 辅助函数：创建图像对象
       function createImage(src) {
@@ -629,7 +629,7 @@ export default defineComponent({
 
         try {
           // 读取文件数据
-          const fileData = await readFileAsDataURL(file);
+          const fileData = await this.readFileAsBase64(file);
 
           // 创建图像对象
           const img = await createImage(fileData);
@@ -703,7 +703,7 @@ export default defineComponent({
       if (items.length > 0 && !this.draggedFragment) {
         e.preventDefault();
 
-        await this.handleDropFiles(e, 'image')
+        await this.handleDropFiles(e, 'media')
       }
 
       // 2. 处理内部内容移动（多元素）
@@ -715,7 +715,7 @@ export default defineComponent({
       }
     },
 
-    // 移动多元素内容到光标位置（修复了节点位置问题）
+    // 移动多元素内容到光标位置
     insertNodeAtCursor(arg1, arg2) {
       let { copy, node } = isBoolean(arg1) ? { copy: arg1, node: arg2 } : { copy: arg2, node: arg1 }
       if (node === undefined) {
@@ -731,6 +731,65 @@ export default defineComponent({
       if (this.lastCaretPosition) {
         range = this.lastCaretPosition.range;
         range.deleteContents();
+      }
+
+      // 检测 contenteditable="false"，插入到前后
+      if (range) {
+        const editorRoot = this.$refs.editor;
+        const startContainer = range.startContainer;
+        let nonEditableEl = null;
+
+        // 向上遍历查找最近 contenteditable="false" 元素
+        let current = startContainer.nodeType === Node.ELEMENT_NODE ? startContainer : startContainer.parentElement;
+        while (current) {
+          // 边界1：到达编辑器根节点，停止
+          if (current === editorRoot) break;
+          // 边界2：遇到可编辑元素，停止向上查找
+          if (current.nodeType === Node.ELEMENT_NODE && current.isContentEditable === true) break;
+
+          if (current.nodeType === Node.ELEMENT_NODE && current.isContentEditable === false) {
+            nonEditableEl = current;
+            break;
+          }
+          current = current.parentElement;
+        }
+
+        if (nonEditableEl) {
+          // 计算光标在元素内部相对偏移
+          const tempRange = document.createRange();
+          tempRange.setStart(nonEditableEl, 0);
+          tempRange.setEnd(range.startContainer, range.startOffset);
+          const charOffset = tempRange.toString().length;
+          const totalChars = nonEditableEl.textContent.length;
+          const moveToBefore = charOffset <= totalChars / 2;
+
+          const parent = nonEditableEl.parentNode;
+          const siblings = Array.from(parent.childNodes);
+          const index = siblings.indexOf(nonEditableEl);
+
+          if (moveToBefore) {
+            // 靠左：插入到元素前面
+            if (index > 0 && siblings[index - 1].nodeType === Node.TEXT_NODE) {
+              range.setStart(siblings[index - 1], siblings[index - 1].textContent.length);
+            } else {
+              // 前置空白文本节点占位
+              const emptyTextNode = document.createTextNode('');
+              parent.insertBefore(emptyTextNode, nonEditableEl);
+              range.setStart(emptyTextNode, 0);
+            }
+          } else {
+            // 靠右：插入到元素后面
+            if (index < siblings.length - 1 && siblings[index + 1].nodeType === Node.TEXT_NODE) {
+              range.setStart(siblings[index + 1], 0);
+            } else {
+              // 后置空白文本节点占位
+              const emptyTextNode = document.createTextNode('');
+              parent.insertBefore(emptyTextNode, nonEditableEl.nextSibling);
+              range.setStart(emptyTextNode, 0);
+            }
+          }
+          range.collapse(true);
+        }
       }
 
       // 克隆片段
@@ -796,6 +855,69 @@ export default defineComponent({
       img.draggable = true;
 
       this.insertNodeAtCursor(img)
+    },
+
+    // 读取视频第一帧作为缩略图
+    async getVideoFirstFrame(videoBase64) {
+      return new Promise((resolve) => {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.crossOrigin = 'anonymous';
+        video.preload = 'metadata';
+        video.src = videoBase64;
+
+        video.onloadeddata = () => {
+          video.currentTime = 0.1;
+        };
+
+        video.onseeked = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+            video.remove();
+            resolve(dataUrl);
+          } catch (e) {
+            video.remove();
+            resolve(null);
+          }
+        };
+
+        video.onerror = () => {
+          video.remove();
+          resolve(null);
+        };
+
+        // 超时处理
+        setTimeout(() => {
+          video.remove();
+          resolve(null);
+        }, 5000);
+      });
+    },
+
+    // 在光标位置插入视频（以缩略图展示，数据存储在 dataset 中）
+    async insertVideoAtCursor(file) {
+      const videoBase64 = await this.readFileAsBase64(file);
+      const thumbnail = await this.getVideoFirstFrame(videoBase64);
+
+      const wrapper = document.createElement('span');
+      wrapper.classList.add("message-input-editor-video-wrapper");
+      wrapper.contentEditable = "false";
+
+      const img = document.createElement('img');
+      img.classList.add("message-input-editor-video");
+      img.src = thumbnail || '';
+      img.draggable = true;
+      img.dataset.videoSrc = videoBase64;
+      img.dataset.videoName = file.name;
+
+      wrapper.appendChild(img);
+      this.insertNodeAtCursor(wrapper)
     },
 
     insertNodesAtCursor(...nodes) {
@@ -901,6 +1023,9 @@ export default defineComponent({
           if (item.type.startsWith("image")) {
             const file = item.data
             if (file) await this.insertImageAtCursor(file);
+          } else if (item.type.startsWith("video")) {
+            const file = item.data
+            if (file) await this.insertVideoAtCursor(file);
           } else if (item.type === 'text/plain') {
             this.insertTextAtCursor(item.data)
           } else if (item.type === 'text/html') {
@@ -969,7 +1094,7 @@ export default defineComponent({
               span.parentNode.replaceChild(a, span)
             })
 
-            fragment = this.keepOnlyImagesAndText(fragment)
+            fragment = this.keepOnlyAllowedNodes(fragment)
 
             // 新增：清除所有空白换行文本，消除span间隙
             this.clearEmptyTextNodes(fragment)
@@ -980,13 +1105,12 @@ export default defineComponent({
       }
     },
 
-    keepOnlyImagesAndText(fragment) {
-      const This = this;
+    keepOnlyAllowedNodes(fragment) {
       // 需要完全删除的标签列表（移除 select/button，表单控件单独逻辑处理）
       const TAGS_TO_REMOVE = [
         'head', 'script', 'style', 'link', 'meta', 'noscript',
         'base', 'title', 'template', 'svg', 'canvas', 'iframe',
-        'object', 'embed', 'audio', 'video', 'source', 'track', 'map', 'area', 'picture'
+        'object', 'embed', 'audio', 'source', 'track', 'map', 'area', 'picture'
       ];
 
       // 块级元素列表（默认display: block的元素）
@@ -1185,10 +1309,22 @@ export default defineComponent({
        * @returns {HTMLImageElement} 处理后的图片
        */
       function createCleanImage(img) {
+        // 视频缩略图：用wrapper包裹并保留视频数据
+        if (img.classList.contains("message-input-editor-video")) {
+          const newImg = document.createElement('img');
+          if (img.src) newImg.src = img.src;
+          newImg.classList.add('message-input-editor-video');
+          newImg.draggable = false;
+          if (img.dataset.videoSrc) newImg.dataset.videoSrc = img.dataset.videoSrc;
+          if (img.dataset.videoName) newImg.dataset.videoName = img.dataset.videoName;
+          const wrapper = document.createElement('span');
+          wrapper.classList.add('message-input-editor-video-wrapper');
+          wrapper.contentEditable = "false";
+          wrapper.appendChild(newImg);
+          return wrapper;
+        }
         const newImg = document.createElement('img');
-        // 保留src属性（图片核心属性）
         if (img.src) newImg.src = img.src;
-        // 添加必要属性和类
         if (img.classList.contains("message-input-editor-emoji")) {
           newImg.classList.add('message-input-editor-emoji');
           newImg.dataset.emoji = img.dataset.emoji
@@ -1199,10 +1335,10 @@ export default defineComponent({
         return newImg;
       }
 
-      function createCleanAnchor(anchor) {
+      const createCleanAnchor = (anchor) => {
         let fragment = document.createDocumentFragment();
         fragment.append(...anchor.childNodes)
-        fragment = This.keepOnlyImagesAndText(fragment)
+        fragment = this.keepOnlyAllowedNodes(fragment)
         let newAnchor = document.createElement('a');
         newAnchor.append(...fragment.childNodes)
         newAnchor.querySelectorAll('br').forEach(br => br.remove());
@@ -1343,7 +1479,7 @@ export default defineComponent({
 
       if (range) {
         // 在设置选择前先调整 range
-        range = this.adjustRangeToAvoidAtUserElement(range);
+        range = this.adjustRangeToAvoidNoneditableElement(range);
 
         selection.removeAllRanges();
         selection.addRange(range);
@@ -1441,6 +1577,11 @@ export default defineComponent({
                     addEmoji(emoji_id, parent_messages)
                   }
                 }
+              } else if (node.classList.contains('message-input-editor-video')) {
+                addMessage(parent_messages, 'video', {
+                  file: node.dataset.videoSrc || '',
+                  name: node.dataset.videoName || ''
+                })
               } else {
                 addImage(node.src, parent_messages)
               }
@@ -1524,7 +1665,7 @@ export default defineComponent({
       template.innerHTML = this.$refs.editor.innerHTML;
 
       // 模板的 content 属性就是一个 DocumentFragment
-      const message = this.parseFragmentIntoMessage(this.keepOnlyImagesAndText(template.content));
+      const message = this.parseFragmentIntoMessage(this.keepOnlyAllowedNodes(template.content));
 
       if (this.quotedMessage) {
         message.unshift({
@@ -1683,7 +1824,7 @@ export default defineComponent({
 
       // 获取当前 range 并调整
       const range = selection.getRangeAt(0);
-      const adjustedRange = this.adjustRangeToAvoidAtUserElement(range);
+      const adjustedRange = this.adjustRangeToAvoidNoneditableElement(range);
 
       // 如果 range 有变化，则更新选择
       if (adjustedRange !== range) {
@@ -1697,62 +1838,37 @@ export default defineComponent({
       this.updateAtMentionState();
     },
 
-    // 公共方法：调整 range 使其避开 .message-input-editor-at-user 元素
-    adjustRangeToAvoidAtUserElement(range) {
-      if (!range.collapsed) return range; // 只处理光标（折叠选择）
+    /**
+     * 光标落在 @用户 / video包装元素内时，选中整个组件节点
+     * @param {Range} range
+     * @returns {Range}
+     */
+    adjustRangeToAvoidNoneditableElement(range) {
+      if (!range.collapsed) return range;
 
-      // 查找包含 startContainer 的 .message-input-editor-at-user 元素
-      let atUserElement = range.startContainer?.parentElement?.closest('.message-input-editor-at-user');
+      // 匹配两类容器：@用户标签、视频包装容器
+      const targetSelector = '.message-input-editor-at-user, .message-input-editor-video-wrapper';
+      const wrapEl = range.startContainer?.parentElement?.closest(targetSelector);
 
-      if (!atUserElement) return range;
+      // 光标不在目标容器内，直接返回原range
+      if (!wrapEl) return range;
 
-      // 获取元素的文本内容和总字符数
-      const totalChars = atUserElement.textContent.length;
-
-      // 创建临时 range 来计算光标前的字符偏移量
-      const tempRange = document.createRange();
-      tempRange.setStart(atUserElement, 0);  // 从元素开头开始
-      tempRange.setEnd(range.startContainer, range.startOffset);  // 到光标位置结束
-      const charOffset = tempRange.toString().length;  // 计算前面的字符数
-
-      // 判断：如果 charOffset <= totalChars / 2，更靠近前面；否则更靠近后面
-      const moveToBefore = charOffset <= totalChars / 2;
-
-      // 获取父节点和兄弟节点列表
-      const parent = atUserElement.parentNode;
-      const siblings = Array.from(parent.childNodes);
-      const index = siblings.indexOf(atUserElement);
-
-      // 创建新的 range
+      // ========== 核心改动：选中整个DOM元素 ==========
       const newRange = document.createRange();
-
-      if (moveToBefore) {
-        // 尝试移到前一个兄弟节点（如果是文本节点）
-        if (index > 0 && siblings[index - 1].nodeType === Node.TEXT_NODE) {
-          newRange.setStart(siblings[index - 1], siblings[index - 1].textContent.length);
-          newRange.collapse(true);
-        } else {
-          // 否则，在它前面插入一个空白文本节点
-          const emptyTextNode = document.createTextNode('');
-          parent.insertBefore(emptyTextNode, atUserElement);
-          newRange.setStart(emptyTextNode, 0); // 移到空白节点末尾
-          newRange.collapse(true);
-        }
-      } else {
-        // 尝试移到后一个兄弟节点（如果是文本节点）
-        if (index < siblings.length - 1 && siblings[index + 1].nodeType === Node.TEXT_NODE) {
-          newRange.setStart(siblings[index + 1], 0);
-          newRange.collapse(true);
-        } else {
-          // 否则，在它后面插入一个空白文本节点
-          const emptyTextNode = document.createTextNode('');
-          parent.insertBefore(emptyTextNode, atUserElement.nextSibling);
-          newRange.setStart(emptyTextNode, 0); // 移到空白节点开头
-          newRange.collapse(true);
-        }
-      }
-
+      newRange.selectNode(wrapEl);
       return newRange;
+    },
+
+    // 点击 video 时选中
+    handleMousedown(e) {
+      // 查找点击目标所属的块容器
+      const targetBlock = e.target.closest('.message-input-editor-video-wrapper');
+      if (!targetBlock) return;
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNode(targetBlock);
+      sel.removeAllRanges();
+      sel.addRange(range);
     },
 
     handleDocumentClick(event) {
@@ -1958,9 +2074,10 @@ export default defineComponent({
       const pickerOpts = {
         types: [
           {
-            description: 'Images',
+            description: '图片 & 视频',
             accept: {
-              'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.svg']
+              'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.svg'],
+              'video/*': ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.flv']
             }
           }
         ],
@@ -1968,7 +2085,7 @@ export default defineComponent({
         excludeAcceptAllOption: false
       };
 
-      await this.handleDropFiles(this.processSelectedFiles(await this.openFilePicker(pickerOpts)), 'image', attachInfo)
+      await this.handleDropFiles(this.processSelectedFiles(await this.openFilePicker(pickerOpts)), 'media', attachInfo)
     },
 
     // 选择任意普通文件
@@ -1976,7 +2093,7 @@ export default defineComponent({
       const pickerOpts = {
         types: [
           {
-            description: 'Files',
+            description: '所有文件',
           }
         ],
         multiple: true,
@@ -1991,7 +2108,7 @@ export default defineComponent({
       const pickerOpts = {
         types: [
           {
-            description: 'Audio 音频文件',
+            description: '音频文件',
             accept: {
               'audio/*': ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.wma']
             }
@@ -2025,7 +2142,7 @@ export default defineComponent({
       if (isUndefined(files)) {
         this.handleMessageInputSelectImages(attachInfo)
       } else if (files?.length) {
-        this.handleDropFiles(this.processSelectedFiles(files), 'image', attachInfo)
+        this.handleDropFiles(this.processSelectedFiles(files), 'media', attachInfo)
       }
     },
 
@@ -2734,7 +2851,7 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <QIcon @click="handleMessageInputSelectImages" class="message-input-ctrl-icon" name="image_24"/>
+                <QIcon @click="handleMessageInputSelectImages()" class="message-input-ctrl-icon" name="image_24"/>
               </template>
             </Tooltip>
 
@@ -2793,6 +2910,7 @@ export default defineComponent({
             @keyup="updateCaretPosition"
             @keydown="handleKeyDown"
             @input="handleInput"
+            @mousedown.capture="handleMousedown"
           ></div>
         </CustomScrollBar>
 
@@ -2814,7 +2932,7 @@ export default defineComponent({
                 <QIcon
                   name="folder_24"
                   class="message-input-ctrl-icon"
-                  @click="handleMessageInputSelectAudios"
+                  @click="handleMessageInputSelectAudios()"
                 />
               </template>
             </Tooltip>
@@ -2996,10 +3114,48 @@ export default defineComponent({
   white-space: pre-wrap;
 }
 
-.message-input-editor:deep(.message-input-editor-image) {
+.message-input-editor:deep(.message-input-editor-image), .message-input-editor:deep(.message-input-editor-video) {
   max-width: 110px;
   max-height: 110px;
+  min-width: 40px;
+  min-height: 40px;
   cursor: default;
+  border-radius: 4px;
+  object-fit: cover;
+  vertical-align: middle;
+}
+
+.message-input-editor:deep(.message-input-editor-image) {
+  background: #e8e8e8;
+}
+
+.message-input-editor:deep(.message-input-editor-video) {
+  @extend %no-user-select;
+  background: #000;
+  display: block;
+}
+
+.message-input-editor:deep(.message-input-editor-video-wrapper) {
+  display: inline-block;
+  position: relative;
+  line-height: 0;
+  vertical-align: middle;
+  border-radius: 4px;
+  overflow: hidden;
+  user-select: all;
+}
+
+.message-input-editor:deep(.message-input-editor-video-wrapper)::after {
+  content: '▶';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 20px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  line-height: 1;
 }
 
 .tooltip-style.message-input-expression-box {

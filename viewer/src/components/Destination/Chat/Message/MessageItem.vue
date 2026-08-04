@@ -344,6 +344,7 @@ const customMessageContextMenu = () => {
           const result = await fetchChangeEssenceMsg(props.message.message_id, set)
           if (result.status === 'ok' && (!result?.data || result?.data?.result?.errorCode === 0)) {
             showToast('success', set ? '设置群精华成功' : "该消息已被移除群精华")
+            const real_seq = props.message.real_seq
             if (set) {
               activeContact.value.essence_real_seq_list.push(real_seq)
             } else {

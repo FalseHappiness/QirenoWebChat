@@ -317,7 +317,7 @@ const fetchSendMessageOptions = async ({ contact, message, signal, timeout = und
             }
           }
           // 群相册特殊逻辑
-          if (type === 'image') {
+          if (['image', 'video'].includes(type)) {
             const { album_id, album_name, file } = data
             if (isString(album_id)) {
               return await fetchAction("upload_image_to_qun_album", {
