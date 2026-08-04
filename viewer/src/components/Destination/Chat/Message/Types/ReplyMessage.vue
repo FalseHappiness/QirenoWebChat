@@ -144,28 +144,27 @@ export default {
     top: 0 !important;
   }
 }
-</style>
 
-<style>
-.message-reply-image, .message-reply-video {
-  max-height: 80px;
-  max-width: 100%;
-  border-radius: 4px;
-}
+.reply-message {
+  :deep(.message-reply-image), :deep(.message-reply-video) {
+    max-height: 80px;
+    max-width: 100%;
+    margin-bottom: 8px;
 
-.message-reply-image {
-  margin-bottom: 8px;
-}
+    &, img, video {
+      border-radius: $radius-sm;
+    }
+  }
 
+  :deep(.message-reply-file-icon) {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 5px;
+  }
 
-.message-reply-file-icon {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-  margin-right: 5px;
-}
-
-.message-reply-file {
-  vertical-align: middle;
+  :deep(.message-reply-file) {
+    vertical-align: middle;
+  }
 }
 </style>

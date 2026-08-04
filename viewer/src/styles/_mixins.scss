@@ -292,7 +292,7 @@
 // ---- 图片/视频媒体样式 ----
 @mixin media-reset {
   max-height: 324px;
-  border-radius: 5px;
+  border-radius: $radius-btn;
   width: 100% !important;
   height: auto;
   object-fit: contain;

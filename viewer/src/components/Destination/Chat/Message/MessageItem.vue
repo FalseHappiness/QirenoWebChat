@@ -841,7 +841,10 @@ onUnmounted(() => {
   max-width: 200px;
 }
 
-.message:deep(.message-emoji-png), .message:deep(.msg-preview-emoji), .notice:deep(.msg-preview-emoji), .message-name-title:deep(.msg-preview-emoji) {
+.message:deep(.message-emoji-png),
+.message:deep(.msg-preview-emoji),
+.notice:deep(.msg-preview-emoji),
+.message-name-title:deep(.msg-preview-emoji) {
   height: 17px;
   position: relative;
   top: -2px;
@@ -873,6 +876,10 @@ onUnmounted(() => {
 
 .message:deep(.message-image), .message:deep(.message-video) {
   @include media-reset;
+
+  img, video {
+    border-radius: $radius-btn;
+  }
 }
 
 .message:has(.message-emoji-picture) {

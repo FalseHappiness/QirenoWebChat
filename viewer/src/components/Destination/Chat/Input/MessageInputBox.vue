@@ -3112,50 +3112,50 @@ export default defineComponent({
   overflow-wrap: break-word;
   color: black;
   white-space: pre-wrap;
-}
 
-.message-input-editor:deep(.message-input-editor-image), .message-input-editor:deep(.message-input-editor-video) {
-  max-width: 110px;
-  max-height: 110px;
-  min-width: 40px;
-  min-height: 40px;
-  cursor: default;
-  border-radius: 4px;
-  object-fit: cover;
-  vertical-align: middle;
-}
+  :deep(.message-input-editor-image), :deep(.message-input-editor-video) {
+    max-width: 110px;
+    max-height: 110px;
+    min-width: 40px;
+    min-height: 40px;
+    cursor: default;
+    border-radius: 4px;
+    object-fit: cover;
+    vertical-align: middle;
+  }
 
-.message-input-editor:deep(.message-input-editor-image) {
-  background: #e8e8e8;
-}
+  :deep(.message-input-editor-image) {
+    background: #e8e8e8;
+  }
 
-.message-input-editor:deep(.message-input-editor-video) {
-  @extend %no-user-select;
-  background: #000;
-  display: block;
-}
+  :deep(.message-input-editor-video) {
+    @extend %no-user-select;
+    background: #000;
+    display: block;
+  }
 
-.message-input-editor:deep(.message-input-editor-video-wrapper) {
-  display: inline-block;
-  position: relative;
-  line-height: 0;
-  vertical-align: middle;
-  border-radius: 4px;
-  overflow: hidden;
-  user-select: all;
-}
+  :deep(.message-input-editor-video-wrapper) {
+    display: inline-block;
+    position: relative;
+    line-height: 0;
+    vertical-align: middle;
+    border-radius: 4px;
+    overflow: hidden;
+    user-select: all;
+  }
 
-.message-input-editor:deep(.message-input-editor-video-wrapper)::after {
-  content: '▶';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 20px;
-  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
-  line-height: 1;
+  :deep(.message-input-editor-video-wrapper)::after {
+    content: '▶';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 20px;
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    line-height: 1;
+  }
 }
 
 .tooltip-style.message-input-expression-box {
@@ -3228,22 +3228,24 @@ export default defineComponent({
   padding: 3px;
 }
 
-.message-input-editor:deep(.message-input-editor-emoji) {
-  width: 20px;
-  height: 20px;
-}
+.message-input-editor {
+  :deep(.message-input-editor-emoji) {
+    width: 20px;
+    height: 20px;
+  }
 
-.message-input-editor:deep(.message-input-editor-at-user) {
-  color: $color-text-at-link;
-  cursor: default;
-  display: inline-block;
-  -webkit-user-modify: read-only;
-  -moz-user-modify: read-only;
-  user-modify: read-only;
-}
+  :deep(.message-input-editor-at-user) {
+    color: $color-text-at-link;
+    cursor: default;
+    display: inline-block;
+    -webkit-user-modify: read-only;
+    -moz-user-modify: read-only;
+    user-modify: read-only;
+  }
 
-.message-input-editor:deep(.message-input-editor-at-user):hover {
-  color: $color-text-at-link;
+  :deep(.message-input-editor-at-user):hover {
+    color: $color-text-at-link;
+  }
 }
 
 .at-group-users-container {

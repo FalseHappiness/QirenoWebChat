@@ -591,8 +591,8 @@ defineExpose({
           :src="`https://p.qlogo.cn/gh/${activeContact.contact_id}/${activeContact.contact_id}/100`"
           alt=""
           class="chat-area-contact-logo">
-        <div>
-          {{ displayName }}
+        <div class="overflow-ellipsis">
+          <span :title="displayName">{{ displayName }}</span>
           <br>
           <small style="color: var(--color-text-muted);display: block;margin-top: -4px;">{{
               activeContact.contact_id

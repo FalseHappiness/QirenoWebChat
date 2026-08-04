@@ -103,9 +103,18 @@ export default defineComponent({
   align-items: flex-end;
 }
 
-.quoted-message:deep(.msg-preview-emoji) {
-  height: 16px;
-  width: 16px;
+.quoted-message {
+  :deep(.msg-preview-emoji) {
+    height: 16px;
+    width: 16px;
+  }
+
+  :deep(.message-reply-file-icon) {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 5px;
+  }
 }
 
 .content {
