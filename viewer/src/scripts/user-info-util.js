@@ -2,7 +2,7 @@ import { showToast } from "./toast.js";
 import {
   fetchGroupInfo,
   fetchGroupMemberInfo,
-  fetchStrangerInfo,
+  fetchStrangerInfo, getUserAvatarFrame,
 } from "./backend-api.js";
 import { isArray, isFunction, isNil, isObject, mergeNotEmpty } from "./types-util.js";
 import { parseJSON } from "./util.js";
@@ -102,7 +102,8 @@ const CacheKey = {
   GROUP_INFO: 'group_info',
   GROUP_MEMBER_INFO: 'group_member_info',
   GROUP_MEMBER_LIST: 'group_member_list',
-  STRANGER_INFO: 'stranger_info'
+  STRANGER_INFO: 'stranger_info',
+  USER_PERSONALIZATION: "user_personalization"
 }
 
 function combineKey(cacheKey, arg) {
@@ -125,6 +126,10 @@ const setGroupListCache = value => {
 }
 
 const setGroupInfoCache = (group_id, value) => {
+  mergeNotEmpty(
+    getGroupInfoCacheByList(group_id),
+    value
+  )
   return setCache(CacheKey.GROUP_INFO, value, { group_id })
 }
 
@@ -145,7 +150,15 @@ const setStrangerInfoCache = (user_id, value) => {
     getFriendInfoCache(user_id),
     value
   )
+  mergeNotEmpty(
+    getFriendInfoCacheByList(user_id),
+    value
+  )
   return setCache(CacheKey.STRANGER_INFO, value, { user_id })
+}
+
+const setUserPersonalization = (user_id, value) => {
+  return setCache(CacheKey.USER_PERSONALIZATION, value, { user_id })
 }
 
 const getCache = (key, arg) => {
@@ -190,6 +203,14 @@ const getGroupMemberInfoCacheByList = (group_id, user_id) => {
 
 const getStrangerInfoCache = user_id => {
   return getCache(CacheKey.STRANGER_INFO, { user_id })
+}
+
+const getUserPersonalization = user_id => {
+  return getCache(CacheKey.USER_PERSONALIZATION, { user_id })
+}
+
+const getUserAvatarFrameCache = (user_id, returnUrl = true) => {
+  return getUserAvatarFrame(getUserPersonalization(user_id), returnUrl)
 }
 
 const GROUP = "group"
@@ -612,7 +633,9 @@ export {
   setGroupMemberInfoCache,
   setGroupMemberListCache,
   setStrangerInfoCache,
+  setUserPersonalization,
   setCacheName,
+  getUserAvatarFrameCache,
   CacheNameKey,
   getContactNameRef,
   getCacheGroupUserName,

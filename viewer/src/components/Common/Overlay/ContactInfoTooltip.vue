@@ -16,6 +16,7 @@ import EnterArrow from "../Widgets/EnterArrow.vue";
 import { isNumber, isString } from "@/scripts/types-util.js";
 import QIcon from "@/components/Common/Icons/QIcon.vue";
 import { showErrorToast } from "@/scripts/toast.js";
+import { getUserAvatarFrameCache } from "@/scripts/user-info-util.js";
 
 export default defineComponent({
   name: "ContactInfoTooltip",
@@ -153,6 +154,10 @@ export default defineComponent({
     notSelf() {
       if (!this.user_id) return true
       return this.user_id !== this.selfId
+    },
+    avatarFrameUrl() {
+      if (!this.user_id) return
+      return getUserAvatarFrameCache(this.user_id)
     }
   },
   watch: {
@@ -183,9 +188,16 @@ export default defineComponent({
       <div class="tooltip-style contact-info-tooltip">
         <div v-if="user_id">
           <div class="contact-info-header">
-            <img class="contact-info-logo" :src="getUserLogo(user_id)" alt="">
+            <div
+              :data-has-frame="!!avatarFrameUrl"
+              :style="{
+                '--avatar-frame-url': `url(${avatarFrameUrl})`
+              }"
+              class="contact-info-logo-container">
+              <img class="contact-info-logo" :src="getUserLogo(user_id)" alt="">
+            </div>
             <div class="contact-info-header-text overflow-ellipsis">
-              <span class="contact-info-name">{{ userNickname }}</span>
+              <span class="contact-info-name overflow-ellipsis" :title="userNickname">{{ userNickname }}</span>
               <span class="contact-info-id">QQ {{ user_id }}</span>
             </div>
             <div class="contact-profile-like" :class="{ clickable: notSelf }" v-if="profileLike"
@@ -274,8 +286,16 @@ export default defineComponent({
   align-items: center;
 }
 
-.contact-info-logo {
-  @include avatar(60px);
+.contact-info-logo-container {
+  position: relative;
+
+  &, .contact-info-logo {
+    @include avatar(60px);
+  }
+
+  &[data-has-frame]::after {
+    @include after-avatar-frame(60px);
+  }
 }
 
 .contact-info-header-text {

@@ -27,7 +27,7 @@ import QIcon from "../../../Common/Icons/QIcon.vue";
 import { isFunction, isString } from "@/scripts/types-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import { showConfirmBox } from "@/scripts/popup-box-api.js";
-import { CacheNameKey, fetchDisplayName, getCacheName } from "@/scripts/user-info-util.js";
+import { CacheNameKey, fetchDisplayName, getCacheName, getUserAvatarFrameCache } from "@/scripts/user-info-util.js";
 
 const props = defineProps({
   message: {
@@ -549,6 +549,8 @@ const customAvatarContextMenu = () => {
   ])
 }
 
+const avatarFrameUrl = computed(() => getUserAvatarFrameCache(props.message?.user_id))
+
 // 组件加载时
 onMounted(() => {
   document.addEventListener('mouseenter', handleMouseEnter, { capture: true })
@@ -613,13 +615,20 @@ onUnmounted(() => {
       { recalled: isRecalled }
     ]"
   >
-    <img
-      class="message-avatar"
-      alt=""
-      :src="getUserLogo(message.user_id)"
-      v-double-click="handleAvatarDoubleClick"
-      v-custom-menu="customAvatarContextMenu"
-    />
+    <div
+      :data-has-frame="!!avatarFrameUrl"
+      :style="{
+        '--avatar-frame-url': `url(${avatarFrameUrl})`
+      }"
+      class="message-avatar-container">
+      <img
+        class="message-avatar"
+        alt=""
+        :src="getUserLogo(message.user_id)"
+        v-double-click="handleAvatarDoubleClick"
+        v-custom-menu="customAvatarContextMenu"
+      />
+    </div>
     <div class="message-msg-side">
       <div class="message-before">
         <div class="message-name-title" v-if="isGroup">
@@ -792,6 +801,19 @@ onUnmounted(() => {
 
 .group .message-avatar {
   margin-top: 4px;
+}
+
+.message-avatar-container[data-has-frame] {
+  position: relative;
+
+  &::after {
+    @include after-avatar-frame(35px);
+  }
+}
+
+.message-in .message-avatar-container[data-has-frame]::after {
+  right: 0;
+  left: unset;
 }
 
 .private .message-avatar {

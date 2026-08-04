@@ -644,3 +644,18 @@
   color: $color;
   cursor: pointer;
 }
+
+@mixin after-avatar-frame($avatar-size: 40px) {
+  display: block;
+  position: absolute;
+  content: "";
+  width: $avatar-size;
+  height: $avatar-size;
+  left: 0;
+  top: 0;
+  background-image: var(--avatar-frame-url);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  transform: scale(1.5);
+  pointer-events: none;
+}

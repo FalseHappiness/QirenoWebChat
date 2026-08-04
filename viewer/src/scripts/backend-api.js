@@ -25,7 +25,7 @@ import {
   setGroupInfoCache, setGroupListCache,
   setGroupMemberInfoCache,
   setGroupMemberListCache,
-  setStrangerInfoCache
+  setStrangerInfoCache, setUserPersonalization
 } from "./user-info-util.js";
 
 /**
@@ -187,11 +187,29 @@ export const fetchGroupInfo = async (group_id) => {
   )
 }
 
-const fetchStrangerInfo = async (user_id) => {
+const fetchStrangerInfo = async user_id => {
+  // noinspection ES6MissingAwait
+  fetchUserPersonalization(user_id)
   return setStrangerInfoCache(
     user_id,
     convertStrangerInfoSL(await fetchActionData("get_stranger_info", { user_id }))
   )
+}
+
+// SnowLuma 获取个性装扮
+const fetchUserPersonalization = async user_id => {
+  if (isSnowLuma()) {
+    return setUserPersonalization(
+      user_id,
+      (await fetchActionData("_get_friend_dress", { user_id }))?.items
+    )
+  }
+  return null
+}
+
+const getUserAvatarFrame = (personalization, returnUrl = true) => {
+  const item = personalization?.find?.(item => item.kind === '挂件')
+  return returnUrl ? item?.preview_url : item
 }
 
 const fetchGroupMemberInfo = async (group_id, user_id) => {
@@ -1070,4 +1088,5 @@ export {
   fetchDeleteGroupFile,
   fetchRenameGroupFile,
   fetchRenameGroupFolder,
+  getUserAvatarFrame,
 }
