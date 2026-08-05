@@ -439,6 +439,12 @@ onMounted(() => {
               { title: event.title }
             )
           }
+        } else if (notice_type === 'group_card') {
+          updateGroupMemberInfoCache(
+            group_id,
+            user_id,
+            { card: event.card_new }
+          )
         }
 
         if (isSupportedNoticeMessage(notice)) {

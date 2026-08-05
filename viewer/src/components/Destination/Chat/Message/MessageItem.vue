@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onUnmounted, computed, h, onMounted, inject, toRaw } from 'vue'
+import { ref, onUnmounted, computed, h, onMounted, inject, toRaw, watch } from 'vue'
 import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
@@ -7,7 +7,7 @@ import {
   fetchChangeEssenceMsg,
   fetchKickGroupUser,
   fetchRecallMessage, fetchRecordToText,
-  fetchSendMessage, fetchSetGroupMute, fetchTranslateEnglish,
+  fetchSendMessage, fetchSetGroupAdmin, fetchSetGroupMemberCard, fetchSetGroupMute, fetchTranslateEnglish,
   getUserLogo
 } from "@/scripts/backend-api.js";
 import { useGlobalStore } from "@/store/global.js";
@@ -25,13 +25,13 @@ import { Emitter } from "@/composables/useEventBus.js";
 import { qqAppImg } from "@/composables/useBase.js";
 import LoadingSpinner from "../../../Common/Widgets/LoadingSpinner.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
-import { isFunction, isString } from "@/scripts/types-util.js";
+import { isFunction, isString, objectHasKey } from "@/scripts/types-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import { showConfirmBox, showPromptBox } from "@/scripts/popup-box-api.js";
 import {
   CacheNameKey,
   fetchDisplayName,
-  getCacheName,
+  getCacheName, getGroupMemberListCache,
   getUserAvatarFrameCache,
   hasGroupMemberOperatePermission, isGroupAdmin, isGroupOperator, isGroupOwner
 } from "@/scripts/user-info-util.js";
@@ -125,26 +125,24 @@ const noticeHtml = computed(() => {
   );
 });
 
-const displayName = ref('');
+const displayName = computed(() => {
+  if (!isGroup.value) return ""
+
+  const sender = messageEvent.value?.sender
+
+  return getCacheName([groupId.value, userId.value], CacheNameKey.GROUP_USER_CARD)
+    || sender?.card || sender?.remark || sender?.nickname || userId.value
+});
+
+const messageEvent = computed(() => props.message ? parseJSON(props.message?.event) : null)
+const groupId = computed(() => messageEvent.value?.group_id)
+const userId = computed(() => messageEvent.value?.user_id)
 
 const getDisplayName = () => {
-  const message = props.message;
-  if (!isGroup.value) {
-    return
-  }
-  const id = [message.group_id, message.user_id];
-  const type = CacheNameKey.GROUP_USER;
-  const event = parseJSON(message.event);
-
-  const sender = event?.sender
-
-  // 初始值
-  displayName.value = getCacheName(id, type) || sender?.nickname || sender?.remark || sender?.card || props.message.user_id
+  if (!isGroup.value) return
 
   // 异步更新
-  fetchDisplayName(id, type, (newName) => {
-    displayName.value = newName
-  });
+  fetchDisplayName([groupId.value, userId.value], CacheNameKey.GROUP_USER);
 }
 
 let currentActiveElement = null
@@ -215,10 +213,9 @@ const handleDocumentClick = (e) => {
 }
 
 const handleNoticePoke = () => {
-  const user_id = props.message.user_id
-  const group_id = props.message.group_id
-  const target_id = props.message.target_id
-  const message_type = props.message.message_type
+  const user_id = userId.value
+  const group_id = groupId.value
+  const { target_id, message_type } = props.message
   const is_group = isGroup.value
   const data = {
     user_id: is_group ? user_id : target_id,
@@ -237,7 +234,7 @@ const handleNoticePoke = () => {
 }
 
 const showContactInfo = e => {
-  const event = JSON.parse(props.message.event)
+  const event = messageEvent.value
   emit("click-show-contact-info", e, { user_id: event.user_id, nickname: event.sender.nickname })
 }
 
@@ -249,7 +246,7 @@ const handleAvatarDoubleClick = {
 const settingEssence = ref(false)
 
 const messagePlainTextContent = computed(() => {
-  const message = parseJSON(props.message.event)?.message
+  const message = messageEvent.value?.message
   if (Array.isArray(message)) {
     return message.filter(item => item?.type === 'text' && item?.data?.text).map(item => item.data.text).join('\n')
   }
@@ -261,7 +258,7 @@ const translatedText = ref(undefined)
 const translateErrorText = ref(null)
 
 const messageRecordSegment = computed(() => {
-  const msg = parseJSON(props.message.event)?.message?.[0]
+  const msg = messageEvent.value?.message?.[0]
   if (msg?.type === 'record') {
     return msg
   }
@@ -330,14 +327,13 @@ const customMessageContextMenu = () => {
       }
     }, "copy_24"),
     basicContextItem('转发', () => {
-      const message = props.message
-      const event = parseJSON(message.event);
+      const event = messageEvent.value;
       Emitter.emit('forward-single-msg', event.message_id, event.message)
     }, "one_by_one_forward_24"),
     basicContextItem('引用', () => {
       emit('quote-message', toRaw(props.message), isGroup.value ? {
         name: displayName.value,
-        qq: props.message.user_id
+        qq: userId.value
       } : null)
     }, "quote_24"),
     basicContextItem(
@@ -385,7 +381,7 @@ const customMessageContextMenu = () => {
       (
         isGroupOwner(self_info) ||
         (
-          props.message.user_id === props.message.self_id &&
+          userId.value === props.message.self_id &&
           (
             (Date.now() / 1000 - props.message.time <= 120) ||
             isGroupAdmin(self_info)
@@ -400,19 +396,12 @@ const customMessageContextMenu = () => {
   ]);
 }
 
-const isRecalled = computed(() => {
-  const message = props.message
-  const event = parseJSON(message.event);
-  return 'recall_operator' in event
-})
+const isRecalled = computed(() => objectHasKey(messageEvent.value, 'recall_operator'))
 
-const isEssence = computed(() => {
-  return activeContact.value?.essence_real_seq_list?.includes(props.message.real_seq)
-})
+const isEssence = computed(() => activeContact.value?.essence_real_seq_list?.includes(props.message.real_seq))
 
 const isSecretEmoji = computed(() => {
-  const message = props.message
-  const event = parseJSON(message.event);
+  const event = messageEvent.value;
   if (event?.message?.length === 1) {
     const item = event.message[0];
     if (item.type === 'face') {
@@ -485,7 +474,7 @@ const handleMessageDoubleClick = e => {
   }
 }
 
-const currentGroupUserInfo = computed(() => findGroupUser(props.message.user_id))
+const currentGroupUserInfo = computed(() => findGroupUser(userId.value))
 const currentGroupSelfInfo = computed(() => findGroupUser(props.message.self_id))
 
 const findGroupUser = user_id => groupUsers.value?.find(user => user.user_id === user_id)
@@ -494,8 +483,8 @@ const flattenContacts = inject('flattenContacts')
 const selectContact = inject("selectContact")
 
 const customAvatarContextMenu = () => {
-  const user_id = props.message.user_id
-  const group_id = props.message.group_id
+  const user_id = userId.value
+  const group_id = groupId.value
   const userContact = {
     contact_id: user_id,
     type: 'private'
@@ -504,6 +493,8 @@ const customAvatarContextMenu = () => {
   const self = currentGroupSelfInfo.value
   const hasBeenMuted = !!self.shut_up_timestamp
   const operatePermission = hasGroupMemberOperatePermission(self, user)
+  const isAdminUser = isGroupAdmin(user)
+  const isSelf = user_id === self.self_id
   const muteFunc = duration => (async () => {
     const result = await fetchSetGroupMute(group_id, user_id, duration)
     const operation = (duration === 0 ? "解除" : "") + "禁言"
@@ -553,15 +544,61 @@ const customAvatarContextMenu = () => {
       },
       'files_24'
     ),
+    basicContextItem(
+      (isAdminUser ? "取消" : "设为") + "管理员",
+      async () => {
+        const action = (isAdminUser ? "取消" : "设为")
+        if (
+          await showConfirmBox(
+            action + '管理员',
+            isAdminUser ? `确定要取消 ${displayName.value} 的管理员权限吗？` : `确定要设置 ${displayName.value} 为管理员吗？`
+          )
+        ) {
+          const result = await fetchSetGroupAdmin(group_id, user_id, !isAdminUser)
+          if (checkResponseOK(result)) {
+            showSuccessToast('设置成功')
+          } else {
+            console.log(action + "管理员失败:", user, result)
+            showErrorToast(action + '管理员失败: ' + result?.message)
+          }
+        }
+      },
+      "administering_user_24.svg",
+      isGroup.value && isGroupOwner(self) && !isSelf
+    ),
+    basicContextItem(
+      '修改群昵称',
+      async () => {
+        const card = await showPromptBox(
+          "修改群昵称",
+          `修改群昵称 ${user.nickname} 的群名片`,
+          "群昵称",
+          user.card
+        )
+        if (card !== null) {
+          const result = await fetchSetGroupMemberCard(group_id, user_id, card)
+          if (checkResponseOK(result)) {
+            showSuccessToast("设置成功")
+          } else {
+            console.error("修改群昵称失败:", result)
+            showErrorToast("修改群昵称失败:" + result?.message)
+          }
+        }
+      },
+      'edit_24',
+      isGroup.value && (isGroupAdmin(self) || isSelf)
+    ),
     contextDividedItem(),
     basicContextItem(
       '移出本群',
       async () => {
         if (await showConfirmBox('温馨提醒', '确定将该成员从本群聊中移除吗？')) {
-          if ((await fetchKickGroupUser(group_id, user_id))?.status === 'ok') {
+          const result = await fetchKickGroupUser(group_id, user_id)
+          if (checkResponseOK(result)) {
             showSuccessToast('已移出本群')
           } else {
-            showErrorToast('移出本群失败')
+            console.log("Kick error:", user, result)
+            showErrorToast('移出本群失败: ' + result?.message)
           }
         }
       },

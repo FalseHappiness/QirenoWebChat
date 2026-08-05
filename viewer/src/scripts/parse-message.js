@@ -157,7 +157,7 @@ const createNameSpanByMessageId = (message_id, promises) => {
     try {
       msg = parseJSON((await fetchMsg(message_id))?.event);
     } catch (e) {
-      console.error("获取消息失败:", messsage_id, e)
+      console.error("获取消息失败:", message_id, e)
     }
     if (msg) {
       const sender = msg?.sender

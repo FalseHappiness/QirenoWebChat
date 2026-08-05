@@ -5,7 +5,7 @@ import {
   fetchGroupMemberInfo,
   fetchGroupNotice,
   fetchMsg,
-  fetchSetGroupMemberRemark
+  fetchSetGroupMemberCard
 } from "@/scripts/backend-api.js";
 import PageScroller from "../../Common/Scrolling/PageScroller.vue";
 import SimpleBarCore from "simplebar";
@@ -351,17 +351,17 @@ const getGroupSelfInfo = async () => {
   if (isGroup.value) {
     if (selfInfo.value?.user_id) {
       groupSelfInfo.value = await fetchGroupMemberInfo(activeContact.value.contact_id, selfInfo.value.user_id);
-      groupSelfRemarkModel.value = groupSelfInfo?.value?.card;
+      groupSelfCardModel.value = groupSelfInfo?.value?.card;
     }
   }
 }
 
-const groupSelfRemarkModel = ref("");
+const groupSelfCardModel = ref("");
 const groupRemarkModel = ref("");
 
-const handleGroupSelfRemarkChange = async () => {
-  if (groupSelfRemarkModel.value !== groupSelfInfo?.value?.card) {
-    await fetchSetGroupMemberRemark(activeContact.value.contact_id, selfInfo.value.user_id, groupSelfRemarkModel.value)
+const handleGroupSelfCardChange = async () => {
+  if (groupSelfCardModel.value !== groupSelfInfo?.value?.card) {
+    await fetchSetGroupMemberCard(activeContact.value.contact_id, selfInfo.value.user_id, groupSelfCardModel.value)
   }
 }
 
@@ -641,8 +641,8 @@ defineExpose({
         v-if="groupSelfInfo"
         class="chat-area-contact-more-area with-title input-content"
         data-title="我的本群昵称">
-        <input v-model="groupSelfRemarkModel"
-               @blur="handleGroupSelfRemarkChange"
+        <input v-model="groupSelfCardModel"
+               @blur="handleGroupSelfCardChange"
                @keydown="handleEnterBlur"
                type="text"
                class="overflow-ellipsis"

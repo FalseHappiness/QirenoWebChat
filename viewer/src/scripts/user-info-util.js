@@ -313,7 +313,7 @@ const NICKNAME = "nickname"
  * @property {string} GROUP_REMARK - 群备注别名，等价GROUP
  * @property {string} GROUP_NAME - 群名称
  * @property {string} GROUP_USER - 群成员名片
- * @property {string} GROUP_USER_REMARK - 群成员备注
+ * @property {string} GROUP_USER_REMARK - 存储在群成员信息的好友备注
  * @property {string} GROUP_USER_NICKNAME - 群成员昵称
  * @property {string} GROUP_USER_CARD - 群成员群名片别名，等价GROUP_USER
  * @property {string} PRIVATE - 私聊好友备注（同PRIVATE）
@@ -670,7 +670,7 @@ const isGroupOperator = user => {
 }
 
 const hasGroupMemberOperatePermission = (self, user) => {
-  return isGroupAdmin(self) || (isGroupAdmin(self) && !isGroupOperator(user))
+  return isGroupOwner(self) || (isGroupAdmin(self) && !isGroupOperator(user))
 }
 
 export {

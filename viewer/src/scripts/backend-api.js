@@ -668,10 +668,10 @@ const fetchSetGroupRemark = async (group_id, remark) => {
   return result
 }
 
-const fetchSetGroupMemberRemark = async (group_id, user_id, card) => {
+const fetchSetGroupMemberCard = async (group_id, user_id, card) => {
   const result = await fetchAction('set_group_card', { group_id, user_id, card })
   if (checkResponseOK(result)) {
-    setCacheName([group_id, user_id], CacheNameKey.GROUP_USER_REMARK, card)
+    setCacheName([group_id, user_id], CacheNameKey.GROUP_USER_CARD, card)
   }
   return result
 }
@@ -1038,6 +1038,14 @@ async function fetchGroupMutedList(group_id) {
   return result
 }
 
+async function fetchSetGroupAdmin(group_id, user_id, enable = true) {
+  const result = await fetchAction('set_group_admin', { group_id, user_id, enable })
+  if (checkResponseOK(result)) {
+    updateGroupMemberInfoCache(group_id, user_id, { role: enable ? "admin" : "member" })
+  }
+  return result
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1058,7 +1066,7 @@ export {
   fetchLoginInfo,
   fetchGroupMemberInfo,
   fetchSetGroupRemark,
-  fetchSetGroupMemberRemark,
+  fetchSetGroupMemberCard,
   fetchSendFileStream,
   apiBaseUrl,
   wsUri,
@@ -1107,4 +1115,5 @@ export {
   getUserAvatarFrame,
   fetchSetGroupMute,
   fetchGroupMutedList,
+  fetchSetGroupAdmin,
 }
