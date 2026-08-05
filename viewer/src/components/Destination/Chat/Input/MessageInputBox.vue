@@ -30,6 +30,7 @@ import { isArray, isBoolean, isFunction, isObject, isUndefined, isString } from 
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { getCacheGroupUserName } from "@/scripts/user-info-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
+import { formatTimeOptions } from "@/scripts/util.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -47,7 +48,7 @@ export default defineComponent({
     SimpleBar,
     Icon,
   },
-  inject: ['activeContact', "groupUsers", "filesUploadTasks"],
+  inject: ['activeContact', "groupUsers", "filesUploadTasks", "groupMutedList", "selfId"],
   data() {
     return {
       lastCaretPosition: null,
@@ -2660,8 +2661,22 @@ export default defineComponent({
           // create_time 是 Date.now() 格式（毫秒时间戳，数字）
           return b.create_time - a.create_time;
         });
-    }
+    },
 
+    selfMutedInfo() {
+      return this.groupMutedList?.find(user => user.user_id === this.selfId)
+    },
+
+    hasBeenMuted() {
+      return !!this.selfMutedInfo
+    },
+
+    selfMutedEndTime() {
+      return formatTimeOptions({
+        timestamp: this.selfMutedInfo?.shut_up_time || 0,
+        alwaysMD: false
+      })
+    }
   },
   watch: {
     filteredAtGroupUsers() {
@@ -2768,6 +2783,10 @@ export default defineComponent({
       :height="180"
       :minHeight="140"
     >
+      <div class="message-input-muted-mask" :class="{ 'display-flex': hasBeenMuted }">
+        禁言中...
+        <p>解除时间：{{ selfMutedEndTime }}</p>
+      </div>
       <div class="message-input-common-panel message-input-panel" :class="{ 'display-none': isShowRecordPanel }">
         <div class="message-input-controls">
           <div class="message-input-controls-left">
@@ -3314,6 +3333,14 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   width: 100% !important;
+}
+
+.message-input-muted-mask {
+  height: 100%;
+  @extend %flex-center-children;
+  @extend %flex-column;
+  display: none;
+  color: $color-text-muted;
 }
 
 .message-input-common-panel {

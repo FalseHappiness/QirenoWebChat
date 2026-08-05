@@ -232,7 +232,9 @@ export default defineComponent({
         </div>
         <div v-else-if="group_id">
           <div class="contact-info-header">
-            <img class="contact-info-logo" :src="getGroupLogo(group_id)" alt="">
+            <div class="contact-info-logo-container">
+              <img class="contact-info-logo" :src="getGroupLogo(group_id)" alt="">
+            </div>
             <div class="contact-info-header-text overflow-ellipsis">
               <span class="contact-info-name">{{ group?.group_name }}</span>
               <span class="contact-info-id">

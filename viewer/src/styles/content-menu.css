@@ -35,6 +35,10 @@
     margin: auto;
 }
 
+.mx-context-menu-item .mx-icon-placeholder:not(:has(svg)) {
+    display: none;
+}
+
 .mx-context-menu-item .label {
     padding-inline-end: 6px;
     padding-left: 6px;

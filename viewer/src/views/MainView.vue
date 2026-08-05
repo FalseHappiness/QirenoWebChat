@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount, provide } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, onBeforeUnmount, provide, toRaw } from 'vue'
 import { ConnectionBridge } from '../scripts/connection/connection-bridge.js'
 import { ConnectionBridgeOnebot } from "../scripts/connection/virtual-backend/connection-bridge-onebot.js";
 import NavigationView from '../components/Navigation/NavigationView.vue'
@@ -13,7 +13,12 @@ import {
   getOnebotWsToken,
   getOnebotWsUri,
   wsUri,
-  fetchCategorizedContacts, fetchGroupMemberList, fetchFriendList, fetchSetFriendRemark, checkResponseOK
+  fetchCategorizedContacts,
+  fetchGroupMemberList,
+  fetchFriendList,
+  fetchSetFriendRemark,
+  checkResponseOK,
+  fetchGroupMutedList
 } from "../scripts/backend-api.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
@@ -85,12 +90,10 @@ watch(() => isConnected.value && selfId.value, val => {
 })
 
 watch(activeContact, (newContact, oldContact) => {
-  if (!newContact) {
+  if (!checkSameContact(newContact, oldContact)) {
     groupEssenceMsgList.value = null
     groupUsers.value = null
-  }
-  if (!checkSameContact(newContact, oldContact) && newContact) {
-    getEssenceMsgRealSeqList()
+    groupMutedList.value = null
   }
 })
 
@@ -204,26 +207,22 @@ const getContacts = async () => {
   }
 }
 
-const fetchEssenceMessagesWrapper = async (group_id, only_real_seq) => {
-  try {
-    return await fetchEssenceMessages(group_id, only_real_seq)
-  } catch (e) {
-    console.error('获取群精华消息列表错误', e)
-  }
-  return []
-}
-
 const groupEssenceMsgList = ref(null)
 provide("groupEssenceMsgList", groupEssenceMsgList)
 
-const getEssenceMsgRealSeqList = async () => {
-  if (activeContact.value?.type === 'group') {
-    const list = await fetchEssenceMessagesWrapper(activeContact.value.contact_id, false)
-    if (activeContact.value) {
-      activeContact.value.essence_real_seq_list = list.map(i => i.msg_seq)
-      groupEssenceMsgList.value = list
-      return list
+const getEssenceMsgList = async () => {
+  try {
+    const contact = toRaw(activeContact.value)
+    if (contact?.type === 'group') {
+      const list = await fetchEssenceMessages(contact.contact_id, false)
+      if (checkSameContact(activeContact.value, contact)) {
+        activeContact.value.essence_real_seq_list = list.map(i => i.msg_seq)
+        groupEssenceMsgList.value = list
+        return list
+      }
     }
+  } catch (e) {
+    console.error('获取群精华消息列表错误', e)
   }
   return []
 }
@@ -242,6 +241,7 @@ const getMessages = async (
 ) => {
   let messages = []
   if (!activeContact.value) return messages
+  const contact = toRaw(activeContact.value)
 
   try {
     const params = {
@@ -263,19 +263,21 @@ const getMessages = async (
       params.message_type = 'private'
       params.target_id = activeContact.value.contact_id
     }
-    let response, essence_real_seq_list;
 
     if (params.message_type === 'group') {
-      [response, essence_real_seq_list, groupUsers.value] = await Promise.all([
-        fetchMessages(params),
-        fetchEssenceMessagesWrapper(params.group_id, true),
-        fetchGroupMemberList(params.group_id),
-      ])
-      if (!activeContact.value) return;
-      activeContact.value.essence_real_seq_list = essence_real_seq_list
-    } else {
-      response = await fetchMessages(params)
+      fetchGroupMemberList(params.group_id)
+        .then(
+          list => checkSameContact(activeContact.value, contact) ? groupUsers.value = list : 0
+        )
+      fetchGroupMutedList(params.group_id)
+        .then(
+          list => checkSameContact(activeContact.value, contact) ? groupMutedList.value = list : 0
+        )
+      // noinspection ES6MissingAwait
+      getEssenceMsgList()
     }
+
+    const response = await fetchMessages(params);
     if (!activeContact.value) return;
 
     messages = response.messages
@@ -354,6 +356,9 @@ provide("showContactInfo", options => contactInfoTooltip.value?.showContactInfo(
 const filesUploadTasks = ref([])
 provide("filesUploadTasks", filesUploadTasks)
 
+const groupMutedList = ref(null)
+provide("groupMutedList", groupMutedList)
+
 // 从 account prop 决定是否是直连模式
 const effectiveIsDirect = computed(() => {
   return props.account.mode === 'direct'
@@ -390,11 +395,23 @@ onMounted(() => {
       }
     },
     onNotice: notice => {
-      const isCurrentContact = checkMsgIsContact(notice, activeContact.value)
-      const { notice_type, sub_type } = notice
-      if (['group_recall', 'friend_recall'].includes(notice_type)) {
-        const is_group = notice_type === 'group_recall'
-        if (isCurrentContact) {
+      if (checkMsgIsContact(notice, activeContact.value)) {
+        const { notice_type, sub_type } = notice
+        const event = parseJSON(notice.event)
+        if (notice_type === 'group_ban') {
+          if (sub_type === 'ban') {
+            if (groupMutedList.value) {
+              groupMutedList.value.push({
+                user_id: notice.user_id,
+                shut_up_time: event.time + event.duration
+              })
+            }
+          } else if (sub_type === 'lift_ban') {
+            groupMutedList.value = groupMutedList.value?.filter(item => item.user_id !== notice.user_id)
+          }
+        }
+        if (['group_recall', 'friend_recall'].includes(notice_type)) {
+          const is_group = notice_type === 'group_recall'
           const visibleMessages = chatArea.value?.$refs?.scroller?.visibleMessages
           if (visibleMessages) {
             visibleMessages.forEach(msg => {
@@ -405,13 +422,9 @@ onMounted(() => {
               }
             })
           }
-        }
-      } else if (notice_type === 'notify' && sub_type === 'input_status') {
-        if (isCurrentContact && (nowSecondTimestamp() - notice.time <= 10)) {
+        } else if (notice_type === 'notify' && sub_type === 'input_status') {
           chatArea.value?.refreshPeerStatus?.(JSON.parse(notice.event)?.status_text)
-        }
-      } else if (isSupportedNoticeMessage(notice)) {
-        if (isCurrentContact) {
+        } else if (isSupportedNoticeMessage(notice)) {
           chatArea.value?.$refs?.scroller?.addMessage(notice)
         }
       }

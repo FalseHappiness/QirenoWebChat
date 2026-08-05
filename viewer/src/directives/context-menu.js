@@ -3,7 +3,7 @@ import '@imengyu/vue3-context-menu/lib/vue3-context-menu.css';
 import "../styles/content-menu.css"
 import { h } from "vue";
 
-import { isFunction } from "../scripts/types-util.js";
+import { isArray, isFunction } from "../scripts/types-util.js";
 import QIcon from "../components/Common/Icons/QIcon.vue";
 
 let last_open_time = 0
@@ -118,6 +118,11 @@ function basicContextItem(text, onclick, iconName, condition = true, divided = f
   const map = {
     label: text,
     onClick: onclick
+  }
+  if (isFunction(onclick)) {
+    map.onClick = onclick
+  } else if (isArray(onclick)) {
+    map.children = onclick
   }
   for (const key in map) {
     const value = map[key]

@@ -387,6 +387,15 @@ function isScreenMobile() {
   return window.matchMedia('(max-width: 570px)').matches;
 }
 
+// 获取元素中心相对于窗口坐标
+function getElementCenter(el) {
+  const rect = el.getBoundingClientRect()
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  }
+}
+
 export {
   hasMouseSupport,
   formatRelativeTime,
@@ -399,4 +408,5 @@ export {
   nowSecondTimestamp,
   hasEnglish,
   isScreenMobile,
+  getElementCenter,
 }

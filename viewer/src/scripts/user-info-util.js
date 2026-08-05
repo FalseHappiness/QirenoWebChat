@@ -614,14 +614,18 @@ const getCacheGroupUserName = (group_id, user_id) => {
   return getCacheName([group_id, user_id], CacheNameKey.GROUP_USER)
 }
 
-const isGroupAdmin = (user) => {
-  return user?.role === 'admin'
+const isGroupAdmin = user => {
+  return user?.role === 'admin' || user === 'admin'
 }
-const isGroupOwner = (user) => {
-  return user?.role === 'owner'
+const isGroupOwner = user => {
+  return user?.role === 'owner' || user === 'owner'
 }
-const isGroupOperator = (user) => {
+const isGroupOperator = user => {
   return isGroupAdmin(user) || isGroupOwner(user)
+}
+
+const hasGroupMemberOperatePermission = (self, user) => {
+  return isGroupAdmin(self) || (isGroupAdmin(self) && !isGroupOperator(user))
 }
 
 export {
@@ -639,5 +643,8 @@ export {
   CacheNameKey,
   getContactNameRef,
   getCacheGroupUserName,
+  isGroupAdmin,
+  isGroupOwner,
   isGroupOperator,
+  hasGroupMemberOperatePermission,
 };

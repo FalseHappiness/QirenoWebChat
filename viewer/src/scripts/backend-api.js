@@ -1022,6 +1022,15 @@ async function fetchRenameGroupFolder(group_id, folder_id, name) {
   return await fetchAction("rename_group_file_folder", { group_id, folder_id, name })
 }
 
+// duration 秒
+async function fetchSetGroupMute(group_id, user_id, duration) {
+  return await fetchAction("set_group_ban", { group_id, user_id, duration })
+}
+
+async function fetchGroupMutedList(group_id) {
+  return await fetchActionData("get_group_shut_list", { group_id })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1089,4 +1098,6 @@ export {
   fetchRenameGroupFile,
   fetchRenameGroupFolder,
   getUserAvatarFrame,
+  fetchSetGroupMute,
+  fetchGroupMutedList,
 }

@@ -3,10 +3,11 @@ import { ref, onUnmounted, computed, h, onMounted, inject, toRaw } from 'vue'
 import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
+  checkResponseOK,
   fetchChangeEssenceMsg,
   fetchKickGroupUser,
   fetchRecallMessage, fetchRecordToText,
-  fetchSendMessage, fetchTranslateEnglish,
+  fetchSendMessage, fetchSetGroupMute, fetchTranslateEnglish,
   getUserLogo
 } from "@/scripts/backend-api.js";
 import { useGlobalStore } from "@/store/global.js";
@@ -18,7 +19,7 @@ import {
   vCustomMenu
 } from "@/directives/context-menu.js";
 import { vDoubleClick } from '@/directives/double-click-directive.js';
-import { formatRelativeTime, hasEnglish, parseJSON } from "@/scripts/util.js";
+import { formatRelativeTime, getElementCenter, hasEnglish, parseJSON } from "@/scripts/util.js";
 import { showErrorToast, showSuccessToast, showToast } from "@/scripts/toast.js";
 import { Emitter } from "@/composables/useEventBus.js";
 import { qqAppImg } from "@/composables/useBase.js";
@@ -26,8 +27,14 @@ import LoadingSpinner from "../../../Common/Widgets/LoadingSpinner.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { isFunction, isString } from "@/scripts/types-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
-import { showConfirmBox } from "@/scripts/popup-box-api.js";
-import { CacheNameKey, fetchDisplayName, getCacheName, getUserAvatarFrameCache } from "@/scripts/user-info-util.js";
+import { showConfirmBox, showPromptBox } from "@/scripts/popup-box-api.js";
+import {
+  CacheNameKey,
+  fetchDisplayName,
+  getCacheName,
+  getUserAvatarFrameCache,
+  hasGroupMemberOperatePermission, isGroupAdmin, isGroupOperator, isGroupOwner
+} from "@/scripts/user-info-util.js";
 
 const props = defineProps({
   message: {
@@ -229,12 +236,14 @@ const handleNoticePoke = () => {
   }])
 }
 
+const showContactInfo = e => {
+  const event = JSON.parse(props.message.event)
+  emit("click-show-contact-info", e, { user_id: event.user_id, nickname: event.sender.nickname })
+}
+
 const handleAvatarDoubleClick = {
   doubleClick: handleNoticePoke,
-  singleClick: e => {
-    const event = JSON.parse(props.message.event)
-    emit("click-show-contact-info", e, { user_id: event.user_id, nickname: event.sender.nickname })
-  }
+  singleClick: showContactInfo
 }
 
 const settingEssence = ref(false)
@@ -374,17 +383,17 @@ const customMessageContextMenu = () => {
       "recall_24",
       !isRecalled.value &&
       (
-        (self_info.role === 'owner') ||
+        isGroupOwner(self_info) ||
         (
           props.message.user_id === props.message.self_id &&
           (
             (Date.now() / 1000 - props.message.time <= 120) ||
-            self_info.role === 'admin'
+            isGroupAdmin(self_info)
           )
         ) ||
         (
-          !['owner', 'admin'].includes(sender_info.role) &&
-          self_info.role === 'admin'
+          !isGroupOperator(sender_info) &&
+          isGroupAdmin(self_info)
         )
       )
     ),
@@ -485,22 +494,38 @@ const currentGroupUserInfo = computed(() => {
   return findGroupUser(props.message.user_id)
 })
 
-const findGroupUser = user_id => {
-  return groupUsers.value?.find(user => user.user_id === user_id)
-}
+const findGroupUser = user_id => groupUsers.value?.find(user => user.user_id === user_id)
 
 const flattenContacts = inject('flattenContacts')
 const selectContact = inject("selectContact")
 
+const groupMutedList = inject("groupMutedList")
+
+const findGroupMutedUser = user_id => groupMutedList.value?.find(user => user.user_id === user_id)
+
 const customAvatarContextMenu = () => {
   const user_id = props.message.user_id
   const self_id = props.message.self_id
+  const group_id = props.message.group_id
   const userContact = {
     contact_id: user_id,
     type: 'private'
   }
-  const selfRole = findGroupUser(self_id)?.role
-  const userRole = currentGroupUserInfo.value?.role
+  const user = currentGroupUserInfo.value
+  const operatePermission = hasGroupMemberOperatePermission(
+    findGroupUser(self_id),
+    user
+  )
+  const muteFunc = duration => (async () => {
+    const result = await fetchSetGroupMute(group_id, user_id, duration)
+    const operation = (duration === 0 ? "解除" : "") + "禁言"
+    if (checkResponseOK(result)) {
+      showSuccessToast(operation + "成功")
+    } else {
+      console.error(operation + "失败", result)
+      showErrorToast(operation + "失败:" + result?.message)
+    }
+  })
   return formatBasicContextItems([
     basicContextItem(
       '发送消息',
@@ -515,9 +540,7 @@ const customAvatarContextMenu = () => {
     ),
     basicContextItem(
       'TA',
-      () => {
-        Emitter.emit("input-at-somebody", user_id, displayName.value)
-      },
+      () => Emitter.emit("input-at-somebody", user_id, displayName.value),
       'at_24',
       isGroup.value
     ),
@@ -526,12 +549,28 @@ const customAvatarContextMenu = () => {
       handleNoticePoke,
       'poke_24'
     ),
+    basicContextItem(
+      '查看资料',
+      e => {
+        const el = avatarElement.value
+        if (el) {
+          const pos = getElementCenter(el)
+          showContactInfo({
+            clientX: pos.x,
+            clientY: pos.y
+          })
+        } else {
+          showContactInfo(e)
+        }
+      },
+      'files_24'
+    ),
     contextDividedItem(),
     basicContextItem(
       '移出本群',
       async () => {
         if (await showConfirmBox('温馨提醒', '确定将该成员从本群聊中移除吗？')) {
-          if ((await fetchKickGroupUser(props.message.group_id, user_id))?.status === 'ok') {
+          if ((await fetchKickGroupUser(group_id, user_id))?.status === 'ok') {
             showSuccessToast('已移出本群')
           } else {
             showErrorToast('移出本群失败')
@@ -539,15 +578,55 @@ const customAvatarContextMenu = () => {
         }
       },
       'remove_user_24',
-      isGroup.value && (
-        selfRole === 'owner' || (
-          selfRole === 'admin' &&
-          !['admin', 'owner'].includes(userRole)
-        )
-      )
+      isGroup.value && operatePermission
     ),
+    basicContextItem(
+      "设置群内禁言",
+      [
+        basicContextItem(
+          "10 分钟",
+          muteFunc(60 * 10)
+        ),
+        basicContextItem(
+          "1 小时",
+          muteFunc(60 * 60)
+        ),
+        basicContextItem(
+          "12 小时",
+          muteFunc(12 * 60 * 60)
+        ),
+        basicContextItem(
+          "1 天",
+          muteFunc(24 * 60 * 60)
+        ),
+        basicContextItem(
+          "自定义时长",
+          async () => {
+            const duration = await showPromptBox(
+              "设定禁言时长",
+              `设定 ${user.nickname} 的禁言时长，不能超过 30 天，单位为秒：`,
+              "1800",
+              ""
+            )
+            if (duration !== null) {
+              await muteFunc(parseInt(duration))()
+            }
+          }
+        ),
+      ],
+      'message_off_24',
+      isGroup.value && operatePermission
+    ),
+    basicContextItem(
+      "解除禁言",
+      muteFunc(0),
+      'message_off_24',
+      isGroup.value && operatePermission && !!findGroupMutedUser(user_id)
+    )
   ])
 }
+
+const avatarElement = ref(null)
 
 const avatarFrameUrl = computed(() => getUserAvatarFrameCache(props.message?.user_id))
 
@@ -627,6 +706,7 @@ onUnmounted(() => {
         :src="getUserLogo(message.user_id)"
         v-double-click="handleAvatarDoubleClick"
         v-custom-menu="customAvatarContextMenu"
+        ref="avatarElement"
       />
     </div>
     <div class="message-msg-side">
