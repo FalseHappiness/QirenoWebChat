@@ -746,6 +746,13 @@ function renderNoticeChildren(event, isPreview, promises) {
           '头衔'
         )
         break
+      case 'group_name':
+        children.push(
+          canSelfName(user_id),
+          `修改了群名称为`,
+          createNoticeExecuteCommand(undefined, event.name_new)
+        )
+        break
       default:
     }
   }
@@ -914,7 +921,7 @@ const parseNotice = (notice) => {
 const isSupportedNoticeMessage = notice => {
   const { notice_type, sub_type } = notice
   return (
-    (notice_type === 'notify' && ['poke', 'title'].includes(sub_type)) ||
+    (notice_type === 'notify' && ['poke', 'title', 'group_name'].includes(sub_type)) ||
     (notice_type === 'essence' && sub_type === 'add') ||
     (notice_type === 'group_ban' && ['ban', 'lift_ban'].includes(sub_type)) ||
     (notice_type === 'group_increase' && ['approve', 'invite'].includes(sub_type)) ||

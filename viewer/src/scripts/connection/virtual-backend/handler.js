@@ -393,7 +393,7 @@ export async function getMessagesCore(params, db, onebotWS) {
     const noticeFilter = {
       sub_type: [
         'poke', 'add', 'ban', 'lift_ban', 'approve', 'invite',
-        'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null
+        'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null, 'group_name'
       ],
       notice_type: [
         'notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',

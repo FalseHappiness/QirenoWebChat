@@ -196,8 +196,8 @@ const getFriendInfoCache = user_id => {
   return getFriendListCache()?.find?.(user => user.user_id === user_id)
 }
 
-const getGroupListCache = group_id => {
-  return getCache(CacheKey.GROUP_LIST, { group_id })
+const getGroupListCache = () => {
+  return getCache(CacheKey.GROUP_LIST)
 }
 
 const getGroupInfoCache = group_id => {
@@ -685,6 +685,8 @@ export {
   setUserPersonalization,
   getGroupInfoCacheFromAll,
   getGroupMemberListCache,
+  getGroupListCache,
+  getFriendListCache,
   updateGroupMemberInfoCache,
   updateGroupInfoCache,
   setCacheName,

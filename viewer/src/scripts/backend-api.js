@@ -25,7 +25,7 @@ import {
   setGroupInfoCache, setGroupListCache,
   setGroupMemberInfoCache,
   setGroupMemberListCache,
-  setStrangerInfoCache, setUserPersonalization, updateGroupMemberInfoCache
+  setStrangerInfoCache, setUserPersonalization, updateGroupInfoCache, updateGroupMemberInfoCache
 } from "./user-info-util.js";
 
 /**
@@ -1046,6 +1046,30 @@ async function fetchSetGroupAdmin(group_id, user_id, enable = true) {
   return result
 }
 
+async function fetchSetGroupName(group_id, group_name) {
+  const result = await fetchAction('set_group_name', { group_id, group_name })
+  if (checkResponseOK(result)) {
+    updateGroupInfoCache(group_id, { group_name: group_name })
+  }
+  return result
+}
+
+async function fetchSetGroupAllMuted(group_id, enable) {
+  const result = await fetchAction('set_group_whole_ban', { group_id, enable })
+  if (checkResponseOK(result)) {
+    updateGroupInfoCache(group_id, { group_all_shut: enable ? -1 : 0 })
+  }
+  return result
+}
+
+async function fetchLeaveGroup(group_id, is_dismiss = false) {
+  return await fetchAction('set_group_leave', { group_id, is_dismiss })
+}
+
+async function fetchDeleteFriend(user_id) {
+  return await fetchAction('delete_friend', { user_id })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1116,4 +1140,8 @@ export {
   fetchSetGroupMute,
   fetchGroupMutedList,
   fetchSetGroupAdmin,
+  fetchSetGroupName,
+  fetchSetGroupAllMuted,
+  fetchLeaveGroup,
+  fetchDeleteFriend,
 }

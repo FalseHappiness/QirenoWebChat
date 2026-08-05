@@ -2,10 +2,10 @@
 import { computed, inject, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import MessageItem from './Message/MessageItem.vue'
 import {
-  fetchGroupMemberInfo,
-  fetchGroupNotice,
-  fetchMsg,
-  fetchSetGroupMemberCard
+  checkResponseOK, fetchDeleteFriend,
+  fetchGroupNotice, fetchLeaveGroup,
+  fetchMsg, fetchSetGroupAllMuted,
+  fetchSetGroupMemberCard, getGroupLogo, getUserLogo
 } from "@/scripts/backend-api.js";
 import PageScroller from "../../Common/Scrolling/PageScroller.vue";
 import SimpleBarCore from "simplebar";
@@ -23,12 +23,15 @@ import GroupAlbumViewer from "./Group/GroupAlbumViewer.vue";
 import { qqAppImg } from "@/composables/useBase.js";
 import CustomScrollBar from "../../Common/Scrolling/CustomScrollBar.vue";
 import ImageViewer from "../../Common/Media/ImageViewer.vue";
-import { isEmptyObject, isObject, isString } from "@/scripts/types-util.js";
+import { isEmptyObject, isNumber, isObject, isString } from "@/scripts/types-util.js";
 import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../Common/Icons/QIcon.vue";
-import { CacheNameKey, getCacheName, getContactNameRef } from "@/scripts/user-info-util.js";
+import { getContactNameRef, getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
 import GroupSignView from "@/components/Destination/Chat/Group/GroupSignView.vue";
 import { checkSameContact } from "@/scripts/contacts-util.js";
+import { Switch as ASwitch } from "ant-design-vue";
+import { showConfirmBox } from "@/scripts/popup-box-api.js";
+import { showErrorToast, showSuccessToast } from "@/scripts/toast.js";
 
 const activeContact = inject("activeContact")
 const selfInfo = inject("selfInfo")
@@ -339,25 +342,16 @@ const getGroupNotice = async () => {
   groupNotifications.value = await fetchGroupNotice(activeContact.value.contact_id);
 }
 
-const groupSelfInfo = ref(null);
+const groupSelfInfo = computed(() => groupUsers.value?.find(user => user.user_id === selfInfo.value?.user_id));
 
-watch(() => selfInfo.value, (newVal, oldVal) => {
-  if (oldVal == null && newVal != null) {
-    getGroupSelfInfo()
+watch(() => groupSelfInfo.value, newVal => {
+  if (newVal != null) {
+    groupSelfCardModel.value = newVal.card
   }
 })
 
-const getGroupSelfInfo = async () => {
-  if (isGroup.value) {
-    if (selfInfo.value?.user_id) {
-      groupSelfInfo.value = await fetchGroupMemberInfo(activeContact.value.contact_id, selfInfo.value.user_id);
-      groupSelfCardModel.value = groupSelfInfo?.value?.card;
-    }
-  }
-}
-
-const groupSelfCardModel = ref("");
-const groupRemarkModel = ref("");
+const groupSelfCardModel = ref(null);
+const groupRemarkModel = ref(null);
 
 const handleGroupSelfCardChange = async () => {
   if (groupSelfCardModel.value !== groupSelfInfo?.value?.card) {
@@ -440,6 +434,70 @@ const createChangeView = refVar => {
   }
 }
 
+const selfGroupOperator = computed(() => isGroupOperator(groupSelfInfo.value))
+
+const groupNameModel = ref(null)
+
+const changeGroupContactName = inject("changeGroupContactName")
+
+const handleGroupNameChange = () => {
+  if (groupNameModel.value !== activeContact.value?.remark) {
+    changeGroupContactName(activeContact.value.contact_id, groupNameModel.value)
+  }
+}
+
+const transGroupAllMuted = (value, toBool = true) => toBool ? value === -1 : (value ? -1 : 0)
+
+const groupAllMutedModel = ref(null)
+
+const currenGroupAllMuted = () => getGroupInfoCacheFromAll(activeContact.value?.contact_id)?.group_all_shut
+
+watch(currenGroupAllMuted, val => {
+  if (isNumber(val)) {
+    groupAllMutedModel.value = transGroupAllMuted(val)
+  }
+})
+
+const handleGroupAllMutedChange = checked => {
+  if (groupAllMutedModel.value !== transGroupAllMuted(currenGroupAllMuted())) {
+    fetchSetGroupAllMuted(activeContact.value.contact_id, checked)
+  }
+}
+
+const handleLeaveGroup = async () => {
+  if (await showConfirmBox("退出群聊", "退出后不会通知群聊中其他成员，且不会再接受此群消息。")) {
+    const group_id = activeContact.value.contact_id
+    const result = await fetchLeaveGroup(group_id)
+    if (checkResponseOK(result)) {
+      showSuccessToast("退出成功")
+    } else {
+      console.error("Leave group error:", group_id, result)
+      showErrorToast("退群失败: " + result?.message)
+    }
+  }
+}
+
+const friendRemarkModel = ref(null)
+const changeFriendContactRemark = inject("changeFriendContactRemark")
+const handleChangeFriendRemark = () => {
+  if (friendRemarkModel.value !== activeContact.value?.remark) {
+    changeFriendContactRemark(activeContact.value?.contact_id, friendRemarkModel.value)
+  }
+}
+
+const handleDeleteFriend = async () => {
+  if (await showConfirmBox("确定删除该好友吗？")) {
+    const user_id = activeContact.value.contact_id
+    const result = await fetchDeleteFriend(user_id)
+    if (checkResponseOK(result)) {
+      showSuccessToast("已删除")
+    } else {
+      console.error("Leave group error:", user_id, result)
+      showErrorToast("删除好友失败: " + result?.message)
+    }
+  }
+}
+
 const showGroupAnnounceViewer = ref(false);
 const changeShowGroupAnnounce = createChangeView(showGroupAnnounceViewer)
 
@@ -460,9 +518,11 @@ const initContactInfo = () => {
   getName()
   if (isGroup.value) {
     groupRemarkModel.value = activeContact.value?.remark;
+    groupNameModel.value = activeContact.value?.real_name
     getGroupNotice()
-    getGroupSelfInfo()
     Emitter.on("show-group-notices", changeShowGroupAnnounce)
+  } else {
+    friendRemarkModel.value = activeContact.value?.remark
   }
 }
 
@@ -568,7 +628,7 @@ defineExpose({
           <span class="text-muted font-size-100">&nbsp;{{ peerStatusText }}</span>
         </template>
       </span>
-      <span class="chat-area-head-control" v-if="isGroup">
+      <span class="chat-area-head-control">
         <Tooltip
           content="更多"
           use-target-slot
@@ -584,80 +644,128 @@ defineExpose({
       </span>
     </div>
 
-    <CustomScrollBar v-if="isGroup" class="chat-area-contact-more" ref="chatAreaContactMore"
+    <CustomScrollBar v-if="activeContact" class="chat-area-contact-more" ref="chatAreaContactMore"
                      :style="{ right: showContactMore ? '0' : '-100%' }">
-      <div class="chat-area-contact-more-area chat-area-contact-info">
-        <img
-          :src="`https://p.qlogo.cn/gh/${activeContact.contact_id}/${activeContact.contact_id}/100`"
-          alt=""
-          class="chat-area-contact-logo">
-        <div class="overflow-ellipsis">
-          <span :title="displayName">{{ displayName }}</span>
-          <br>
-          <small style="color: var(--color-text-muted);display: block;margin-top: -4px;">{{
-              activeContact.contact_id
-            }}</small>
-        </div>
-      </div>
-
-      <div class="chat-area-contact-more-area">
-        群聊成员
-      </div>
-
-      <div class="chat-area-contact-more-area container-inline-size">
-        群应用
-        <div class="group-applications-list">
-          <div @click="changeShowGroupFiles()" class="group-app-list-app-container">
-            <QIcon name="filelook_folder_16" class="group-app-icon"/>
-            群文件
-          </div>
-          <div @click="changeShowGroupAlbum()" class="group-app-list-app-container">
-            <QIcon name="image_24" class="group-app-icon" style="color: var(--color-primary);"/>
-            群相册
-          </div>
-          <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">
-            <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')" class="group-app-icon"/>
-            群精华
-          </div>
-          <div @click="changeShowGroupSign()" class="group-app-list-app-container">
-            <QIcon name="calendar_24" class="group-app-icon"/>
-            群打卡
+      <template v-if="isGroup">
+        <div class="chat-area-contact-more-area chat-area-contact-info">
+          <img
+            :src="getGroupLogo(activeContact.contact_id)"
+            alt=""
+            class="chat-area-contact-logo">
+          <div class="overflow-ellipsis">
+            <span :title="displayName">{{ displayName }}</span>
+            <br>
+            <small>{{ activeContact.contact_id }}</small>
           </div>
         </div>
-      </div>
 
-      <div class="chat-area-contact-more-area with-title display-flex cursor-pointer" data-title="群公告"
-           @click="changeShowGroupAnnounce()">
-        <span v-if="groupNotifications == null" style="color: var(--color-text-muted);">内容获取中</span>
-        <span v-else-if="!groupNotifications?.length" style="color: var(--color-text-muted);">未设置</span>
-        <span v-else class="overflow-ellipsis">
+        <div class="chat-area-contact-more-area">
+          群聊成员
+        </div>
+
+        <label
+          v-if="selfGroupOperator && isString(groupNameModel)"
+          class="chat-area-contact-more-area with-title input-content"
+          data-title="群聊名称">
+          <input v-model="groupNameModel"
+                 @blur="handleGroupNameChange"
+                 @keydown="handleEnterBlur"
+                 type="text"
+                 placeholder="填写群名称">
+        </label>
+
+        <div class="chat-area-contact-more-area container-inline-size">
+          群应用
+          <div class="group-applications-list">
+            <div @click="changeShowGroupFiles()" class="group-app-list-app-container">
+              <QIcon name="filelook_folder_16" class="group-app-icon"/>
+              群文件
+            </div>
+            <div @click="changeShowGroupAlbum()" class="group-app-list-app-container">
+              <QIcon name="image_24" class="group-app-icon" style="color: var(--color-primary);"/>
+              群相册
+            </div>
+            <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">
+              <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')" class="group-app-icon"/>
+              群精华
+            </div>
+            <div @click="changeShowGroupSign()" class="group-app-list-app-container">
+              <QIcon name="calendar_24" class="group-app-icon"/>
+              群打卡
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-area-contact-more-area with-title display-flex cursor-pointer" data-title="群公告"
+             @click="changeShowGroupAnnounce()">
+          <span v-if="groupNotifications == null" style="color: var(--color-text-muted);">内容获取中</span>
+          <span v-else-if="!groupNotifications?.length" style="color: var(--color-text-muted);">未设置</span>
+          <span v-else class="overflow-ellipsis">
           <span v-if="latestGroupNoticeMsg?.image?.length">【图片】</span>
           <span v-html="latestGroupNoticeMsg.text"></span>
         </span>
-        <EnterArrow/>
-      </div>
+          <EnterArrow/>
+        </div>
 
-      <label
-        v-if="groupSelfInfo"
-        class="chat-area-contact-more-area with-title input-content"
-        data-title="我的本群昵称">
-        <input v-model="groupSelfCardModel"
-               @blur="handleGroupSelfCardChange"
-               @keydown="handleEnterBlur"
-               type="text"
-               class="overflow-ellipsis"
-               placeholder="填写我的本群昵称">
-      </label>
+        <label
+          v-if="groupSelfInfo && isString(groupSelfCardModel)"
+          class="chat-area-contact-more-area with-title input-content"
+          data-title="我的本群昵称">
+          <input v-model="groupSelfCardModel"
+                 @blur="handleGroupSelfCardChange"
+                 @keydown="handleEnterBlur"
+                 type="text"
+                 class="overflow-ellipsis"
+                 placeholder="填写我的本群昵称">
+        </label>
 
-      <label
-        class="chat-area-contact-more-area with-title input-content"
-        data-title="群聊备注">
-        <input v-model="groupRemarkModel"
-               @blur="handleGroupRemarkChange"
-               @keydown="handleEnterBlur"
-               type="text"
-               placeholder="填写备注">
-      </label>
+        <label
+          v-if="isString(groupRemarkModel)"
+          class="chat-area-contact-more-area with-title input-content"
+          data-title="群聊备注">
+          <input v-model="groupRemarkModel"
+                 @blur="handleGroupRemarkChange"
+                 @keydown="handleEnterBlur"
+                 type="text"
+                 placeholder="填写备注">
+        </label>
+
+        <div
+          v-if="selfGroupOperator"
+          class="chat-area-contact-more-area with-title display-flex cursor-pointer"
+          data-title="发言权限">
+          全员禁言
+          <ASwitch v-model:checked="groupAllMutedModel" @change="handleGroupAllMutedChange" size="small"/>
+        </div>
+
+        <div class="chat-area-contact-more-area contact-more-leave-group" @click="handleLeaveGroup">退出群聊</div>
+      </template>
+      <template v-else>
+        <div class="chat-area-contact-more-area chat-area-contact-info">
+          <img
+            :src="getUserLogo(activeContact.contact_id)"
+            alt=""
+            class="chat-area-contact-logo">
+          <div class="overflow-ellipsis">
+            <span :title="displayName">{{ displayName }}</span>
+            <br>
+            <small>{{ activeContact.contact_id }}</small>
+          </div>
+        </div>
+
+        <label
+          v-if="isString(friendRemarkModel)"
+          class="chat-area-contact-more-area with-title input-content"
+          data-title="好友备注">
+          <input v-model="friendRemarkModel"
+                 @blur="handleChangeFriendRemark"
+                 @keydown="handleEnterBlur"
+                 type="text"
+                 placeholder="填写备注">
+        </label>
+
+        <div class="chat-area-contact-more-area contact-more-delete-friend" @click="handleDeleteFriend">删除好友</div>
+      </template>
     </CustomScrollBar>
 
     <div v-if="!activeContact" class="display-flex justify-content-center align-items-center height-100">
@@ -872,6 +980,12 @@ defineExpose({
   margin: 5px 10px 5px 5px;
 }
 
+.chat-area-contact-info small {
+  color: var(--color-text-muted);
+  display: block;
+  margin-top: -4px;
+}
+
 .chat-area-contact-info {
   display: flex;
   align-items: center;
@@ -901,6 +1015,12 @@ defineExpose({
 .group-app-icon {
   width: 30px;
   height: 30px;
+}
+
+.contact-more-leave-group, .contact-more-delete-friend {
+  @include flex-center-children;
+  color: $color-text-danger;
+  cursor: pointer;
 }
 
 @include mobile {

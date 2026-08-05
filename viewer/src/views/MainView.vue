@@ -18,7 +18,7 @@ import {
   fetchFriendList,
   fetchSetFriendRemark,
   checkResponseOK,
-  fetchGroupMutedList
+  fetchGroupMutedList, fetchSetGroupName
 } from "../scripts/backend-api.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
@@ -33,11 +33,12 @@ import {
   createGroupContact, createPrivateContact,
   flattenCategorizedContacts
 } from "../scripts/contacts-util.js";
-import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
-import { isArray, isNumber } from "../scripts/types-util.js";
+import { parseJSON } from "../scripts/util.js";
+import { isNumber, isString } from "../scripts/types-util.js";
 import { DestKey } from "../scripts/view-keys.js";
 import {
-  getGroupInfoCacheFromAll, getGroupMemberListCache,
+  getGroupListCache,
+  getGroupMemberListCache,
   updateGroupInfoCache,
   updateGroupMemberInfoCache
 } from "@/scripts/user-info-util.js";
@@ -50,6 +51,7 @@ const props = defineProps({
 });
 
 const categorizedContacts = ref([])
+
 const loadingContacts = ref(false)
 provide("isLoadingContacts", loadingContacts)
 const activeContact = ref(null)
@@ -78,9 +80,9 @@ const changeDestView = (key, active) => {
 }
 provide("changeDestView", changeDestView)
 
-const recentContacts = () => {
+const recentContacts = computed(() => {
   return categorizedContacts.value.find?.(c => c.id === -100)?.contacts || []
-}
+})
 
 const flattenContacts = computed(() => {
   return flattenCategorizedContacts(categorizedContacts.value)
@@ -126,7 +128,7 @@ provide("selectContact", selectContact)
 
 
 const updateContactRemark = (contact, remark) => {
-  if (!remark) return
+  if (!isString(remark)) return
   for (const category of (categorizedContacts.value || [])) {
     for (const c of (category.contacts || [])) {
       if (checkSameContact(c, contact)) {
@@ -187,6 +189,39 @@ const changeFriendContactRemark = async (user_id, remark) => {
   }
 }
 provide("changeFriendContactRemark", changeFriendContactRemark)
+
+const updateContactName = (contact, name) => {
+  if (!name) return
+  for (const category of (categorizedContacts.value || [])) {
+    for (const c of (category.contacts || [])) {
+      if (checkSameContact(c, contact)) {
+        c.real_name = name
+        c.name = c.remark || name || c.name
+      }
+    }
+  }
+  if (checkSameContact(contact, activeContact.value)) {
+    activeContact.value.real_name = name
+    activeContact.value.name = activeContact.value.remark || name || activeContact.value.name
+  }
+}
+
+const changeGroupContactName = async (contact_id, name) => {
+  const result = await fetchSetGroupName(
+    contact_id,
+    name
+  );
+  if (checkResponseOK(result)) {
+    updateContactName(
+      createGroupContact(contact_id),
+      name
+    )
+  } else {
+    console.log("Change group contact remark error: ", contact_id, name, result)
+    showErrorToast(`改变群 ${contact_id} 名称为 ${name} 失败`)
+  }
+}
+provide("changeGroupContactName", changeGroupContactName)
 
 const initAppData = () => {
   fetchFriendList()
@@ -438,6 +473,11 @@ onMounted(() => {
               user_id,
               { title: event.title }
             )
+          } else if (sub_type === 'group_name') {
+            updateContactName(
+              createGroupContact(group_id),
+              event.name_new
+            )
           }
         } else if (notice_type === 'group_card') {
           updateGroupMemberInfoCache(
@@ -455,13 +495,13 @@ onMounted(() => {
     onNewContact: (newContact) => {
       // 检查是否已存在该联系人
       const findTarget = () => {
-        return recentContacts().find((c) => c.contact_id === newContact.contact_id && c.type === newContact.type)
+        return recentContacts.value.find((c) => c.contact_id === newContact.contact_id && c.type === newContact.type)
       }
       let target = findTarget()
 
       if (!target) {
         // 构造新联系人对象
-        recentContacts().unshift({
+        recentContacts.value.unshift({
           contact_id: newContact.contact_id,
           type: newContact.type,
         })

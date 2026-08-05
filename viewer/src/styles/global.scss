@@ -6,6 +6,23 @@
   -webkit-app-region: no-drag;
 }
 
+.ant-switch.ant-switch-small.ant-switch-checked .ant-switch-handle {
+  inset-inline-start: calc(100% - 15px);
+}
+
+.ant-switch .ant-switch-handle {
+  top: 3px;
+  inset-inline-start: 4px;
+  width: 18px;
+  height: 18px;
+}
+
+.ant-switch.ant-switch-small {
+  min-width: 36px;
+  height: 18px;
+  line-height: 18px;
+}
+
 .no-user-select {
   @extend %no-user-select;
 }
