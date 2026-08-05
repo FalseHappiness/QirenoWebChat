@@ -396,10 +396,10 @@ onMounted(() => {
     },
     onNotice: notice => {
       if (checkMsgIsContact(notice, activeContact.value)) {
-        const { notice_type, sub_type } = notice
+        const { notice_type, sub_type, user_id, group_id } = notice
         const event = parseJSON(notice.event)
         if (notice_type === 'group_ban') {
-          const { duration, user_id, group_id } = event
+          const { duration } = event
           const isBan = sub_type === 'ban'
           if (String(user_id) === '0') {
             updateGroupInfoCache(
@@ -417,8 +417,7 @@ onMounted(() => {
               }
             )
           }
-        }
-        if (['group_recall', 'friend_recall'].includes(notice_type)) {
+        } else if (['group_recall', 'friend_recall'].includes(notice_type)) {
           const is_group = notice_type === 'group_recall'
           const visibleMessages = chatArea.value?.$refs?.scroller?.visibleMessages
           if (visibleMessages) {
@@ -430,9 +429,19 @@ onMounted(() => {
               }
             })
           }
-        } else if (notice_type === 'notify' && sub_type === 'input_status') {
-          chatArea.value?.refreshPeerStatus?.(JSON.parse(notice.event)?.status_text)
-        } else if (isSupportedNoticeMessage(notice)) {
+        } else if (notice_type === 'notify') {
+          if (sub_type === 'input_status') {
+            chatArea.value?.refreshPeerStatus?.(JSON.parse(notice.event)?.status_text)
+          } else if (sub_type === 'title') {
+            updateGroupMemberInfoCache(
+              group_id,
+              user_id,
+              { title: event.title }
+            )
+          }
+        }
+
+        if (isSupportedNoticeMessage(notice)) {
           chatArea.value?.$refs?.scroller?.addMessage(notice)
         }
       }

@@ -255,9 +255,17 @@ class VirtualDB extends Dexie {
         }
 
         // 4. 群聊通知
-        if (groupId && groupId !== 0 && postType === 'notice' &&
-          ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove', 'kick'].includes(subType) &&
-          ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease', 'group_msg_emoji_like'].includes(noticeType)) {
+        if (
+          groupId && groupId !== 0 && postType === 'notice' &&
+          [
+            'poke', 'add', 'ban', 'lift_ban',
+            'approve', 'invite', 'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null
+          ].includes(subType) &&
+          [
+            'notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',
+            'group_msg_emoji_like', 'group_recall', 'friend_recall'
+          ].includes(noticeType)
+        ) {
           const key = `group_${groupId}`;
           const currName = event?.group_name ?? null;
           if (!groupMap.has(key) || groupMap.get(key).last_timestamp < ts) {

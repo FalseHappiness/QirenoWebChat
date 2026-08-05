@@ -425,43 +425,38 @@ const isSecretEmoji = computed(() => {
 const scrollToMidwayMsg = inject('scrollToMidwayMsg')
 const findMessage = inject('findMessage')
 
-const handleNoticeExecuteCommand = e => {
-  const element = e.target?.closest('.notice-execute-command')
-  if (element) {
-    const command = element.dataset.command
-    if (isString(command)) {
-      const jumpToMsg = 'jump-to-msg-'
-      const openEssence = 'open-essence-window'
-      const viewUserInfo = 'view-user-info-'
-      if (command.startsWith(jumpToMsg)) {
-        const msg = element.jumpToMsg
-        if (msg === undefined) {
-          showToast('warning', '正在获取消息中，请等待')
-        } else if (msg === null) {
-          showToast('error', '找不到消息')
-        } else {
-          scrollToMidwayMsg(msg)
-        }
-      } else if (command === openEssence) {
-        emit('change-show-essence-list')
-      } else if (command.startsWith(viewUserInfo)) {
-        emit("click-show-contact-info", e, command.substring(viewUserInfo.length))
-      }
-    }
-  }
-}
-
 const handleMessageExecuteCommand = e => {
   const element = e.target?.closest('.message-execute-command')
   if (element) {
-    const command = element.dataset.command
+    const dataset = element.dataset
+    const command = dataset.command
     if (isString(command)) {
-      const atSomebody = 'at-somebody'
-      const showGroupNotice = 'show-group-notice'
-      if (command === atSomebody) {
-        Emitter.emit("input-at-somebody", element.dataset.userId, element.dataset.displayName)
-      } else if (command === showGroupNotice) {
-        emit("change-show-group-notice")
+      switch (command) {
+        case 'jump-to-msg': {
+          const msg = element.jumpToMsg
+          if (msg === undefined) {
+            showToast('warning', '正在获取消息中，请等待')
+          } else if (msg === null) {
+            showToast('error', '找不到消息')
+          } else {
+            scrollToMidwayMsg(msg)
+          }
+          break
+        }
+        case 'open-essence-window':
+          emit('change-show-essence-list')
+          break
+        case 'view-user-info':
+          emit("click-show-contact-info", e, dataset.userId)
+          break
+        case 'at-somebody':
+          Emitter.emit("input-at-somebody", dataset.userId, dataset.displayName)
+          break
+        case 'show-group-notice':
+          emit("change-show-group-notice")
+          break
+        default:
+          showErrorToast("未知操作")
       }
     }
   }
@@ -629,10 +624,10 @@ onMounted(() => {
   document.addEventListener('mouseleave', handleMouseLeave, { capture: true })
   document.addEventListener('mousedown', handleDocumentClick)
   if (noticeContainer.value) {
-    const jumpToMsgCommands = noticeContainer.value.querySelectorAll('[data-command^="jump-to-msg-"]')
+    const jumpToMsgCommands = noticeContainer.value.querySelectorAll('[data-command="jump-to-msg"]')
     if (jumpToMsgCommands) {
       jumpToMsgCommands.forEach(async element => {
-        const message_id = parseInt(element.dataset.command.substring("jump-to-msg-".length))
+        const message_id = Number(element.dataset.messageId)
         if (message_id) {
           try {
             const msg = await findMessage(message_id)
@@ -673,7 +668,7 @@ onUnmounted(() => {
   <div
     class="notice-container"
     v-if="message.post_type === 'notice'"
-    @click="handleNoticeExecuteCommand"
+    @click="handleMessageExecuteCommand"
     ref="noticeContainer"
   >
     <notice-html class="notice no-user-select"/>
@@ -1022,7 +1017,7 @@ onUnmounted(() => {
     margin: -2px 1px 0 1px;
   }
 
-  &:deep(.notice-execute-command) {
+  &:deep(.message-execute-command) {
     color: $color-text-record-cancel;
     cursor: pointer;
     text-decoration: none;

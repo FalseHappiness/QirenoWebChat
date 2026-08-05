@@ -165,9 +165,10 @@ async def get_messages_core(params: dict):
     if post_type is None and message_type is not None and user_id == -1:
         if message_type in ['group', 'private']:
             notice_filter: Dict[str, Union[str, int, float, bool, List, None]] = {
-                'sub_type': ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove', 'kick'],
+                'sub_type': ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove', 'kick',
+                             'set', 'unset', 'title', None],
                 'notice_type': ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',
-                                'group_msg_emoji_like'],
+                                'group_msg_emoji_like', 'group_admin', 'group_recall', 'friend_recall'],
                 'post_type': 'notice',
             }
             filters['post_type'] = ['message', 'message_sent']

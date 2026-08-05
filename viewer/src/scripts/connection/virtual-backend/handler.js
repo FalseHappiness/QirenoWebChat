@@ -391,8 +391,14 @@ export async function getMessagesCore(params, db, onebotWS) {
   if (postType === undefined && messageType && userId === -1) {
     // 同时查消息和通知
     const noticeFilter = {
-      sub_type: ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove', 'kick'],
-      notice_type: ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease', 'group_msg_emoji_like'],
+      sub_type: [
+        'poke', 'add', 'ban', 'lift_ban', 'approve', 'invite',
+        'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null
+      ],
+      notice_type: [
+        'notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',
+        'group_msg_emoji_like', 'group_recall', 'friend_recall'
+      ],
       post_type: 'notice',
     };
     msgFilter.post_type = ['message', 'message_sent'];
