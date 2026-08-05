@@ -120,6 +120,10 @@ const createDisplayNameSpan = (is_group, group_id, user_id, promises) => {
   })
 
   const promise = (async () => {
+    if (user_id === 0) {
+      name = '未知用户'
+      return
+    }
     const result = await fetchDisplayName(id_list, type, (newName) => {
       if (vnode?.el) {
         vnode.el.textContent = newName;
@@ -622,7 +626,7 @@ const parseNoticePreview = (notice, returnPromise = false) => {
         '的消息被设为了精华消息'
       )
     } else if (event.notice_type === 'group_ban' && ['ban', 'lift_ban'].includes(event.sub_type)) {
-      if (event.duration <= 0 && String(event.user_id) === '0') {
+      if (String(event.user_id) === '0') {
         children.push(
           event.operator_id === event.self_id ? "你" :
             createDisplayNameSpan(
@@ -825,7 +829,7 @@ const parseNotice = notice => {
         createNoticeExecuteCommand('span', ['精华消息'], 'open-essence-window'),
       )
     } else if (event.notice_type === 'group_ban' && ['ban', 'lift_ban'].includes(event.sub_type)) {
-      if (event.duration <= 0 && String(event.user_id) === '0') {
+      if (String(event.user_id) === '0') {
         children.push(
           event.operator_id === event.self_id ? "你" :
             createNoticeExecuteCommand('span', [

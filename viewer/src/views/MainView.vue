@@ -34,8 +34,13 @@ import {
   flattenCategorizedContacts
 } from "../scripts/contacts-util.js";
 import { nowSecondTimestamp, parseJSON } from "../scripts/util.js";
-import { isNumber } from "../scripts/types-util.js";
+import { isArray, isNumber } from "../scripts/types-util.js";
 import { DestKey } from "../scripts/view-keys.js";
+import {
+  getGroupInfoCacheFromAll, getGroupMemberListCache,
+  updateGroupInfoCache,
+  updateGroupMemberInfoCache
+} from "@/scripts/user-info-util.js";
 
 const props = defineProps({
   account: {
@@ -55,11 +60,19 @@ const chatArea = computed(() => {
 })
 const wsInited = ref(false);
 const groupUsers = ref(null)
+watch(() => getGroupMemberListCache(activeContact.value?.contact_id), newVal => {
+  if (activeContact.value?.type === 'group') {
+    groupUsers.value = newVal
+  } else {
+    groupUsers.value = null
+  }
+})
 provide("groupUsers", groupUsers)
 
 const changeDestView = (key, active) => {
   if (![DestKey.CHAT_AREA, DestKey.BLANK].includes(key)) {
     activeContact.value = null
+    groupUsers.value = null
   }
   destinationView?.value?.changeView(key, active)
 }
@@ -92,8 +105,6 @@ watch(() => isConnected.value && selfId.value, val => {
 watch(activeContact, (newContact, oldContact) => {
   if (!checkSameContact(newContact, oldContact)) {
     groupEssenceMsgList.value = null
-    groupUsers.value = null
-    groupMutedList.value = null
   }
 })
 
@@ -241,7 +252,6 @@ const getMessages = async (
 ) => {
   let messages = []
   if (!activeContact.value) return messages
-  const contact = toRaw(activeContact.value)
 
   try {
     const params = {
@@ -265,14 +275,7 @@ const getMessages = async (
     }
 
     if (params.message_type === 'group') {
-      fetchGroupMemberList(params.group_id)
-        .then(
-          list => checkSameContact(activeContact.value, contact) ? groupUsers.value = list : 0
-        )
-      fetchGroupMutedList(params.group_id)
-        .then(
-          list => checkSameContact(activeContact.value, contact) ? groupMutedList.value = list : 0
-        )
+      fetchGroupMemberList(params.group_id).then(() => fetchGroupMutedList(params.group_id))
       // noinspection ES6MissingAwait
       getEssenceMsgList()
     }
@@ -356,9 +359,6 @@ provide("showContactInfo", options => contactInfoTooltip.value?.showContactInfo(
 const filesUploadTasks = ref([])
 provide("filesUploadTasks", filesUploadTasks)
 
-const groupMutedList = ref(null)
-provide("groupMutedList", groupMutedList)
-
 // 从 account prop 决定是否是直连模式
 const effectiveIsDirect = computed(() => {
   return props.account.mode === 'direct'
@@ -399,15 +399,23 @@ onMounted(() => {
         const { notice_type, sub_type } = notice
         const event = parseJSON(notice.event)
         if (notice_type === 'group_ban') {
-          if (sub_type === 'ban') {
-            if (groupMutedList.value) {
-              groupMutedList.value.push({
-                user_id: notice.user_id,
-                shut_up_time: event.time + event.duration
-              })
-            }
-          } else if (sub_type === 'lift_ban') {
-            groupMutedList.value = groupMutedList.value?.filter(item => item.user_id !== notice.user_id)
+          const { duration, user_id, group_id } = event
+          const isBan = sub_type === 'ban'
+          if (String(user_id) === '0') {
+            updateGroupInfoCache(
+              group_id,
+              {
+                group_all_shut: isBan ? -1 : 0
+              }
+            )
+          } else {
+            updateGroupMemberInfoCache(
+              group_id,
+              user_id,
+              {
+                shut_up_timestamp: isBan ? event.time + duration : 0
+              }
+            )
           }
         }
         if (['group_recall', 'friend_recall'].includes(notice_type)) {

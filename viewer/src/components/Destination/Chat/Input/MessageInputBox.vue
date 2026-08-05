@@ -28,7 +28,7 @@ import { getPokeDescription } from "@/scripts/faces-config.js";
 import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js";
 import { isArray, isBoolean, isFunction, isObject, isUndefined, isString } from "@/scripts/types-util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
-import { getCacheGroupUserName } from "@/scripts/user-info-util.js";
+import { getCacheGroupUserName, getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import { formatTimeOptions } from "@/scripts/util.js";
 
@@ -48,7 +48,7 @@ export default defineComponent({
     SimpleBar,
     Icon,
   },
-  inject: ['activeContact', "groupUsers", "filesUploadTasks", "groupMutedList", "selfId"],
+  inject: ['activeContact', "groupUsers", "filesUploadTasks", "selfId"],
   data() {
     return {
       lastCaretPosition: null,
@@ -2663,17 +2663,27 @@ export default defineComponent({
         });
     },
 
-    selfMutedInfo() {
-      return this.groupMutedList?.find(user => user.user_id === this.selfId)
+    selfGroupInfo() {
+      return this.groupUsers?.find?.(user => user.user_id === this.selfId)
+    },
+
+    isOperatorSelf() {
+      if (!this.isGroup) return false
+      return isGroupOperator(this.selfGroupInfo)
+    },
+
+    isGroupAllMuted() {
+      if (!this.isGroup) return false
+      return getGroupInfoCacheFromAll(this.activeContact.contact_id)?.group_all_shut === -1
     },
 
     hasBeenMuted() {
-      return !!this.selfMutedInfo
+      return !!this.selfGroupInfo?.shut_up_timestamp || (this.isGroupAllMuted && !this.isOperatorSelf)
     },
 
     selfMutedEndTime() {
-      return formatTimeOptions({
-        timestamp: this.selfMutedInfo?.shut_up_time || 0,
+      return this.isGroupAllMuted ? "全员禁言中" : formatTimeOptions({
+        timestamp: this.selfGroupInfo?.shut_up_timestamp || 0,
         alwaysMD: false
       })
     }

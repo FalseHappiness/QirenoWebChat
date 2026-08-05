@@ -25,7 +25,7 @@ import {
   setGroupInfoCache, setGroupListCache,
   setGroupMemberInfoCache,
   setGroupMemberListCache,
-  setStrangerInfoCache, setUserPersonalization
+  setStrangerInfoCache, setUserPersonalization, updateGroupMemberInfoCache
 } from "./user-info-util.js";
 
 /**
@@ -1028,7 +1028,14 @@ async function fetchSetGroupMute(group_id, user_id, duration) {
 }
 
 async function fetchGroupMutedList(group_id) {
-  return await fetchActionData("get_group_shut_list", { group_id })
+  const result = await fetchActionData("get_group_shut_list", { group_id })
+  if (isArray(result)) {
+    for (const user of result) {
+      console.log(updateGroupMemberInfoCache)
+      updateGroupMemberInfoCache(group_id, user.user_id, { shut_up_timestamp: user.shut_up_time })
+    }
+  }
+  return result
 }
 
 export {

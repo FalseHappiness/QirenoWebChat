@@ -273,7 +273,7 @@ const pttText = ref(undefined)
 const pttErrorText = ref(null)
 
 const customMessageContextMenu = () => {
-  const self_info = findGroupUser(props.message.self_id)
+  const self_info = currentGroupSelfInfo.value
   const sender_info = currentGroupUserInfo.value
   return formatBasicContextItems([
     basicContextItem(
@@ -490,32 +490,25 @@ const handleMessageDoubleClick = e => {
   }
 }
 
-const currentGroupUserInfo = computed(() => {
-  return findGroupUser(props.message.user_id)
-})
+const currentGroupUserInfo = computed(() => findGroupUser(props.message.user_id))
+const currentGroupSelfInfo = computed(() => findGroupUser(props.message.self_id))
 
 const findGroupUser = user_id => groupUsers.value?.find(user => user.user_id === user_id)
 
 const flattenContacts = inject('flattenContacts')
 const selectContact = inject("selectContact")
 
-const groupMutedList = inject("groupMutedList")
-
-const findGroupMutedUser = user_id => groupMutedList.value?.find(user => user.user_id === user_id)
-
 const customAvatarContextMenu = () => {
   const user_id = props.message.user_id
-  const self_id = props.message.self_id
   const group_id = props.message.group_id
   const userContact = {
     contact_id: user_id,
     type: 'private'
   }
   const user = currentGroupUserInfo.value
-  const operatePermission = hasGroupMemberOperatePermission(
-    findGroupUser(self_id),
-    user
-  )
+  const self = currentGroupSelfInfo.value
+  const hasBeenMuted = !!self.shut_up_timestamp
+  const operatePermission = hasGroupMemberOperatePermission(self, user)
   const muteFunc = duration => (async () => {
     const result = await fetchSetGroupMute(group_id, user_id, duration)
     const operation = (duration === 0 ? "解除" : "") + "禁言"
@@ -609,7 +602,7 @@ const customAvatarContextMenu = () => {
               ""
             )
             if (duration !== null) {
-              await muteFunc(parseInt(duration))()
+              await muteFunc(Math.min(parseInt(duration), 30 * 24 * 60 * 60))()
             }
           }
         ),
@@ -621,7 +614,7 @@ const customAvatarContextMenu = () => {
       "解除禁言",
       muteFunc(0),
       'message_off_24',
-      isGroup.value && operatePermission && !!findGroupMutedUser(user_id)
+      isGroup.value && operatePermission && hasBeenMuted
     )
   ])
 }

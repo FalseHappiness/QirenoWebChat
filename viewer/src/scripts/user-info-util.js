@@ -10,43 +10,42 @@ import { useGlobalStore } from "../store/global.js";
 
 class ResponseCache {
   /**
-   * 构造缓存实例
-   * @param {number} defaultExpireMs - 默认过期毫秒，默认1小时
+   * @param {number} defaultExpireMs 默认过期毫秒
    */
   constructor(defaultExpireMs = 3600 * 1000) {
     this.defaultExpireMs = defaultExpireMs;
   }
 
-  // 私有方法，每次操作前动态获取store
   #getCacheMap() {
     return useGlobalStore().responseCacheMap;
   }
 
   /**
    * 设置缓存
-   * @param {string} key 缓存键
-   * @param {*} value 缓存值（接口Response数据）
-   * @param {number} [expireMs] 自定义过期时间，不传使用默认1小时
+   * @param {string} key
+   * @param {*} value 允许 falsy 值
+   * @param {number} [expireMs]
+   * @returns {*} 原样返回传入的 value
    */
   set(key, value, expireMs) {
-    if (!value) return null
     const cache = this.#getCacheMap();
     const expire = Date.now() + (expireMs ?? this.defaultExpireMs);
-    cache.set(key, { value, expire });
-    return value
+    const cacheItem = { value, expire };
+    cache.set(key, cacheItem);
+    // 返回代理
+    return cache.get(key).value;
   }
 
   /**
-   * 获取缓存，过期自动删除返回null
-   * @param {string} key 缓存键
-   * @returns {*|null} 缓存数据，过期/不存在返回null
+   * 获取缓存，过期自动移除
+   * @param {string} key
+   * @returns {*|null}
    */
   get(key) {
     const cache = this.#getCacheMap();
     const item = cache.get(key);
     if (!item) return null;
 
-    // 判断是否过期
     if (Date.now() > item.expire) {
       cache.delete(key);
       return null;
@@ -55,42 +54,70 @@ class ResponseCache {
   }
 
   /**
-   * 删除指定key缓存
+   * 仅查看缓存元数据，不会清理过期项
    * @param {string} key
+   * @returns {object|null}
    */
+  peek(key) {
+    const cache = this.#getCacheMap();
+    return cache.get(key) ?? null;
+  }
+
   delete(key) {
-    const cache = this.#getCacheMap();
-    cache.delete(key);
+    this.#getCacheMap().delete(key);
   }
 
-  /**
-   * 清空全部缓存
-   */
   clear() {
-    const cache = this.#getCacheMap();
-    cache.clear();
+    this.#getCacheMap().clear();
   }
 
   /**
-   * 主动清理所有已过期缓存（定时调用可优化内存）
+   * 清理全部过期缓存（先收集key再批量删除，规避迭代陷阱）
    */
   cleanExpired() {
     const cache = this.#getCacheMap();
     const now = Date.now();
+    const expiredKeys = [];
+
     for (const [key, item] of cache) {
-      if (now > item.expire) {
-        cache.delete(key);
-      }
+      if (now > item.expire) expiredKeys.push(key);
     }
+    expiredKeys.forEach(k => cache.delete(k));
   }
 
   /**
-   * 判断key是否存在且未过期
+   * 判断有效缓存，过期直接返回false
    * @param {string} key
    * @returns {boolean}
    */
   has(key) {
     return this.get(key) !== null;
+  }
+
+  /**
+   * 获取缓存剩余毫秒，过期返回0
+   * @param {string} key
+   * @returns {number}
+   */
+  getRemainingTime(key) {
+    const item = this.peek(key);
+    if (!item) return 0;
+    const remain = item.expire - Date.now();
+    return remain > 0 ? remain : 0;
+  }
+
+  /**
+   * 刷新缓存过期时间
+   * @param {string} key
+   * @param {number} [expireMs]
+   * @returns {boolean}
+   */
+  refreshExpire(key, expireMs) {
+    const cache = this.#getCacheMap();
+    const item = cache.get(key);
+    if (!item) return false;
+    item.expire = Date.now() + (expireMs ?? this.defaultExpireMs);
+    return true;
   }
 }
 
@@ -150,10 +177,6 @@ const setStrangerInfoCache = (user_id, value) => {
     getFriendInfoCache(user_id),
     value
   )
-  mergeNotEmpty(
-    getFriendInfoCacheByList(user_id),
-    value
-  )
   return setCache(CacheKey.STRANGER_INFO, value, { user_id })
 }
 
@@ -173,10 +196,6 @@ const getFriendInfoCache = user_id => {
   return getFriendListCache()?.find?.(user => user.user_id === user_id)
 }
 
-const getFriendInfoCacheByList = user_id => {
-  return getFriendListCache()?.find?.(user => user.user_id === user_id)
-}
-
 const getGroupListCache = group_id => {
   return getCache(CacheKey.GROUP_LIST, { group_id })
 }
@@ -187,6 +206,14 @@ const getGroupInfoCache = group_id => {
 
 const getGroupInfoCacheByList = group_id => {
   return getGroupListCache()?.find?.(group => group.group_id === group_id)
+}
+
+const getGroupInfoCacheFromAll = group_id => {
+  let groupInfo = getGroupInfoCache(group_id)
+  if (!groupInfo) {
+    groupInfo = getGroupInfoCacheByList(group_id)
+  }
+  return groupInfo
 }
 
 const getGroupMemberInfoCache = (group_id, user_id) => {
@@ -201,8 +228,30 @@ const getGroupMemberInfoCacheByList = (group_id, user_id) => {
   return getGroupMemberListCache(group_id)?.find?.(user => user.user_id === user_id)
 }
 
+const getGroupUserInfoCache = (group_id, user_id) => {
+  const groupUserInfo = getGroupMemberInfoCache(group_id, user_id);
+  const groupUserInfoByList = getGroupMemberInfoCacheByList(group_id, user_id)
+  const userInfo = getUserInfoCache(user_id)
+  if (userInfo) {
+    updateNotEmptyObjectCache(
+      { remark: userInfo.remark },
+      groupUserInfo,
+      groupUserInfoByList
+    )
+  }
+  return groupUserInfo || groupUserInfoByList
+}
+
 const getStrangerInfoCache = user_id => {
   return getCache(CacheKey.STRANGER_INFO, { user_id })
+}
+
+const getUserInfoCache = user_id => {
+  let userInfo = getStrangerInfoCache(user_id);
+  if (!userInfo) {
+    userInfo = getFriendInfoCache(user_id);
+  }
+  return userInfo
 }
 
 const getUserPersonalization = user_id => {
@@ -211,6 +260,41 @@ const getUserPersonalization = user_id => {
 
 const getUserAvatarFrameCache = (user_id, returnUrl = true) => {
   return getUserAvatarFrame(getUserPersonalization(user_id), returnUrl)
+}
+
+const updateNotEmptyObjectCache = (value, ...caches) => {
+  for (const cache of caches) {
+    if (isObject(cache) && isObject(value)) {
+      mergeNotEmpty(
+        cache,
+        value
+      )
+    }
+  }
+}
+
+const updateGroupInfoCache = (group_id, value) => {
+  updateNotEmptyObjectCache(
+    value,
+    getGroupInfoCache(group_id),
+    getGroupInfoCacheByList(group_id)
+  )
+}
+
+const updateUserInfoCache = (user_id, value) => {
+  updateNotEmptyObjectCache(
+    value,
+    getStrangerInfoCache(user_id),
+    getFriendInfoCache(user_id)
+  )
+}
+
+const updateGroupMemberInfoCache = (group_id, user_id, value) => {
+  updateNotEmptyObjectCache(
+    value,
+    getGroupMemberInfoCache(group_id, user_id),
+    getGroupMemberInfoCacheByList(group_id, user_id, value)
+  )
 }
 
 const GROUP = "group"
@@ -355,10 +439,7 @@ const getCacheName = function (idList, type) {
     user_id
   } = parseCacheArg(idList, type)
   if (isGroupInfo) {
-    let groupInfo = getGroupInfoCacheByList(group_id)
-    if (!groupInfo) {
-      groupInfo = getGroupInfoCache(group_id)
-    }
+    const groupInfo = getGroupInfoCacheFromAll(group_id)
     if (isObject(groupInfo)) {
       if (isGroup) {
         return groupInfo.group_remark || groupInfo.group_name;
@@ -367,13 +448,7 @@ const getCacheName = function (idList, type) {
       }
     }
   } else {
-    let userInfo = getFriendInfoCacheByList(user_id);
-    if (!userInfo) {
-      userInfo = getFriendInfoCache(user_id);
-    }
-    if (!userInfo) {
-      userInfo = getStrangerInfoCache(user_id)
-    }
+    const userInfo = getUserInfoCache(user_id)
     if (isPrivateInfo) {
       if (isObject(userInfo)) {
         if (isPrivate) {
@@ -383,10 +458,7 @@ const getCacheName = function (idList, type) {
         }
       }
     } else if (isGroupUserInfo) {
-      let groupUserInfo = getGroupMemberInfoCacheByList(group_id, user_id);
-      if (!groupUserInfo) {
-        groupUserInfo = getGroupMemberInfoCache(group_id, user_id)
-      }
+      const groupUserInfo = getGroupUserInfoCache(group_id, user_id)
       const card = groupUserInfo?.card
       const remark = groupUserInfo?.remark || userInfo?.remark
       const nickname = groupUserInfo?.nickname || userInfo?.nickname;
@@ -428,58 +500,31 @@ function setCacheName(idList, type, name) {
     return
   }
   if (isGroupInfo) {
-    const update = group => {
-      if (isObject(group)) {
-        if (isGroupRemark) {
-          group.group_remark = name
-        } else if (isGroupName) {
-          group.group_name = name
-        }
-      }
+    const value = {}
+    if (isGroupRemark) {
+      value.group_remark = name
+    } else if (isGroupName) {
+      value.group_name = name
     }
-    update(
-      getGroupInfoCache(group_id)
-    )
-    update(
-      getGroupInfoCacheByList(group_id)
-    )
+    updateGroupInfoCache(group_id, value)
   } else if (isGroupUserInfo) {
-    const update = user => {
-      if (isObject(user)) {
-        if (isGroupUserRemark) {
-          user.remark = name
-        } else if (isGroupUserNickname) {
-          user.nickname = name
-        } else if (isGroupUserCard) {
-          user.card = name
-        }
-      }
+    const value = {}
+    if (isGroupUserRemark) {
+      value.remark = name
+    } else if (isGroupUserNickname) {
+      value.nickname = name
+    } else if (isGroupUserCard) {
+      value.card = name
     }
-    update(
-      getGroupMemberInfoCacheByList(group_id, user_id)
-    )
-    update(
-      getGroupMemberInfoCache(group_id, user_id)
-    )
+    updateGroupMemberInfoCache(group_id, user_id, value)
   } else if (isPrivateInfo) {
-    const update = user => {
-      if (isObject(user)) {
-        if (isUserRemark) {
-          user.remark = name
-        } else if (isUserNickname) {
-          user.nickname = name
-        }
-      }
+    const value = {}
+    if (isUserRemark) {
+      value.remark = name
+    } else if (isUserNickname) {
+      value.nickname = name
     }
-    update(
-      getFriendInfoCache(user_id)
-    )
-    update(
-      getFriendInfoCacheByList(user_id)
-    )
-    update(
-      getStrangerInfoCache(user_id)
-    )
+    updateUserInfoCache(user_id, value)
   }
 }
 
@@ -638,6 +683,10 @@ export {
   setGroupMemberListCache,
   setStrangerInfoCache,
   setUserPersonalization,
+  getGroupInfoCacheFromAll,
+  getGroupMemberListCache,
+  updateGroupMemberInfoCache,
+  updateGroupInfoCache,
   setCacheName,
   getUserAvatarFrameCache,
   CacheNameKey,
