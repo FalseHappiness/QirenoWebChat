@@ -1,19 +1,17 @@
 <script>
 import { defineComponent } from 'vue'
-import TruncatedText from "../../../../../Common/Widgets/TruncatedText.vue";
 import BasicBoxWithFooter from "./Base/BasicBoxWithFooter.vue";
 
 export default defineComponent({
   name: "StructMsg",
-  components: { BasicBoxWithFooter, TruncatedText },
+  components: { BasicBoxWithFooter },
   props: { json: Object },
   computed: {
     view() {
       return this.json?.meta[this.json?.view]
     },
   },
-  methods: {
-  }
+  methods: {}
 })
 </script>
 
@@ -33,17 +31,15 @@ export default defineComponent({
   </BasicBoxWithFooter>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 .message-struct-msg {
   width: 270px;
   max-width: 100%;
-  display: flex;
-  background-color: white;
-  color: black;
   text-decoration: none !important;
-  border-radius: 8px;
   padding: 8px 8px 2px 8px !important;
-  flex-direction: column;
+  @include card();
+  color: $color-text-primary;
+  @extend %flex-column;
   justify-content: space-between;
 }
 

@@ -28,8 +28,10 @@ import ActivityMD from "../components/Destination/Chat/Message/Types/JSON/Activi
 import UnparsedMessage from "../components/Destination/Chat/Message/Types/UnparsedMessage.vue";
 import { getPokeDescription } from "./faces-config.js";
 import { qqFileIcon, qqSystemEmoji } from "../composables/useBase.js";
-import { isArray, isObject, objectHasKey } from "./types-util.js";
+import { isArray, objectHasKey } from "./types-util.js";
 import { CacheNameKey, fetchDisplayName, getCacheName } from "./user-info-util.js";
+import ViewInvite from "@/components/Destination/Chat/Message/Types/JSON/ViewInvite.vue";
+import ViewLocationShare from "@/components/Destination/Chat/Message/Types/JSON/ViewLocationShare.vue";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -461,7 +463,9 @@ const parseMessage = (wrappedMsg) => {
                 "com.tencent.activity.md": ActivityMD
               }
               const view_components_map = {
-                "news": ViewNews
+                "news": ViewNews,
+                "invite": ViewInvite,
+                "LocationShare": ViewLocationShare
               }
               const component = view_components_map[data?.view] || components_map[data.app] || UnparsedJSON;
               if (component) {
