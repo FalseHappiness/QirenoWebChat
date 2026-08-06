@@ -110,6 +110,10 @@ function isNil(val) {
   return val === undefined || val === null;
 }
 
+function isPromise(variable) {
+  return variable instanceof Promise
+}
+
 export {
   isNumber,
   isFunction,
@@ -124,4 +128,5 @@ export {
   isArray,
   mergeNotEmpty,
   isNil,
+  isPromise,
 };

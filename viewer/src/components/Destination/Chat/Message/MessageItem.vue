@@ -35,7 +35,7 @@ import {
   getUserAvatarFrameCache,
   hasGroupMemberOperatePermission, isGroupAdmin, isGroupOperator, isGroupOwner
 } from "@/scripts/user-info-util.js";
-import { createUserAvatarContextMenuItems } from "@/scripts/avatar-content-menu.js";
+import { createUserAvatarContextMenuItems } from "@/scripts/contact-content-menu.js";
 
 const props = defineProps({
   message: {

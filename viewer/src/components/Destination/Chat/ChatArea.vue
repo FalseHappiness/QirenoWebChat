@@ -444,7 +444,7 @@ const groupNameModel = ref(null)
 const changeGroupContactName = inject("changeGroupContactName")
 
 const handleGroupNameChange = () => {
-  if (groupNameModel.value !== activeContact.value?.remark) {
+  if (groupNameModel.value !== activeContact.value?.real_name) {
     changeGroupContactName(activeContact.value.contact_id, groupNameModel.value)
   }
 }

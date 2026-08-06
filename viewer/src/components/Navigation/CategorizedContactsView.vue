@@ -7,9 +7,11 @@ import {
   getUserLogo
 } from "@/scripts/backend-api.js"
 import CustomScrollBar from "../Common/Scrolling/CustomScrollBar.vue"
-import { filterSearchContacts, flattenCategorizedContacts } from "../../scripts/contacts-util.js";
+import { filterSearchContacts, flattenCategorizedContacts } from "@/scripts/contacts-util.js";
 import QIcon from "../Common/Icons/QIcon.vue";
 import LoadingSpinner from "../Common/Widgets/LoadingSpinner.vue";
+import { createContactContextMenuItems } from "@/scripts/contact-content-menu.js";
+import { vCustomMenu } from "@/directives/context-menu.js"
 
 const collapseActiveKeys = ref([-100])
 const filterTextModel = ref("")
@@ -29,6 +31,11 @@ const getLogo = (id, type) => {
 }
 
 const handleSelectContact = inject("selectContact")
+
+const showContactInfo = inject("showContactInfo")
+const handleContextMenu = contact => e => createContactContextMenuItems({
+  contact, showContactInfo, avatarElement: e?.target?.querySelector(".contacts-view-contact-logo")
+})
 </script>
 
 <template>
@@ -66,6 +73,7 @@ const handleSelectContact = inject("selectContact")
             :key="`${contact.type}.${contact.contact_id}`"
             class="contacts-view-contact-item"
             @click="handleSelectContact(contact)"
+            v-custom-menu="handleContextMenu(contact)"
           >
             <img
               class="contacts-view-contact-logo"
@@ -84,6 +92,7 @@ const handleSelectContact = inject("selectContact")
           :key="`${contact.type}.${contact.contact_id}`"
           class="contacts-view-contact-item"
           @click="handleSelectContact(contact)"
+          v-custom-menu="handleContextMenu(contact)"
         >
           <img
             class="contacts-view-contact-logo"

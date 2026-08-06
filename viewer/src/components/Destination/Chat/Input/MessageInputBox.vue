@@ -26,7 +26,7 @@ import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
 import { getPokeDescription } from "@/scripts/faces-config.js";
 import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js";
-import { isArray, isBoolean, isFunction, isObject, isUndefined, isString } from "@/scripts/types-util.js";
+import { isArray, isBoolean, isFunction, isObject, isUndefined, isString, isPromise } from "@/scripts/types-util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { getCacheGroupUserName, getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
 import { checkSameContact, filteredAtGroupUsers } from "@/scripts/contacts-util.js";
@@ -67,8 +67,11 @@ export default defineComponent({
       atMentionText: '',
       atMentionRange: null,
       selectedAtIndex: 0,
-      messageIdToForward: undefined,
-      messageContentToForward: undefined,
+      pendingForwardInfo: {
+        confirming: false,
+        messageId: null,
+        messageContent: null
+      },
       showFilesUploadTasks: false,
       remainGroupAtAll: undefined,
       isShowRecordPanel: false,
@@ -116,6 +119,7 @@ export default defineComponent({
     Emitter.on('select-upload-group-files', this.handleSelectUploadGroupFiles)
     Emitter.on('show-files-upload-tasks', this.handleFilesUploadTasksViewer)
     Emitter.on('select-upload-group-images', this.handleSelectUploadGroupImages)
+    Emitter.on('select-contacts-send-msg', this.handleSelectContactsSendMsg)
   },
   beforeDestroy() {
     this.handleUnmounted()
@@ -140,6 +144,7 @@ export default defineComponent({
       Emitter.off('select-upload-group-files')
       Emitter.off('show-files-upload-tasks')
       Emitter.off('select-upload-group-images')
+      Emitter.off('select-contacts-send-msg')
     },
     // 用户在编辑后调用此方法记录状态
     recordHistory() {
@@ -1932,65 +1937,94 @@ export default defineComponent({
       this.insertAtUserAtCursor({ qq, name })
     },
 
+    handleSelectContactsSendMsg(messageContent) {
+      this.pendingForwardInfo = {
+        messageContent,
+        confirming: true,
+      }
+    },
+
     handleForwardSingleMsg(message_id, message_content) {
-      this.messageIdToForward = [message_id]
-      this.messageContentToForward = { [message_id]: message_content }
+      this.pendingForwardInfo = {
+        confirming: true,
+        messageId: message_id || null,
+        messageContent: message_content || null
+      }
     },
 
     async handleContactsPickerConfirm(selectedContacts) {
-      const idList = toRaw(this.messageIdToForward)
-      this.handleContactsPickerCancel()
-      const promises = [];
+      let { messageId, messageContent } = this.pendingForwardInfo
+      this.clearPendingForwardInfo()
 
-      idList.flatMap(id => selectedContacts.map(contact =>
-        promises.push(
-          fetchForwardSingleMsg(id, contact).then(response => {
+      const isForward = messageId && (messageContent || !messageContent)
+      const isSend = !messageId && messageContent
+
+      const promises = selectedContacts.map(async (contact) => {
+        if (isForward) {
+          try {
+            const response = await fetchForwardSingleMsg(messageId, contact)
             return {
               status: response?.status || "error",
-              msg_id: id,
+              msg_id: messageId,
               contact_id: contact.contact_id,
               type: contact.type,
               error: response?.message || '请求失败'
-            };
-          }).catch(error => {
+            }
+          } catch (error) {
             return {
-              status: 'error', // 捕获错误时也标记为error
-              msg_id: id,
+              status: 'error',
+              msg_id: messageId,
               contact_id: contact.contact_id,
               type: contact.type,
-              error: error?.message || '请求失败'
-            };
-          })
-        )
-      ));
+              error
+            }
+          }
+        } else if (isSend) {
+          try {
+            if (isPromise(messageContent)) messageContent = await messageContent;
+            const response = await fetchSendMessage(contact, messageContent)
+            return {
+              status: response?.status || "error",
+              contact_id: contact.contact_id,
+              type: contact.type,
+              error: response?.message || '请求失败'
+            }
+          } catch (error) {
+            return {
+              status: 'error',
+              contact_id: contact.contact_id,
+              type: contact.type,
+              error,
+            }
+          }
+        }
+      })
 
-      const allResults = await Promise.all(promises);
+      const allResults = await Promise.all(promises)
 
       // 筛选出失败的结果
       const failedResults = allResults.filter(result => result.status === 'error');
 
       if (failedResults.length > 0) {
-        // 打印完整错误结果到控制台
-        console.error('转发消息失败结果:', failedResults);
+        console.error(isForward ? '转发消息失败结果:' : '发送消息失败结果:', failedResults);
         if (failedResults.length !== allResults.length) {
-          showToast('success', '部分转发成功')
-          console.log('转发消息成功结果:', allResults.filter(result => result.status !== 'error'));
+          showToast('success', isForward ? '部分转发成功' : '部分发送成功')
+          console.log(isForward ? '转发消息成功结果:' : '发送消息成功结果:', allResults.filter(result => result.status !== 'error'));
         }
         // 按消息ID和类型归类
-        const errorsByMsgId = failedResults.reduce((acc, failed) => {
-          if (!acc[failed.msg_id]) {
-            acc[failed.msg_id] = {
+        const errorsByContact = failedResults.reduce((acc, failed) => {
+          const key = failed.msg_id || 'send'
+          if (!acc[key]) {
+            acc[key] = {
               group: [],
               private: []
             };
           }
-
           if (failed.type === 'group') {
-            acc[failed.msg_id].group.push(failed.contact_id);
+            acc[key].group.push(failed.contact_id);
           } else {
-            acc[failed.msg_id].private.push(failed.contact_id);
+            acc[key].private.push(failed.contact_id);
           }
-
           return acc;
         }, {});
 
@@ -1998,36 +2032,42 @@ export default defineComponent({
         const displayedErrors = [];
         let msgCount = 0;
 
-        for (const [msgId, contacts] of Object.entries(errorsByMsgId)) {
+        for (const [key, contacts] of Object.entries(errorsByContact)) {
           if (msgCount >= 2) break;
 
           const parts = [];
-
           if (contacts.group.length > 0) {
             parts.push(`群聊: ${contacts.group.slice(0, 2).join(', ')}${contacts.group.length > 2 ? '...' : ''}`);
           }
-
           if (contacts.private.length > 0) {
             parts.push(`私聊: ${contacts.private.slice(0, 2).join(', ')}${contacts.private.length > 2 ? '...' : ''}`);
           }
-
           if (parts.length > 0) {
-            displayedErrors.push(`消息ID: ${msgId} 发送失败, ${parts.join('; ')}`);
+            const prefix = key !== 'send' ? `消息ID: ${key} ` : ''
+            displayedErrors.push(`${prefix}发送失败, ${parts.join('; ')}`);
             msgCount++;
           }
         }
 
         const errorMessage = displayedErrors.join('; ') +
-          (Object.keys(errorsByMsgId).length > 2 ? '; 更多失败项...' : '');
+          (Object.keys(errorsByContact).length > 2 ? '; 更多失败项...' : '');
 
         showToast('error', errorMessage);
       } else {
-        showToast('success', '已转发');
+        showToast('success', isForward ? '已转发' : '已发送');
+      }
+    },
+
+    clearPendingForwardInfo() {
+      this.pendingForwardInfo = {
+        confirming: false,
+        messageId: null,
+        messageContent: null
       }
     },
 
     handleContactsPickerCancel() {
-      this.messageContentToForward = this.messageIdToForward = undefined
+      this.clearPendingForwardInfo()
     },
 
     // 公共通用文件选择工具方法
@@ -2697,7 +2737,7 @@ export default defineComponent({
       :on-cancel="handleFilesConfirmCancel"
       :type-name="formatPendingUploadType()"
     />
-    <ContactsPicker v-if="messageIdToForward?.length"
+    <ContactsPicker v-if="pendingForwardInfo.confirming"
                     :on-confirm="handleContactsPickerConfirm"
                     :on-cancel="handleContactsPickerCancel"/>
     <Tooltip v-if="isGroup && atInputPosition && filteredAtGroupUsers?.length" :tip-position="atInputPosition"

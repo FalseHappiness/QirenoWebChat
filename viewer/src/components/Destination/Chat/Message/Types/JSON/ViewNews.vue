@@ -1,7 +1,6 @@
 <script>
 import { defineComponent } from 'vue'
 import TruncatedText from "../../../../../Common/Widgets/TruncatedText.vue";
-import { getMultimediaProxyUrl } from "../../../../../../scripts/backend-api.js"
 import BasicBoxWithFooter from "./Base/BasicBoxWithFooter.vue";
 
 export default defineComponent({
@@ -14,7 +13,6 @@ export default defineComponent({
     },
   },
   methods: {
-    getMultimediaProxyUrl
   }
 })
 </script>

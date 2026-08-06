@@ -1,5 +1,4 @@
 import { pinyin, convert } from "pinyin-pro";
-import { isSupportedNoticeMessage } from "./parse-message.js";
 import { isObject } from "./types-util.js";
 import { getGroupUserInfoCache } from "@/scripts/user-info-util.js";
 
@@ -253,7 +252,7 @@ const checkMsgIsContact = (event, contact) => {
   if (!contact || !isObject(event)) {
     return false
   }
-  const { group_id, target_id, user_id, post_type, message_type, notice_type, sub_type } = event;
+  const { group_id, target_id, user_id, post_type, message_type } = event;
   if (['message', 'message_sent'].includes(event.post_type)) {
     const isGroup = message_type === 'group'
     return checkSameContact({
@@ -262,16 +261,10 @@ const checkMsgIsContact = (event, contact) => {
     }, contact)
   } else if (post_type === 'notice') {
     const isGroup = !!group_id
-    if (
-      ['group_recall', 'friend_recall'].includes(notice_type) ||
-      sub_type === 'input_status' ||
-      isSupportedNoticeMessage(event)
-    ) {
-      return checkSameContact({
-        type: isGroup ? 'group' : 'private',
-        contact_id: isGroup ? group_id : user_id
-      }, contact)
-    }
+    return checkSameContact({
+      type: isGroup ? 'group' : 'private',
+      contact_id: isGroup ? group_id : user_id
+    }, contact)
   }
   return false
 }
@@ -288,6 +281,7 @@ const createPrivateContact = contact_id => {
     contact_id
   }
 }
+
 /**
  * 筛选群成员
  * 匹配优先级：缓存群名片 > 缓存备注 > 缓存昵称 > card > remark > nickname
@@ -325,6 +319,8 @@ function filterGroupMembers(group_id, groupUsers, searchText) {
   }))
 }
 
+const isGroupContact = contact => contact?.type === 'group' || contact === 'group'
+
 export {
   flattenCategorizedContacts,
   filterSearchContacts,
@@ -334,4 +330,5 @@ export {
   createPrivateContact,
   filteredAtGroupUsers,
   filterGroupMembers,
+  isGroupContact,
 }

@@ -1,7 +1,7 @@
 // 获取显示名称的函数
 import axios from "axios";
 import { useGlobalStore } from "../store/global.js";
-import { showToast } from "./toast.js";
+import { showErrorToast, showSuccessToast, showToast } from "./toast.js";
 import { createSHA256 } from 'hash-wasm';
 import { nanoid } from 'nanoid';
 import { CalledEmitter } from "../composables/useEventBus.js";
@@ -15,7 +15,7 @@ import {
   convertStrangerInfoSL,
   convertWrappedMsgSL
 } from "./snow-luma-translator.js";
-import { parseJSON, trimTrailingSlash } from "./util.js";
+import { parseJSON, stringifyJSON, trimTrailingSlash } from "./util.js";
 
 import { isArray, isObject, isString, objectHasKey } from "./types-util.js";
 import {
@@ -27,6 +27,7 @@ import {
   setGroupMemberListCache,
   setStrangerInfoCache, setUserPersonalization, updateGroupInfoCache, updateGroupMemberInfoCache
 } from "./user-info-util.js";
+import { isGroupContact } from "@/scripts/contacts-util.js";
 
 /**
  * 替换URL中的 sitehost 为当前页面真实主机（支持 sitehost:自定义端口 格式）
@@ -1069,6 +1070,52 @@ async function fetchDeleteFriend(user_id) {
   return await fetchAction('delete_friend', { user_id })
 }
 
+async function fetchSetGroupMemberTitle(group_id, user_id, special_title) {
+  const result = await fetchAction('set_group_special_title', { group_id, user_id, special_title })
+  if (checkResponseOK(result)) {
+    updateGroupMemberInfoCache(group_id, user_id, { title: special_title })
+  }
+  return result
+}
+
+/**
+ * 统一执行后端接口、处理响应、弹出提示
+ * @param {Promise} apiPromise api调用Promise
+ * @param {string} successText 成功提示文案
+ * @param {string} failText 失败前置文案
+ * @returns {Promise<boolean>} 请求是否成功
+ */
+async function handleApiRequest(apiPromise, successText, failText) {
+  const result = await apiPromise
+  if (checkResponseOK(result)) {
+    showSuccessToast(successText)
+    return true
+  } else {
+    console.error(failText, result)
+    showErrorToast(`${failText}: ${result?.message}`)
+    return false
+  }
+}
+
+function wrapJsonMessageSegment(json) {
+  return {
+    type: "json",
+    data: { data: stringifyJSON(json) }
+  }
+}
+
+async function fetchContactShareArk({ contact_id, type }) {
+  const params = {}
+  if (isGroupContact(type)) {
+    params.group_id = contact_id
+  } else {
+    params.user_id = contact_id
+  }
+  const ark = await fetchActionData("send_ark_share", params)
+  if (!ark) return null
+  return wrapJsonMessageSegment(ark?.ark || ark?.arkMsg || ark)
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1143,4 +1190,7 @@ export {
   fetchSetGroupAllMuted,
   fetchLeaveGroup,
   fetchDeleteFriend,
+  fetchSetGroupMemberTitle,
+  handleApiRequest,
+  fetchContactShareArk,
 }

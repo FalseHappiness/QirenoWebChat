@@ -8,7 +8,7 @@ import { getUserLogo } from "@/scripts/backend-api.js"
 import { getCacheName, CacheNameKey } from "@/scripts/user-info-util.js"
 import { pinyin } from "pinyin-pro"
 import { vCustomMenu } from "@/directives/context-menu.js"
-import { createUserAvatarContextMenuItems } from "@/scripts/avatar-content-menu.js"
+import { createUserAvatarContextMenuItems } from "@/scripts/contact-content-menu.js"
 import { filterGroupMembers } from "@/scripts/contacts-util.js"
 
 export default defineComponent({

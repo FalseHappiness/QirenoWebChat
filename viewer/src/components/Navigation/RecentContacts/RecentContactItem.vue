@@ -3,10 +3,11 @@
 import { computed, ref, onMounted, h, watch, inject } from "vue";
 import { parseMessagePreview, parseNoticePreview } from "@/scripts/parse-message.js";
 import { getGroupLogo, getUserLogo } from "@/scripts/backend-api.js";
-import { basicContextItem, vCustomMenu } from "../../../directives/context-menu.js";
+import { basicContextItem, vCustomMenu } from "@/directives/context-menu.js";
 import { copy } from "@/scripts/clipboard.js";
 import { formatRelativeTime, parseJSON } from "@/scripts/util.js";
 import { CacheNameKey, fetchDisplayName, getContactNameRef } from "@/scripts/user-info-util.js";
+import { createContactContextMenuItems } from "@/scripts/contact-content-menu.js";
 
 const props = defineProps({
   contact: {
@@ -121,17 +122,14 @@ const logoUrl = computed(() => {
   return (isGroup.value ? getGroupLogo : getUserLogo)(props.contact.contact_id)
 })
 
-const customContextMenu = () => {
-  return [
-    basicContextItem(
-      isGroup.value ? "复制群号" : "复制 QQ 号",
-      () => {
-        copy(props.contact.contact_id)
-      },
-      "copy_24"
-    )
-  ]
-}
+const avatarElement = ref(null)
+const showContactInfo = inject("showContactInfo")
+
+const customContextMenu = () => createContactContextMenuItems({
+  contact: props.contact,
+  avatarElement: avatarElement.value,
+  showContactInfo
+})
 
 watch(() => props.contact?.name, newName => {
   displayName.value = newName
@@ -156,7 +154,7 @@ onMounted(async () => {
     v-custom-menu="customContextMenu"
     @click="handleClick"
   >
-    <img alt="" :src="logoUrl" class="contact-logo">
+    <img alt="" :src="logoUrl" class="contact-logo" ref="avatarElement">
     <div class="contact-info">
       <div class="display-flex justify-content-between">
         <span

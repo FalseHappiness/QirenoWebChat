@@ -8,15 +8,14 @@ import {
   formatBasicContextItems
 } from "@/directives/context-menu.js";
 import {
-  checkResponseOK,
+  fetchContactShareArk,
   fetchKickGroupUser,
   fetchSendMessage,
   fetchSetGroupAdmin,
-  fetchSetGroupMemberCard,
-  fetchSetGroupMute,
+  fetchSetGroupMemberCard, fetchSetGroupMemberTitle,
+  fetchSetGroupMute, handleApiRequest,
 } from "@/scripts/backend-api.js";
 import { showConfirmBox, showPromptBox } from "@/scripts/popup-box-api.js";
-import { showErrorToast, showSuccessToast } from "@/scripts/toast.js";
 import { getElementCenter } from "@/scripts/util.js";
 import {
   isGroupAdmin,
@@ -25,6 +24,8 @@ import {
 } from "@/scripts/user-info-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import { Emitter } from "@/composables/useEventBus.js";
+import { copy } from "@/scripts/clipboard.js";
+import { isObject } from "@/scripts/types-util.js";
 
 /**
  * 创建群成员右键菜单项
@@ -40,21 +41,22 @@ import { Emitter } from "@/composables/useEventBus.js";
  * @returns {Array} 格式化后的菜单项数组，可直接用于 vCustomMenu
  */
 export function createUserAvatarContextMenuItems({
-                                                  userInfo,
-                                                  selfInfo,
-                                                  displayName = '',
-                                                  activeContact,
-                                                  flattenContacts = [],
-                                                  selectContact,
-                                                  showContactInfo,
-                                                  avatarElement
-                                                }) {
+                                                   userInfo,
+                                                   selfInfo,
+                                                   displayName = '',
+                                                   activeContact,
+                                                   flattenContacts = [],
+                                                   selectContact,
+                                                   showContactInfo,
+                                                   avatarElement
+                                                 }) {
   const user = userInfo || {}
   const self = selfInfo || {}
   const { group_id, user_id } = user
   const isGroup = !!group_id
   const isSelf = user_id === self.user_id
   const isAdminUser = isGroupAdmin(user)
+  const isOwnerSelf = isGroupOwner(self)
   const operatePermission = hasGroupMemberOperatePermission(self, user)
   const hasBeenMuted = !!self.shut_up_timestamp
 
@@ -63,16 +65,14 @@ export function createUserAvatarContextMenuItems({
     type: 'private'
   }
 
-  const muteFunc = duration => (async () => {
-    const result = await fetchSetGroupMute(group_id, user_id, duration)
-    const operation = (duration === 0 ? "解除" : "") + "禁言"
-    if (checkResponseOK(result)) {
-      showSuccessToast(operation + "成功")
-    } else {
-      console.error(operation + "失败", result)
-      showErrorToast(operation + "失败:" + result?.message)
-    }
-  })
+  const muteFunc = duration => async () => {
+    const operation = (duration === 0 ? "解除" : "")
+    await handleApiRequest(
+      fetchSetGroupMute(group_id, user_id, duration),
+      operation + "禁言成功",
+      operation + "禁言失败"
+    )
+  }
 
   return formatBasicContextItems([
     basicContextItem(
@@ -135,49 +135,66 @@ export function createUserAvatarContextMenuItems({
             isAdminUser ? `确定要取消 ${displayName} 的管理员权限吗？` : `确定要设置 ${displayName} 为管理员吗？`
           )
         ) {
-          const result = await fetchSetGroupAdmin(group_id, user_id, !isAdminUser)
-          if (checkResponseOK(result)) {
-            showSuccessToast('设置成功')
-          } else {
-            showErrorToast(action + '管理员失败: ' + result?.message)
-          }
+          await handleApiRequest(
+            fetchSetGroupAdmin(group_id, user_id, !isAdminUser),
+            "设置成功",
+            `${action}管理员失败`
+          )
         }
       },
-      "administering_user_24.svg",
-      isGroup && isGroupOwner(self) && !isSelf
+      "administering_user_24",
+      isGroup && isOwnerSelf && !isSelf
     ),
     basicContextItem(
       '修改群昵称',
       async () => {
         const card = await showPromptBox(
           "修改群昵称",
-          `修改群昵称 ${user.nickname} 的群名片`,
+          `修改 ${user.nickname} 的群名片`,
           "群昵称",
           user.card
         )
         if (card !== null) {
-          const result = await fetchSetGroupMemberCard(group_id, user_id, card)
-          if (checkResponseOK(result)) {
-            showSuccessToast("设置成功")
-          } else {
-            showErrorToast("修改群昵称失败:" + result?.message)
-          }
+          await handleApiRequest(
+            fetchSetGroupMemberCard(group_id, user_id, card),
+            "设置成功",
+            "修改群昵称失败"
+          )
         }
       },
       'edit_24',
       isGroup && (isGroupAdmin(self) || isSelf)
+    ),
+    basicContextItem(
+      '修改群头衔',
+      async () => {
+        const title = await showPromptBox(
+          "修改群头衔",
+          `修改 ${displayName} 的群头衔`,
+          "群头衔",
+          user.title
+        )
+        if (title !== null) {
+          await handleApiRequest(
+            fetchSetGroupMemberTitle(group_id, user_id, title),
+            "设置成功",
+            "修改群头衔失败"
+          )
+        }
+      },
+      'edit_24',
+      isGroup && isOwnerSelf
     ),
     contextDividedItem(),
     basicContextItem(
       '移出本群',
       async () => {
         if (await showConfirmBox('温馨提醒', '确定将该成员从本群聊中移除吗？')) {
-          const result = await fetchKickGroupUser(group_id, user_id)
-          if (checkResponseOK(result)) {
-            showSuccessToast('已移出本群')
-          } else {
-            showErrorToast('移出本群失败: ' + result?.message)
-          }
+          await handleApiRequest(
+            fetchKickGroupUser(group_id, user_id),
+            '已移出本群',
+            '移出本群失败'
+          )
         }
       },
       'remove_user_24',
@@ -207,7 +224,7 @@ export function createUserAvatarContextMenuItems({
           async () => {
             const duration = await showPromptBox(
               "设定禁言时长",
-              `设定 ${user.nickname} 的禁言时长，不能超过 30 天，单位为秒：`,
+              `设定 ${displayName} 的禁言时长，不能超过 30 天，单位为秒：`,
               "1800",
               ""
             )
@@ -227,4 +244,49 @@ export function createUserAvatarContextMenuItems({
       isGroup && operatePermission && hasBeenMuted
     )
   ])
+}
+
+export function createContactContextMenuItems({ contact, showContactInfo, avatarElement }) {
+  if (!isObject(contact)) return []
+  const isGroup = contact.type === 'group'
+  const { contact_id, remark, real_name } = contact
+  const contactInfo = isGroup ? {
+    group_id: contact_id,
+    group_remark: remark,
+    group_name: real_name
+  } : {
+    user_id: contact_id,
+    remark,
+    nickname: real_name
+  }
+  return [
+    basicContextItem(
+      '查看资料',
+      e => {
+        const options = {
+          position: (avatarElement ? getElementCenter(avatarElement) : null) || { x: e?.clientX, y: e?.clientY }
+        }
+        options[isGroup ? 'group' : 'user'] = contactInfo
+        showContactInfo(options)
+      },
+      'files_24'
+    ),
+    basicContextItem(
+      isGroup ? "复制群号" : "复制 QQ 号",
+      () => {
+        copy(contact.contact_id)
+      },
+      "copy_24"
+    ),
+    basicContextItem(
+      "分享",
+      () => {
+        Emitter.emit(
+          "select-contacts-send-msg",
+          (async () => [await fetchContactShareArk(contact)])()
+        )
+      },
+      "share_new_24"
+    ),
+  ]
 }

@@ -53,11 +53,11 @@ defineExpose({
   <div class="destination-view" :class="{ active: viewActive }">
     <ChatArea
       class="dest-view-component"
-      v-if="isChatAreaView"
+      :class="{ 'display-none': !isChatAreaView }"
       ref="chatArea"
     />
     <LicenseView
-      v-else-if="isLicenseView"
+      v-if="isLicenseView"
       class="dest-view-component"
     />
     <ThemeSelector

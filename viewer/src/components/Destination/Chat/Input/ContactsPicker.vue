@@ -4,8 +4,9 @@ import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import { Collapse, CollapsePanel, Checkbox, CheckboxGroup } from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css';
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
-import { filterSearchContacts, flattenCategorizedContacts } from "../../../../scripts/contacts-util.js";
+import { filterSearchContacts, flattenCategorizedContacts } from "@/scripts/contacts-util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
+import { getGroupLogo, getUserLogo } from "@/scripts/backend-api.js";
 
 export default defineComponent({
   name: "ContactsPicker",
@@ -50,8 +51,8 @@ export default defineComponent({
   methods: {
     getLogo(id, type) {
       return type === 'group'
-        ? `https://p.qlogo.cn/gh/${id}/${id}/40`
-        : `https://q1.qlogo.cn/g?b=qq&nk=${id}&s=40`
+        ? getGroupLogo(id, 40)
+        : getUserLogo(id, 40)
     },
     getContact(id, type) {
       if (!type) {
