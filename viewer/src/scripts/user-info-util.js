@@ -687,6 +687,8 @@ export {
   getGroupMemberListCache,
   getGroupListCache,
   getFriendListCache,
+  getGroupUserInfoCache,
+  getUserInfoCache,
   updateGroupMemberInfoCache,
   updateGroupInfoCache,
   setCacheName,

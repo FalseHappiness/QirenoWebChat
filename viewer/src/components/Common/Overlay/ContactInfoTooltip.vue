@@ -1,7 +1,7 @@
 <script>
 import { defineComponent } from 'vue'
 import Tooltip from "./Tooltip.vue";
-import { Emitter } from "@/composables/useEventBus.js";
+import { CalledEmitter, Emitter } from "@/composables/useEventBus.js";
 import {
   checkResponseOK,
   fetchGroupInfo,
@@ -13,10 +13,16 @@ import {
 } from "@/scripts/backend-api.js";
 import { nanoid } from "nanoid";
 import EnterArrow from "../Widgets/EnterArrow.vue";
-import { isNumber, isString } from "@/scripts/types-util.js";
+import { isNumber, isString, mergeNotEmpty } from "@/scripts/types-util.js";
 import QIcon from "@/components/Common/Icons/QIcon.vue";
 import { showErrorToast } from "@/scripts/toast.js";
-import { getUserAvatarFrameCache } from "@/scripts/user-info-util.js";
+import {
+  getGroupInfoCacheFromAll,
+  getGroupUserInfoCache,
+  getUserAvatarFrameCache,
+  getUserInfoCache
+} from "@/scripts/user-info-util.js";
+import { checkSameContact, createGroupContact } from "@/scripts/contacts-util.js";
 
 export default defineComponent({
   name: "ContactInfoTooltip",
@@ -36,7 +42,7 @@ export default defineComponent({
       profileLike: null
     }
   },
-  inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark"],
+  inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark", "activeContact"],
   methods: {
     isString,
     getGroupLogo,
@@ -54,13 +60,10 @@ export default defineComponent({
       // console.log(options)
       const showId = this.showId = nanoid()
       this.showTime = Date.now();
-      const setter = (key, merge = true) => {
+      const setter = key => {
         return info => {
           if (this.showId === showId) {
-            if (merge) {
-              info = { ...this[key], ...info }
-            }
-            this[key] = info
+            this[key] = mergeNotEmpty(this[key], info) || info
           }
         }
       }
@@ -75,29 +78,40 @@ export default defineComponent({
         user_id = user.user_id
       }
       if (group_id && user_id) {
-        this.group_user = group_user
+        group_user = group_user || {}
+        this.group_user = mergeNotEmpty(group_user, getGroupUserInfoCache(group_id, user_id)) || group_user
         fetchGroupMemberInfo(group_id, user_id).then(setter("group_user"))
       }
       if (user_id) {
-        this.user = user
+        user = user || {}
+        this.user = mergeNotEmpty(user, getUserInfoCache(user_id)) || user
         fetchStrangerInfo(user_id).then(setter("user"))
         fetchProfileLikeInfo(user_id).then(setter("profileLike"))
       }
       if (group_id && !user_id) {
-        this.group = group
+        group = group || {}
+        this.group = mergeNotEmpty(group, getGroupInfoCacheFromAll(group_id)) || group
         fetchGroupInfo(group_id).then(setter("group"))
-        fetchGroupNotice(group_id).then(info => {
+        const setGroupNotice = info => {
           if (this.showId === showId) {
             this.latestGroupNotice = info?.[0]?.message
           }
-        })
+        }
+        if (checkSameContact(this.activeContact, createGroupContact(group_id))) {
+          try {
+            CalledEmitter.emit("get-current-group-notices").then(setGroupNotice)
+          } catch (e) {
+
+          }
+        }
+        fetchGroupNotice(group_id).then(setGroupNotice)
       }
       this.group_id = group_id
       this.user_id = Number(user_id) || user_id
       this.position = position
     },
-    documentClick(e) {
-      if (!e?.target?.closest(".contact-info-tooltip") && (Date.now() - this.showTime) > 300) {
+    documentMousedown(e) {
+      if (!e?.target?.closest(".contact-info-tooltip") && (Date.now() - this.showTime) > 100) {
         this.disappear()
       }
     },
@@ -136,10 +150,10 @@ export default defineComponent({
     }
   },
   mounted() {
-    document.addEventListener("click", this.documentClick)
+    document.addEventListener("mousedown", this.documentMousedown)
   },
   unmounted() {
-    document.removeEventListener("click", this.documentClick)
+    document.removeEventListener("mousedown", this.documentMousedown)
   },
   computed: {
     isGroupContact() {
@@ -149,7 +163,7 @@ export default defineComponent({
       return this.user?.remark ?? this.group_user?.remark
     },
     userNickname() {
-      return this.group_user?.nickname ?? this.user?.nickname
+      return this.user?.nickname ?? this.group_user?.nickname
     },
     notSelf() {
       if (!this.user_id) return true

@@ -108,7 +108,7 @@ function contextDividedItem() {
   }
 }
 
-function basicContextItem(text, onclick, iconName, condition = true, divided = false) {
+function basicContextItem(text, onclick, iconName = undefined, condition = true, divided = false) {
   if (!condition) {
     return undefined
   }

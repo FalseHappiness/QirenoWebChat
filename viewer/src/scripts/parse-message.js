@@ -659,7 +659,7 @@ function toDataAttr(obj) {
   const res = {}
   for (let key in obj) {
     const kebab = key.replace(/[A-Z]/g, m => '-' + m.toLowerCase())
-    res[`data${kebab}`] = obj[key]
+    res[`data-${kebab}`] = obj[key]
   }
   return res
 }
@@ -812,6 +812,11 @@ function renderNoticeChildren(event, isPreview, promises) {
           '已被',
           canSelfName(operator_id),
           '移出'
+        )
+      } else if (sub_type === 'leave') {
+        children.push(
+          canSelfName(user_id),
+          '退出了群聊',
         )
       }
       break

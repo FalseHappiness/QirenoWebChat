@@ -1031,7 +1031,6 @@ async function fetchGroupMutedList(group_id) {
   const result = await fetchActionData("get_group_shut_list", { group_id })
   if (isArray(result)) {
     for (const user of result) {
-      console.log(updateGroupMemberInfoCache)
       updateGroupMemberInfoCache(group_id, user.user_id, { shut_up_timestamp: user.shut_up_time })
     }
   }

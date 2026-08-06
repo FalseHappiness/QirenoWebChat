@@ -29,7 +29,7 @@ import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js";
 import { isArray, isBoolean, isFunction, isObject, isUndefined, isString } from "@/scripts/types-util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { getCacheGroupUserName, getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
-import { checkSameContact } from "@/scripts/contacts-util.js";
+import { checkSameContact, filteredAtGroupUsers } from "@/scripts/contacts-util.js";
 import { formatTimeOptions } from "@/scripts/util.js";
 
 export default defineComponent({
@@ -2605,53 +2605,7 @@ export default defineComponent({
       return this.activeContact?.type === 'private'
     },
     filteredAtGroupUsers() {
-      if (!isArray(this.groupUsers)) {
-        return null;
-      }
-      const atGroupUsers = this.groupUsers.map(
-        item => ({
-          ...item,
-          name: getCacheGroupUserName(item.group_id, item.user_id) || item.card || item.nickname
-        })
-      )
-
-      if (this.remainGroupAtAll?.can_at_all) {
-        atGroupUsers.unshift({ user_id: 'all', name: '全体成员' })
-      }
-
-      if (!this.atMentionText) {
-        return atGroupUsers;
-      }
-
-      const searchText = this.atMentionText.toLowerCase();
-
-      // 分类匹配结果
-      const directMatches = [];
-      const pinyinMatches = [];
-      const qqMatches = [];
-
-      atGroupUsers.forEach(user => {
-        // 直接匹配 name
-        if (user.name.toLowerCase().includes(searchText)) {
-          directMatches.push(user);
-          return;
-        }
-
-        // 拼音匹配
-        const namePinyin = pinyin(user.name, { toneType: "none", type: "array" }).join('').toLowerCase();
-        if (namePinyin.includes(searchText)) {
-          pinyinMatches.push(user);
-          return;
-        }
-
-        // QQ号匹配
-        if (String(user.user_id).includes(searchText)) {
-          qqMatches.push(user);
-        }
-      });
-
-      // 合并结果，按优先级排序
-      return [...directMatches, ...pinyinMatches, ...qqMatches];
+      return filteredAtGroupUsers(this.groupUsers, this.atMentionText, this.remainGroupAtAll?.can_at_all)
     },
 
     currentFilesUploadTasks() {

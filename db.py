@@ -460,7 +460,7 @@ WITH all_raw AS (
                     notice_type NOT IN ('group_recall','friend_recall')
                     AND sub_type IN (
                         'poke','add','ban','lift_ban','approve',
-                        'invite','kick_me','remove','kick','set','unset','title','group_name'
+                        'invite','kick_me','remove','kick','set','unset','title','group_name','leave'
                     )
                 )
                 -- 撤回消息，sub_type 可以为空，不再校验

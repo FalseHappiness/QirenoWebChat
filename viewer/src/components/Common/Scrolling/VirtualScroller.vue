@@ -3,10 +3,31 @@
     <CustomScrollBar ref="container" class="scroll-container" @scroll="handleScroll">
       <div class="content" :style="{ height: `${totalHeight}px` }">
         <div class="viewport" :style="{ transform: `translateY(${startOffset}px)` }">
-          <slot v-for="(item, index) in visibleItems" :key="start + index" :item="item" :index="start + index"></slot>
+          <slot
+            v-for="pack in visibleItemsWithMeta"
+            :key="pack.originalIndex"
+            :item="pack.item"
+            :index="pack.originalIndex"
+            :isStickyActive="pack.isStickyActive"
+          ></slot>
         </div>
       </div>
     </CustomScrollBar>
+
+    <!-- 粘性标题覆盖层 -->
+    <div
+      v-if="activeHeaderInfo && activeHeaderInfo.stickyOffset > -headerHeight"
+      class="sticky-header"
+      :style="{
+        transform: `translateY(${activeHeaderInfo.stickyOffset}px)`,
+        height: `${headerHeight}px`,
+        lineHeight: `${headerHeight}px`
+      }"
+    >
+      <slot name="sticky-header" :header="activeHeaderInfo">
+        {{ activeHeaderInfo.text }}
+      </slot>
+    </div>
   </div>
 </template>
 
@@ -25,179 +46,210 @@ export default {
       required: true,
       default: () => []
     },
-    // 每个项的固定高度（像素）
+    // 每个普通项的高度（像素）
     itemHeight: {
       type: Number,
       required: true
     },
-    // 可选：缓冲区大小（上下各缓冲多少项，默认为5，提高平滑性）
+    // 可选：粘性标题的高度（像素）
+    headerHeight: {
+      type: Number,
+      default: 0
+    },
+    // 缓冲区大小（上下各缓冲多少项，默认为5）
     buffer: {
       type: Number,
       default: 5
     },
+    // 标题字段的键名，用于识别标题项
+    headerKey: {
+      type: String,
+      default: 'header'
+    },
   },
   data() {
     return {
-      containerHeight: 0, // 容器实际高度（从样式动态获取）
-      start: 0, // 可见项起始索引
-      end: 0, // 可见项结束索引
-      scrollEl: null, // SimpleBar 滚动元素引用
-    };
+      containerHeight: 0,
+      start: 0,
+      end: 0,
+      scrollEl: null,
+      scrollTop: 0
+    }
   },
   computed: {
-    // 总内容高度
     totalHeight() {
-      return this.items.length * this.itemHeight;
+      const headersLength = this.headerItems.length
+      return headersLength * this.headerHeight + (this.items.length - headersLength) * this.itemHeight
     },
-    // 可见项数量（基于容器高度 + 缓冲）
     visibleCount() {
-      return Math.ceil(this.containerHeight / this.itemHeight) + this.buffer * 2;
+      return Math.ceil(this.containerHeight / this.itemHeight) + this.buffer * 2
     },
-    // 实际渲染的可见项
     visibleItems() {
-      return this.items.slice(this.start, this.end);
+      return this.items.slice(this.start, this.end)
     },
-    // 起始偏移（用于translateY）
+    visibleItemsWithMeta() {
+      return this.visibleItems.map((item, idx) => {
+        const originalIndex = this.start + idx
+        return {
+          item,
+          originalIndex,
+          isStickyActive:
+            this.activeHeaderInfo !== null &&
+            originalIndex === this.activeHeaderInfo.index
+        }
+      })
+    },
     startOffset() {
-      return this.start * this.itemHeight;
+      return this.start * this.itemHeight
     },
-    // 最大滚动距离
     maxScroll() {
-      return this.totalHeight - this.containerHeight;
+      return this.totalHeight - this.containerHeight
     },
-  },
-  mounted() {
-    this.$nextTick(() => {
-      this.scrollEl = this.getScrollElement();
-      if (this.scrollEl) {
-        this.containerHeight = this.scrollEl.clientHeight;
+    headerItems() {
+      const key = this.headerKey
+      return this.items.reduce((headers, item, index) => {
+        const text = item[key]
+        if (text != null && text !== '') {
+          headers.push({ index, text: String(text) })
+        }
+        return headers
+      }, [])
+    },
+    activeHeaderInfo() {
+      const headers = this.headerItems
+      if (!headers.length) return null
+
+      const st = this.scrollTop
+      let activeIdx = -1
+      // 找到最后一个已滚过的标题
+      for (let i = 0; i < headers.length; i++) {
+        if (headers[i].index * this.itemHeight <= st) {
+          activeIdx = i
+        } else {
+          break
+        }
       }
-      this.updateVisibleRange();
-    });
-    this.initObserver();
-  },
-  beforeDestroy() {
-    if (this.observer) {
-      this.observer.disconnect();
+      if (activeIdx === -1) return null
+
+      const current = headers[activeIdx]
+      const next = headers[activeIdx + 1] || null
+      let stickyOffset = -1
+
+      if (next) {
+        const nextTop = next.index * this.itemHeight
+        // 下一标题推挤当前标题（使用 headerHeight 作为参考高度）
+        if (nextTop - st < this.headerHeight) {
+          stickyOffset = Math.max(-this.headerHeight, nextTop - st - this.headerHeight)
+        }
+      }
+
+      return {
+        text: current.text,
+        index: current.index,
+        stickyOffset
+      }
     }
   },
   watch: {
     items() {
-      this.updateVisibleRange();
+      this.updateVisibleRange()
     },
     itemHeight() {
-      this.updateVisibleRange();
+      this.updateVisibleRange()
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.scrollEl = this.getScrollElement()
+      if (this.scrollEl) {
+        this.containerHeight = this.scrollEl.clientHeight
+        this.scrollTop = this.scrollEl.scrollTop || 0
+      }
+      this.updateVisibleRange()
+    })
+    this.initObserver()
+  },
+  beforeDestroy() {
+    if (this.observer) {
+      this.observer.disconnect()
     }
   },
   methods: {
-    // 获取 SimpleBar 滚动元素
     getScrollElement() {
       if (!this.scrollEl) {
-        this.scrollEl = this.$refs.container?.$el?.querySelector('.simplebar-content-wrapper');
+        this.scrollEl = this.$refs.container?.$el?.querySelector('.simplebar-content-wrapper')
       }
-      return this.scrollEl;
+      return this.scrollEl
     },
-    // 滚动距离顶部
-    scrollTop() {
-      return this.getScrollElement()?.scrollTop || 0;
-    },
-    // 更新容器高度
     updateContainerHeight() {
-      const el = this.getScrollElement();
+      const el = this.getScrollElement()
       if (el) {
-        this.containerHeight = el.clientHeight;
+        this.containerHeight = el.clientHeight
       }
     },
-    // 处理resize事件
     handleResize() {
-      this.updateContainerHeight();
-      this.updateVisibleRange();
+      this.updateContainerHeight()
+      const el = this.getScrollElement()
+      this.scrollTop = el ? el.scrollTop : 0
+      this.updateVisibleRange()
     },
-    // 更新可见项范围
     updateVisibleRange() {
-      const scrollTop = this.scrollTop();
-      this.start = Math.max(0, Math.floor(scrollTop / this.itemHeight) - this.buffer);
-      this.end = Math.min(this.items.length, this.start + this.visibleCount);
+      const scrollTop = this.scrollTop
+      this.start = Math.max(0, Math.floor(scrollTop / this.itemHeight) - this.buffer)
+      this.end = Math.min(this.items.length, this.start + this.visibleCount)
     },
-    // 处理容器滚动事件（通过 CustomScrollBar / SimpleBar 透传）
     handleScroll(event) {
-      this.scrollEl = event.target;
-      this.containerHeight = event.target.clientHeight;
-      this.updateVisibleRange();
+      this.scrollEl = event.target
+      this.containerHeight = event.target.clientHeight
+      this.scrollTop = event.target.scrollTop
+      this.updateVisibleRange()
     },
-    // 初始化观察器
     initObserver() {
       this.observer = new ResizeObserver(() => {
-        this.handleResize();
-      });
-      this.observer.observe(this.$el);
+        this.handleResize()
+      })
+      this.observer.observe(this.$el)
     },
-
-    /**
-     * 滚动到指定索引的项
-     * @param {number} index - 要滚动到的项目索引
-     * @param {Object} [options] - 滚动选项
-     * @param {string} [options.behavior='auto'] - 滚动行为 ('auto' 或 'smooth')
-     * @param {string} [options.align='center'] - 对齐方式 ('start', 'center', 'end', 'nearest')
-     */
     scrollToIndex(index, options = {}) {
-      const {
-        behavior = 'auto',
-        align = 'center'
-      } = options;
+      const { behavior = 'auto', align = 'center' } = options
+      const validIndex = Math.max(0, Math.min(index, this.items.length - 1))
+      let scrollTop = validIndex * this.itemHeight
 
-      // 确保索引在有效范围内
-      const validIndex = Math.max(0, Math.min(index, this.items.length - 1));
-
-      // 计算目标滚动位置
-      let scrollTop = validIndex * this.itemHeight;
-
-      // 根据对齐方式调整位置
       if (align === 'center') {
-        scrollTop = scrollTop - this.containerHeight / 2 + this.itemHeight / 2;
+        scrollTop = scrollTop - this.containerHeight / 2 + this.itemHeight / 2
       } else if (align === 'end') {
-        scrollTop = scrollTop - this.containerHeight + this.itemHeight;
+        scrollTop = scrollTop - this.containerHeight + this.itemHeight
       } else if (align === 'nearest') {
-        const currentScroll = this.scrollTop();
-        const itemTop = validIndex * this.itemHeight;
-        const itemBottom = itemTop + this.itemHeight;
-
+        const currentScroll = this.scrollTop
+        const itemTop = validIndex * this.itemHeight
+        const itemBottom = itemTop + this.itemHeight
         if (itemTop < currentScroll) {
-          // 项目在当前视口上方，滚动到顶部
-          scrollTop = itemTop;
+          scrollTop = itemTop
         } else if (itemBottom > currentScroll + this.containerHeight) {
-          // 项目在当前视口下方，滚动到底部
-          scrollTop = itemBottom - this.containerHeight;
+          scrollTop = itemBottom - this.containerHeight
         } else {
-          // 项目已经在视口中，不需要滚动
-          return;
+          return
         }
       }
 
-      // 限制滚动范围
-      scrollTop = Math.max(0, Math.min(scrollTop, this.maxScroll));
-
-      // 通过 SimpleBar 滚动元素执行滚动
-      const el = this.getScrollElement();
+      scrollTop = Math.max(0, Math.min(scrollTop, this.maxScroll))
+      const el = this.getScrollElement()
       if (el) {
-        el.scrollTo({
-          top: scrollTop,
-          behavior
-        });
+        el.scrollTo({ top: scrollTop, behavior })
       }
-
-      // 立即更新可见范围（不等待滚动动画）
-      this.start = Math.max(0, Math.floor(scrollTop / this.itemHeight) - this.buffer);
-      this.end = Math.min(this.items.length, this.start + this.visibleCount);
+      this.start = Math.max(0, Math.floor(scrollTop / this.itemHeight) - this.buffer)
+      this.end = Math.min(this.items.length, this.start + this.visibleCount)
     }
   }
-};
+}
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .virtual-scroller {
   position: relative;
   width: 100%;
+  overflow: hidden;
+  max-height: 100%;
 }
 
 .scroll-container {
@@ -217,5 +269,28 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
+}
+
+.sticky-header {
+  z-index: 5;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: $color-bg-page;
+  box-sizing: border-box;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 12px;
+  border-bottom: 1px solid $color-border;
+  color: $color-text-regular;
+  will-change: transform;
+}
+
+/* 确保滚动条层级高于粘性标题，避免遮挡 */
+:deep(.simplebar-track) {
+  z-index: 10;
 }
 </style>

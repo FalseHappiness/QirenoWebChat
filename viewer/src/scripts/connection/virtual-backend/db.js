@@ -259,7 +259,7 @@ class VirtualDB extends Dexie {
           groupId && groupId !== 0 && postType === 'notice' &&
           [
             'poke', 'add', 'ban', 'lift_ban',
-            'approve', 'invite', 'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null, 'group_name'
+            'approve', 'invite', 'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null, 'group_name', 'leave'
           ].includes(subType) &&
           [
             'notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',

@@ -14,7 +14,7 @@
     --mx-menu-open-text: black;
     --mx-menu-open-hover-text: black;
     --mx-menu-border-color: rgb(215 215 215 / 75%);
-    --mx-menu-divider: #e4e4e4;
+    --mx-menu-divider: #cecece;
 }
 
 .mx-menu-bar.mac .mx-context-menu-item, .mx-context-menu.mac .mx-context-menu-item {

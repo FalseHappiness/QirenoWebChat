@@ -659,3 +659,8 @@
   transform: scale(1.5);
   pointer-events: none;
 }
+
+@mixin square-size($size: 100%) {
+  height: $size;
+  width: $size;
+}

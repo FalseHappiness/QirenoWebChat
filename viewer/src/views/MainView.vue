@@ -485,6 +485,12 @@ onMounted(() => {
             user_id,
             { card: event.card_new }
           )
+        } else if (notice_type === 'group_admin') {
+          updateGroupMemberInfoCache(
+            group_id,
+            user_id,
+            { role: sub_type === 'set' ? 'admin' : 'member' }
+          )
         }
 
         if (isSupportedNoticeMessage(notice)) {
