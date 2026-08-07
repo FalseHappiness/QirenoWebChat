@@ -138,7 +138,7 @@ function basicContextItem(text, onclick, iconName = undefined, condition = true,
   return item
 }
 
-function formatBasicContextItems(items) {
+function formatBasicContextItems(...items) {
   items = items.filter(item => item !== undefined)
   for (const index in items) {
     if (parseInt(index) === items.length - 1) {

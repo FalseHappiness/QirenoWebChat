@@ -275,7 +275,7 @@ export default defineComponent({
             this.refreshFolder()
           }
         }
-        return formatBasicContextItems([
+        return formatBasicContextItems(
           basicContextItem(
             "下载",
             () => window.location.open(this.getFileDownloadUrl(item))
@@ -347,7 +347,7 @@ export default defineComponent({
             "delete_new_24",
             this.isAdmin
           )
-        ])
+        )
       }
     },
     selectUploadGroupFiles() {

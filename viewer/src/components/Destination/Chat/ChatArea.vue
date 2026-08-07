@@ -1017,28 +1017,19 @@ defineExpose({
 
 .group-applications-list {
   padding: 8px 10px 0 10px;
-  display: flex;
-  flex-wrap: wrap;
   gap: 15px;
-  justify-content: flex-start;
-
-  @container (max-width: 360px) {
-    justify-content: space-between;
-  }
+  @include grid-columns-auto-fill(50px);
 }
 
 .group-app-list-app-container {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
+  @extend %flex-column-center;
   font-size: 12px;
   gap: 5px;
   cursor: pointer;
 }
 
 .group-app-icon {
-  width: 30px;
-  height: 30px;
+  @include square-size(30px);
 }
 
 .contact-more-leave-group, .contact-more-delete-friend {

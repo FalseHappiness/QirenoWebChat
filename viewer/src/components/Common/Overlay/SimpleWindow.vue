@@ -58,8 +58,8 @@ export default defineComponent({
     <SimplePopUp ref="popUp"
                  :on-cancel="close"
                  :on-confirm="close"
-                 :container-styles="[$style['simple-window-popup-container'], fillMobile ? $style['fill-mobile'] : '' ]"
-                 :inline-styles="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }">
+                 :class="[ 'simple-window-popup-container', fillMobile ? 'fill-mobile' : '' ]"
+                 :style="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }">
       <div class="window-title">
         {{ title }}
         <QIcon name="close_fill_24" class="window-close-btn cannot-drag"
@@ -71,22 +71,6 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
-.window-title {
-  @include dialog-title;
-}
-
-.window-close-btn {
-  float: right;
-  width: $close-btn-size;
-  height: $close-btn-size;
-  position: absolute;
-  right: 6px;
-  top: 1px;
-  cursor: pointer;
-}
-</style>
-
-<style module lang="scss">
 .simple-window-popup-container {
   width: var(--width);
   height: var(--height);
@@ -106,5 +90,19 @@ export default defineComponent({
     width: 100%;
     border-radius: 0;
   }
+}
+
+.window-title {
+  @include dialog-title;
+}
+
+.window-close-btn {
+  float: right;
+  width: $close-btn-size;
+  height: $close-btn-size;
+  position: absolute;
+  right: 6px;
+  top: 1px;
+  cursor: pointer;
 }
 </style>

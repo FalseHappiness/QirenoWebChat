@@ -114,6 +114,7 @@ export default {
       showFlag: false,
       listeners: [], // 存储事件监听器
       resizeObserver: null,
+      intersectionObserver: null,
       // mutationObserver: null,
       scrollableParents: [],
       targetElement: null,
@@ -388,6 +389,18 @@ export default {
       }
 
       // this.addListener(window, "resize", this.updatePosition)
+      this.intersectionObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0]
+        // 完全不可见
+        this.targetVisible = entry.isIntersecting
+        if (!this.targetVisible && this.show) {
+          this.show = false
+          this.showFlag = false
+        }
+      }, {
+        threshold: 0 // 0 = 元素一丁点都看不见就触发隐藏
+      })
+      this.intersectionObserver.observe(targetEl)
     },
     removeObserver() {
       if (this.resizeObserver) this.resizeObserver.disconnect();
@@ -396,6 +409,10 @@ export default {
         this.clearListener(el, "scroll", this.updatePosition)
       });
       // this.clearListener(window, "resize", this.updatePosition)
+      if (this.intersectionObserver) {
+        this.intersectionObserver.disconnect()
+        this.intersectionObserver = null
+      }
     },
     // 获取所有可滚动的祖先元素
     getScrollableAncestors(el) {
@@ -457,11 +474,14 @@ export default {
       this.addListener(targetEl, 'click', this.toggle);
       if (this.closeOnClickOutside) {
         this.addListener(document, "click", e => {
+          const {target}=e
           if (
             this.show &&
-            !this.$refs?.popover?.contains(e.target) &&
-            e.target !== targetEl &&
-            !targetEl.contains(e.target)
+            !this.$refs?.popover?.contains(target) &&
+            target !== targetEl &&
+            !targetEl.contains(target) &&
+            !target?.closest(".mx-context-menu") &&
+            !target?.closest(".popup-confirm-box-container")
           ) {
             this.show = false
           }

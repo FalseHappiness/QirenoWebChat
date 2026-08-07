@@ -114,6 +114,46 @@ function isPromise(variable) {
   return variable instanceof Promise
 }
 
+/**
+ * @param {Array} arr 原数组
+ * @param {Function} predicate 匹配回调 item=>boolean
+ * @param {boolean} mutate 是否修改原数组，false 返回全新数组
+ * @returns {Array} 处理后的数组
+ */
+function moveItemToFront(arr, predicate, mutate = false) {
+  const idx = arr.findIndex(predicate)
+  if (idx === -1) return mutate ? arr : [...arr]
+
+  if (mutate) {
+    const item = arr.splice(idx, 1)[0]
+    arr.unshift(item)
+    return arr
+  } else {
+    return [arr[idx], ...arr.filter((_, i) => i !== idx)]
+  }
+}
+
+/**
+ * 删除数组中满足条件的全部项
+ * @param {Array} arr 源数组
+ * @param {Function} predicate (item)=>boolean 需要删除的判断函数
+ * @param {boolean} mutate 是否原地修改原数组，默认false返回新数组
+ * @returns {Array} 处理完成后的数组
+ */
+function removeItems(arr, predicate, mutate = false) {
+  if (!mutate) {
+    // 返回全新数组，原数组不受影响
+    return arr.filter(item => !predicate(item))
+  }
+  // 原地删除，倒序遍历防止下标错乱
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (predicate(arr[i])) {
+      arr.splice(i, 1)
+    }
+  }
+  return arr
+}
+
 export {
   isNumber,
   isFunction,
@@ -129,4 +169,6 @@ export {
   mergeNotEmpty,
   isNil,
   isPromise,
+  moveItemToFront,
+  removeItems,
 };

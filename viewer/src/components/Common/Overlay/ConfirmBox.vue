@@ -43,7 +43,7 @@ export default defineComponent({
   <div class="confirm-box">
     <SimplePopUp :on-confirm="onConfirm"
                  :on-cancel="onCancel"
-                 :container-styles="$style['confirm-box-container']"
+                 class="popup-confirm-box-container"
                  ref="popUp">
       <div class="confirm-box-header">
         <span class="confirm-box-title">{{ title }}</span>
@@ -62,6 +62,14 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
+.popup-confirm-box-container {
+  width: 360px;
+  height: auto;
+  max-height: calc(100% - 20px);
+  padding: 15px 20px;
+  z-index: 10;
+}
+
 .confirm-box-header {
   padding: 4px 0 6px 0;
 }
@@ -134,14 +142,5 @@ export default defineComponent({
 .confirm-box-button-cancel:active {
   background-color: $color-bg-active-alt;
   color: $color-text-muted;
-}
-</style>
-
-<style module>
-.confirm-box-container {
-  width: 360px;
-  height: auto;
-  max-height: calc(100% - 20px);
-  padding: 15px 20px;
 }
 </style>

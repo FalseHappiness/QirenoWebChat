@@ -3,12 +3,12 @@ import { ref, onUnmounted, computed, h, onMounted, inject, toRaw, watch } from '
 import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
-  checkResponseOK,
+  checkResponseOK, fetchAddCustomFace,
   fetchChangeEssenceMsg,
   fetchKickGroupUser,
   fetchRecallMessage, fetchRecordToText,
   fetchSendMessage, fetchSetGroupAdmin, fetchSetGroupMemberCard, fetchSetGroupMute, fetchTranslateEnglish,
-  getUserLogo
+  getUserLogo, handleApiRequest
 } from "@/scripts/backend-api.js";
 import { useGlobalStore } from "@/store/global.js";
 import GroupLevelTitle from "./GroupLevelTitle.vue";
@@ -270,10 +270,21 @@ const isEnabledPTT = ref(false);
 const pttText = ref(undefined)
 const pttErrorText = ref(null)
 
-const customMessageContextMenu = () => {
+const customMessageContextMenu = e => {
   const self_info = currentGroupSelfInfo.value
   const sender_info = currentGroupUserInfo.value
-  return formatBasicContextItems([
+  let imageSrc;
+  let videoSrc
+  const imageContainer = e?.target?.closest(".message-image")
+  const videoContainer = e?.target?.closest(".message-video")
+  if (imageContainer) {
+    imageSrc = imageContainer.dataset.src
+  }
+  if (videoContainer) {
+    videoSrc = videoContainer.dataset.src
+  }
+  const mediaSrc = imageSrc || videoSrc
+  return formatBasicContextItems(
     basicContextItem(
       '英译中',
       async () => {
@@ -338,6 +349,18 @@ const customMessageContextMenu = () => {
       } : null)
     }, "quote_24"),
     basicContextItem(
+      '添加到表情',
+      async () => handleApiRequest(fetchAddCustomFace(imageSrc), "表情添加成功", "表情添加失败"),
+      "expression_add_24",
+      !!imageSrc
+    ),
+    basicContextItem(
+      '另存为',
+      () => window.open(mediaSrc),
+      "save_as_24",
+      !!mediaSrc
+    ),
+    basicContextItem(
       isEssence.value ? '移除精华' : '设为精华',
       async () => {
         if (settingEssence.value) {
@@ -394,7 +417,7 @@ const customMessageContextMenu = () => {
         )
       )
     ),
-  ]);
+  );
 }
 
 const isRecalled = computed(() => objectHasKey(messageEvent.value, 'recall_operator'))

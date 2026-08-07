@@ -6,6 +6,7 @@ import 'simplebar-vue/dist/simplebar.min.css';
 import Tooltip from "../../../Common/Overlay/Tooltip.vue";
 import { useGlobalStore } from "@/store/global.js";
 import {
+  checkResponseOK,
   fetchForwardSingleMsg,
   fetchRemainGroupAtAll,
   fetchSendFiles,
@@ -14,23 +15,35 @@ import {
 } from "@/scripts/backend-api.js";
 import InputQuote from "./InputQuote.vue";
 import VirtualScroller from "../../../Common/Scrolling/VirtualScroller.vue";
-import { pinyin } from "pinyin-pro";
 import FilesConfirm from "./FilesConfirm.vue";
 import FilesUploadTasksViewer from "./FilesUploadTasksViewer.vue";
 import ContactsPicker from "./ContactsPicker.vue";
 import { Emitter } from "@/composables/useEventBus.js";
 import { nanoid } from "nanoid";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
-import { showErrorToast, showInfoToast, showWarningToast } from "@/scripts/toast.js";
+import { showErrorToast, showInfoToast } from "@/scripts/toast.js";
 import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
-import { getPokeDescription } from "@/scripts/faces-config.js";
-import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js";
-import { isArray, isBoolean, isFunction, isObject, isUndefined, isString, isPromise } from "@/scripts/types-util.js";
+import {
+  isArray,
+  isBoolean,
+  isFunction,
+  isObject,
+  isUndefined,
+  isString,
+  isPromise,
+  isNumber
+} from "@/scripts/types-util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { getCacheGroupUserName, getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
 import { checkSameContact, filteredAtGroupUsers } from "@/scripts/contacts-util.js";
 import { formatTimeOptions } from "@/scripts/util.js";
+// 引入拆分的子组件
+import RecordPanel from "./RecordPanel.vue";
+import ExpressionPanel from "./ExpressionPanel.vue";
+// 引入 composables
+import { useEditorHistory } from "./composables/useEditorHistory.js";
+import { useEditorEmoji } from "./composables/useEditorEmoji.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -47,6 +60,8 @@ export default defineComponent({
     VueResizable,
     SimpleBar,
     Icon,
+    RecordPanel,
+    ExpressionPanel,
   },
   inject: ['activeContact', "groupUsers", "filesUploadTasks", "selfId"],
   data() {
@@ -55,11 +70,7 @@ export default defineComponent({
       dragCounter: 0,
       draggedFragment: null,
       draggedRange: null,
-      history: [],         // 历史记录栈
-      historyIndex: -1,    // 当前历史位置
-      inputTime: null,
-      ignoreChanges: false, // 忽略程序引起的DOM变化
-      isCompositing: false, // 是否在拼词
+      editorHistory: null,
       refReady: false,
       global: undefined,
       quotedMessage: null,
@@ -75,44 +86,34 @@ export default defineComponent({
       showFilesUploadTasks: false,
       remainGroupAtAll: undefined,
       isShowRecordPanel: false,
-      isRecording: false,
-      recordDuration: 0,
-      recordTimer: null,
-      mediaRecorder: null,
-      audioChunks: [],
-      recordActiveCount: 0,
-      recordShouldCancel: false,
-      recordStream: null,
-      isHoveringCancel: false,
-      isRecordLocked: false,   // 录音锁定状态
-      isRecordPaused: false,   // 录音暂停状态
-      showGroupAiRecordEditor: false,  // AI语音编辑器显示状态
       pendingUploadInfo: {
         files: [],
         confirming: false,
         type: null,
         attachInfo: null
-      }
+      },
+      editorEmoji: null,
     }
   },
   mounted() {
-    // console.log(this)
-    this.recordHistory();
-    this.$refs.editor.addEventListener('compositionstart', this.handleCompositionStart)
-    this.$refs.editor.addEventListener('compositionend', this.handleCompositionEnd)
+    this.global = useGlobalStore()
+
+    // 初始化 composable 的状态引用（使用 getter 函数以在 mounted 后获取 DOM 引用）
+    this.editorHistory = useEditorHistory(() => this.$refs.editor)
+    this.editorEmoji = useEditorEmoji(this.global)
+
+    this.editorHistory.recordHistory();
+    this.$refs.editor.addEventListener('compositionstart', this.editorHistory.handleCompositionStart)
+    this.$refs.editor.addEventListener('compositionend', this.editorHistory.handleCompositionEnd)
     document.addEventListener('selectionchange', this.handleSelectionChange);
     document.addEventListener('click', this.handleDocumentClick);
     window.addEventListener('keydown', this.handleWindowKeyDown);
     document.addEventListener('drop', this.handleDocumentDrop);
     document.addEventListener('dragover', this.handleDocumentDragover);
-    window.addEventListener('keydown', this.handleWindowRecordKeyDown);
-    window.addEventListener('keyup', this.handleWindowRecordKeyUp);
 
     this.$nextTick(() => {
       this.refReady = true
     })
-
-    this.global = useGlobalStore()
 
     Emitter.on('forward-single-msg', this.handleForwardSingleMsg)
     Emitter.on('input-at-somebody', this.handleInputAtSomebody)
@@ -130,12 +131,10 @@ export default defineComponent({
   methods: {
     getCacheGroupUserName,
     handleUnmounted() {
-      this.$refs.editor?.removeEventListener('compositionstart', this.handleCompositionStart)
-      this.$refs.editor?.removeEventListener('compositionend', this.handleCompositionEnd)
+      this.$refs.editor?.removeEventListener('compositionstart', this.editorHistory?.handleCompositionStart)
+      this.$refs.editor?.removeEventListener('compositionend', this.editorHistory?.handleCompositionEnd)
       document.removeEventListener('click', this.handleDocumentClick);
       window.removeEventListener('keydown', this.handleWindowKeyDown);
-      window.removeEventListener('keyup', this.handleWindowRecordKeyUp);
-      window.removeEventListener('keydown', this.handleWindowRecordKeyDown);
       document.removeEventListener('drop', this.handleDocumentDrop);
       document.removeEventListener('dragover', this.handleDocumentDragover);
 
@@ -146,159 +145,61 @@ export default defineComponent({
       Emitter.off('select-upload-group-images')
       Emitter.off('select-contacts-send-msg')
     },
-    // 用户在编辑后调用此方法记录状态
+
+    // 兼容代理方法：调用 composable 中的 history 方法
     recordHistory() {
-      // 获取当前 innerHTML
-      const content = this.$refs.editor.innerHTML;
-      // 保存光标位置（使用路径方式恢复）
-      const selection = this.saveSelection();
-
-      // 撤销时清除当前索引之后的未来历史
-      this.history = this.history.slice(0, this.historyIndex + 1);
-      this.history.push({ content, selection });
-      this.historyIndex = this.history.length - 1;
+      this.editorHistory?.recordHistory()
     },
-
-    // 撤销
     undo() {
-      if (this.historyIndex > 0) {
-        this.historyIndex--;
-        const state = this.history[this.historyIndex];
-        this.$refs.editor.innerHTML = state.content;
-        this.restoreSelection(state.selection);
-      }
+      this.editorHistory?.undo()
     },
-
-    // 重做
     redo() {
-      if (this.historyIndex < this.history.length - 1) {
-        this.historyIndex++;
-        const state = this.history[this.historyIndex];
-        this.$refs.editor.innerHTML = state.content;
-        this.restoreSelection(state.selection);
-      }
+      this.editorHistory?.redo()
     },
-
-    // 保存光标位置（返回路径和偏移）
     saveSelection() {
-      const sel = window.getSelection();
-      if (sel.rangeCount === 0) return null;
-
-      const range = sel.getRangeAt(0);
-      return {
-        startContainerPath: this.getNodePath(range.startContainer),
-        startOffset: range.startOffset,
-        endContainerPath: this.getNodePath(range.endContainer),
-        endOffset: range.endOffset,
-      };
+      return this.editorHistory?.saveSelection()
     },
-
-    // 恢复光标位置
     restoreSelection(selData) {
-      if (!selData) return;
-
-      const startContainer = this.getNodeByPath(selData.startContainerPath);
-      const endContainer = this.getNodeByPath(selData.endContainerPath);
-
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      const range = new Range();
-
-      try {
-        range.setStart(startContainer, selData.startOffset);
-        range.setEnd(endContainer, selData.endOffset);
-        sel.addRange(range);
-      } catch (e) {
-        // 如果设置失败（可能路径失效），选择元素开头
-        range.selectNodeContents(this.$refs.editor);
-        sel.addRange(range);
-      }
+      this.editorHistory?.restoreSelection(selData)
     },
-
-    // 获取节点的路径（从元素根开始）
     getNodePath(node) {
-      const path = [];
-      while (node !== this.$refs.editor && node.parentNode) {
-        const siblings = node.parentNode.childNodes;
-        let index = 0;
-        for (const sibling of siblings) {
-          if (sibling === node) break;
-          index++;
-        }
-        path.unshift({
-          nodeType: node.nodeType,
-          tagName: node.nodeType === 1 ? node.tagName : null,
-          index,
-        });
-        node = node.parentNode;
-      }
-      return path;
+      return this.editorHistory?.getNodePath(node)
     },
-
-    // 根据路径获取节点
     getNodeByPath(path) {
-      let node = this.$refs.editor;
-      for (const step of path) {
-        const children = node.childNodes;
-        if (step.index < children.length && children[step.index].nodeType === step.nodeType) {
-          node = children[step.index];
-        } else {
-          throw new Error('Path invalid');
-        }
-      }
-      return node;
+      return this.editorHistory?.getNodeByPath(path)
     },
-
     handleCompositionStart() {
-      this.isCompositing = true
+      this.editorHistory?.handleCompositionStart()
     },
-
     handleCompositionEnd() {
-      this.isCompositing = false
-      this.recordHistory()
+      this.editorHistory?.handleCompositionEnd()
     },
-
     moveCaretToEditorEnd() {
-      // 移到末尾
-      const range = document.createRange();
-      range.selectNodeContents(this.$refs.editor);
-      range.collapse(false);
-
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      this.updateCaretPosition()
+      this.editorHistory?.moveCaretToEditorEnd()
     },
-
     handleInput() {
-      if (this.inputTime === null) {
-        this.inputTime = Date.now()
-      } else if ((Date.now() - this.inputTime > 300) && !this.isCompositing) {
-        this.recordHistory();
-        this.inputTime = null
-      }
+      this.editorHistory?.handleInput()
     },
-
     // 键盘事件处理（撤销/重做）
     handleKeyDown(e) {
-      // Ctrl+Z 或 Cmd+Z
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
-        if (e.shiftKey) {
-          // Ctrl+Shift+Z 重做
-          this.redo()
-        } else {
-          // Ctrl+Z 撤销
-          this.undo()
-        }
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      // Ctrl+Y 重做
-      else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-        this.redo()
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      this.editorHistory?.handleKeyDown(e)
+    },
+
+    // 兼容代理方法：调用 composable 中的 emoji 方法
+    isPokeEmoji(emoji_id) {
+      return this.editorEmoji?.isPokeEmoji(emoji_id)
+    },
+    getPokeEmojiNum(emoji_id) {
+      return this.editorEmoji?.getPokeEmojiNum(emoji_id)
+    },
+    getPngEmojiUrl(emoji_id, forceStatic) {
+      return this.editorEmoji?.getPngEmojiUrl(emoji_id, forceStatic)
+    },
+    getAnimationEmojiUrl(emoji_id) {
+      return this.editorEmoji?.getAnimationEmojiUrl(emoji_id)
+    },
+    insertEmojiAtCursor(emoji_id) {
+      this.editorEmoji?.insertEmojiAtCursor(emoji_id, this.insertNodeAtCursor)
     },
 
     // 处理拖动开始（支持多元素）
@@ -352,6 +253,7 @@ export default defineComponent({
             isGroupAlbumViewer = undefined
           }
         }
+        const isCustomFacePanel = closest(".message-input-expression-box")
         return {
           target,
           isEditor,
@@ -360,7 +262,8 @@ export default defineComponent({
           isGroupFilesViewer,
           isGroupAlbumViewer,
           groupAlbumAttachInfo,
-          shouldHandle: isEditor || isChatContainer || isRecord || isGroupFilesViewer || isGroupAlbumViewer
+          isCustomFacePanel,
+          shouldHandle: isEditor || isChatContainer || isRecord || isGroupFilesViewer || isGroupAlbumViewer || isCustomFacePanel
         }
       }
       return {
@@ -380,7 +283,8 @@ export default defineComponent({
 
     async handleDocumentDrop(e) {
       const {
-        isEditor, isChatContainer, isRecord, isGroupFilesViewer, isGroupAlbumViewer, groupAlbumAttachInfo, shouldHandle
+        isEditor, isChatContainer, isRecord, isGroupFilesViewer, isGroupAlbumViewer, groupAlbumAttachInfo, shouldHandle,
+        isCustomFacePanel
       } = this.parseDragTarget(e)
       if (shouldHandle) {
         e.preventDefault();
@@ -398,6 +302,8 @@ export default defineComponent({
             'media',
             groupAlbumAttachInfo
           )
+        } else if (isCustomFacePanel) {
+          await this.handleDropFiles(e, 'face')
         }
       }
     },
@@ -500,6 +406,13 @@ export default defineComponent({
               )
             )
           }
+        } else if (type === 'face') {
+          const imageFiles = filteredFiles.filter(file => file.type.startsWith('image/'))
+          if (imageFiles.length !== filteredFiles.length) {
+            showInfoToast('已自动过滤非图片文件')
+          }
+          this.createPendingFilesUpload(imageFiles, type)
+          this.handleFilesConfirm()
         } else {
           this.createPendingFilesUpload(filteredFiles, type, attachInfo)
         }
@@ -510,12 +423,13 @@ export default defineComponent({
       const { type, files, attachInfo } = this.pendingUploadInfo
       this.clearPendingFilesUpload()
       const maxSize = 20 * 1024 * 1024; // 20MB
-      const minFiles = isObject(attachInfo) ? [] : files.filter(f => f.size <= maxSize);
+      const forceStream = isObject(attachInfo) || type === 'face'
+      const minFiles = forceStream ? [] : files.filter(f => f.size <= maxSize);
       const bigFiles = files.filter(f => !minFiles.includes(f))
       const contact = toRaw(this.activeContact)
       const handleResult = task => {
         return result => {
-          if (result?.status === 'ok') {
+          if (checkResponseOK(result)) {
             task.completed = true
           } else {
             handleError(task)(new Error(JSON.stringify(result)))
@@ -578,20 +492,25 @@ export default defineComponent({
         const send = () => fetchSendFileStream(task)
           .then(handleResult(task))
           .catch(handleError(task))
+        const convertImageSend = () => {
+          task.is_converting_image = true
+          this.convertImageToSafeType(file)
+            .then(file => {
+              task.is_converting_image = false
+              task.file = file
+              send()
+            })
+            .catch(handleError(task))
+        }
         if (type === 'media') {
           task.type = file.type.startsWith("image/") ? "image" : "video"
           if (task.type === 'image') {
-            task.is_converting_image = true
-            this.convertImageToSafeType(file)
-              .then(file => {
-                task.is_converting_image = false
-                task.file = file
-                send()
-              })
-              .catch(handleError(task))
+            convertImageSend()
           } else {
             send()
           }
+        } else if (type === 'face') {
+          convertImageSend()
         } else {
           send()
         }
@@ -853,12 +772,23 @@ export default defineComponent({
     },
 
     // 在光标位置插入图片
-    async insertImageAtCursor(file) {
-      const base64 = await this.readFileAsBase64(file);
+    async insertImageAtCursor(file, summary = undefined, sub_type = 0) {
+      let url = '';
+      if (file instanceof File) {
+        url = await this.readFileAsBase64(file);
+      } else if (isString(file)) {
+        url = file
+      }
       const img = document.createElement('img');
       img.classList.add("message-input-editor-image");
-      img.src = base64;
+      img.src = url;
       img.draggable = true;
+      if (isString(summary)) {
+        img.dataset.summary = summary
+      }
+      if (isNumber(sub_type) || isString(sub_type)) {
+        img.dataset.subType = sub_type
+      }
 
       this.insertNodeAtCursor(img)
     },
@@ -938,73 +868,6 @@ export default defineComponent({
       this.insertNodeAtCursor(fragment);
     },
 
-    isPokeEmoji(emoji_id) {
-      return !!this.getPokeEmojiNum(emoji_id)
-    },
-
-    getPokeEmojiPath(emoji_id, dynamic = false) {
-      const pokeId = this.getPokeEmojiNum(emoji_id);
-      if (pokeId) {
-        return qqAppPoke(pokeId, pokeId + (dynamic ? "_loop.webp" : ".png"))
-      }
-      return null
-    },
-
-    getPokeEmojiNum(emoji_id) {
-      const pokeMatch = String(emoji_id).match(/^poke_([1-6])$/);
-      return pokeMatch ? Number(pokeMatch[1]) : null
-    },
-
-    getPngEmojiUrl(emoji_id, forceStatic = false) {
-      if (this.isPokeEmoji(emoji_id)) {
-        return this.getPokeEmojiPath(emoji_id);
-      }
-      let add = ''
-      if (forceStatic && this.isDynamicDefaultPngEmoji(emoji_id)) {
-        add = `_0`
-      }
-      return qqSystemEmoji(emoji_id, 'png', `${emoji_id}${add}.png`)
-    },
-
-    isDynamicDefaultPngEmoji(emoji_id) {
-      // 466, 468, 469 即使加了 _0 也是动态的
-      return [367, 466, 468, 469].includes(Number(emoji_id))
-    },
-
-    getApngEmojiUrl(emoji_id) {
-      if (this.isPokeEmoji(emoji_id)) {
-        return this.getPokeEmojiPath(emoji_id, true);
-      }
-      const url = qqSystemEmoji(emoji_id, 'apng', `${emoji_id}.png`)
-      return this.emojiFiles.includes(url) ? url : null
-    },
-
-    getAnimationEmojiUrl(emoji_id) {
-      const animation_src = this.getApngEmojiUrl(emoji_id);
-      return animation_src ? animation_src : this.getPngEmojiUrl(emoji_id);
-    },
-
-    getEmojiDescription(emoji_id) {
-      const pokeId = this.getPokeEmojiNum(emoji_id)
-      if (pokeId) {
-        return getPokeDescription(pokeId)
-      } else {
-        return this.emojiDescribes[emoji_id]
-      }
-    },
-
-    insertEmojiAtCursor(emoji_id) {
-      emoji_id = String(emoji_id)
-      const img = document.createElement('img');
-      img.classList.add("message-input-editor-emoji");
-      img.src = this.getAnimationEmojiUrl(emoji_id);
-      img.dataset.emoji = emoji_id
-      img.draggable = true;
-      if (img.src) {
-        this.insertNodeAtCursor(img)
-      }
-    },
-
     insertTextAtCursor(text) {
       this.insertNodeAtCursor(document.createTextNode(text))
     },
@@ -1056,8 +919,8 @@ export default defineComponent({
 
               if (emoji_describe) {
                 emoji_describe = decodeURIComponent(emoji_describe)
-                const emoji_id = Object.keys(this.emojiDescribes).find(
-                  key => this.emojiDescribes[key] === emoji_describe
+                const emoji_id = Object.keys(this.global.emojiDescribes).find(
+                  key => this.global.emojiDescribes[key] === emoji_describe
                 )
                 if (emoji_id) {
                   const url = this.getAnimationEmojiUrl(emoji_id)
@@ -1336,6 +1199,13 @@ export default defineComponent({
           newImg.dataset.emoji = img.dataset.emoji
         } else {
           newImg.classList.add('message-input-editor-image');
+          const { summary, subType } = img.dataset
+          if (isString(summary)) {
+            newImg.dataset.summary = summary
+          }
+          if (isString(subType)) {
+            newImg.dataset.subType = subType
+          }
         }
         newImg.draggable = true;
         return newImg;
@@ -1506,20 +1376,11 @@ export default defineComponent({
       });
     },
 
-    handleExpressionInput(e) {
-      let target = e.target
-      if (target) {
-        if (!target.classList.contains("message-input-expression-emoji-box")) {
-          target = target.closest(".message-input-expression-emoji-box")
-        }
-        if (target) {
-          const emoji = target.dataset.emoji
-          if (this.isPokeEmoji(emoji)) {
-            this.handleMessageInputShake(this.getPokeEmojiNum(emoji))
-          } else {
-            this.insertEmojiAtCursor(emoji)
-          }
-        }
+    handleExpressionSelectEmoji(emoji) {
+      if (this.isPokeEmoji(emoji)) {
+        this.handleMessageInputShake(this.getPokeEmojiNum(emoji))
+      } else {
+        this.insertEmojiAtCursor(emoji)
       }
     },
 
@@ -1534,8 +1395,17 @@ export default defineComponent({
         return addMessage(messages, 'text', { text })
       }
 
-      const addImage = (url, messages) => {
-        return addMessage(messages, 'image', { url })
+      const addImage = (imgData, messages) => {
+        if (isString(imgData)) imgData = { url: imgData }
+        const { url, summary, subType } = imgData
+        const data = { url }
+        if (isString(summary)) {
+          data.summary = summary
+        }
+        if (isString(subType)) {
+          data.sub_type = parseInt(subType)
+        }
+        return addMessage(messages, 'image', data)
       }
       const addEmoji = (id, messages) => {
         return addMessage(messages, 'face', { id })
@@ -1576,7 +1446,7 @@ export default defineComponent({
             } else if (node.tagName === 'IMG') {
               if (node.classList.contains('message-input-editor-emoji')) {
                 const emoji_id = node.dataset.emoji
-                if (emoji_id && this.emojiFiles.includes(this.getPngEmojiUrl(emoji_id))) {
+                if (emoji_id && this.global.emojiFiles.includes(this.getPngEmojiUrl(emoji_id))) {
                   if (this.global.emojiEmojiids.includes(emoji_id)) {
                     addText(emoji_id, parent_messages)
                   } else {
@@ -1589,7 +1459,11 @@ export default defineComponent({
                   name: node.dataset.videoName || ''
                 })
               } else {
-                addImage(node.src, parent_messages)
+                addImage({
+                  url: node.src,
+                  summary: node.dataset.summary,
+                  subType: node.dataset.subType
+                }, parent_messages)
               }
             }
           }
@@ -1721,7 +1595,7 @@ export default defineComponent({
      */
     getCurrentAtMentionRange() {
       const selection = window.getSelection();
-      if (!selection.rangeCount || this.isCompositing) return null;
+      if (!selection.rangeCount || this.editorHistory?.isCompositing) return null;
 
       const range = selection.getRangeAt(0);
       const node = range.startContainer;
@@ -1816,7 +1690,7 @@ export default defineComponent({
       // 排除tooltip内的选择和组合输入状态
       const selection = window.getSelection();
       if (this.$refs.atGroupUsersTooltip?.contains(selection.anchorNode) ||
-        this.isCompositing) {
+        this.editorHistory?.isCompositing) {
         return;
       }
 
@@ -2162,6 +2036,23 @@ export default defineComponent({
       await this.handleDropFiles(this.processSelectedFiles(await this.openFilePicker(pickerOpts)), 'record')
     },
 
+    async handleSelectAddCustomFaces() {
+      const pickerOpts = {
+        types: [
+          {
+            description: '图片',
+            accept: {
+              'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.tiff', '.svg'],
+            }
+          }
+        ],
+        multiple: true,
+        excludeAcceptAllOption: false
+      };
+
+      await this.handleDropFiles(this.processSelectedFiles(await this.openFilePicker(pickerOpts)), 'face')
+    },
+
     handleFilesUploadTasksViewer() {
       this.showFilesUploadTasks = !this.showFilesUploadTasks
     },
@@ -2187,456 +2078,22 @@ export default defineComponent({
       }
     },
 
-    // ====== 录音功能 ======
-
-    formatRecordTime(seconds) {
-      const days = Math.floor(seconds / 86400)
-      const hours = Math.floor((seconds % 86400) / 3600)
-      const minutes = Math.floor((seconds % 3600) / 60)
-      const secs = seconds % 60
-      let result = ''
-      if (days > 0) result += `${String(days).padStart(2, '0')} 天 `
-      if (hours > 0) result += `${String(hours).padStart(2, '0')}:`
-      result += `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-      return result
-    },
-
-    async requestRecordPermission() {
-      try {
-        return await navigator.mediaDevices.getUserMedia({ audio: true })
-      } catch (err) {
-        console.error('获取录音权限失败:', err)
-        showErrorToast('获取录音权限失败')
-        return null
-      }
-    },
-
-    /**
-     * 打开AI语音录制编辑器
-     */
-    handleOpenGroupAiRecordEditor() {
-      if (!this.isGroup) return
-      this.showGroupAiRecordEditor = true
-    },
-    /**
-     * 关闭AI语音录制编辑器
-     */
-    handleCloseGroupAiRecordEditor() {
-      this.showGroupAiRecordEditor = false
-    },
-
-    /**
-     * 打开录音面板（始终切换，不阻塞权限获取）
-     * 仍然请求权限，但即使没有权限也切换到面板（方便拖放音频文件到面板上）
-     */
-    async handleOpenRecordPanel() {
-      if (this.isShowRecordPanel) return
-      // 先切换到面板，不阻塞
+    // 录音面板相关方法 - 代理到 RecordPanel
+    handleOpenRecordPanel() {
       this.isShowRecordPanel = true
-      // 尝试获取权限，但不阻塞面板显示
-      const stream = await this.requestRecordPermission()
-      if (stream) {
-        this.recordStream = stream
-      }
+      this.$refs.recordPanel?.handleOpenRecordPanel()
     },
 
-    /**
-     * 开始录音的底层逻辑（不处理激活计数）
-     */
-    async startRecording() {
-      if (!this.activeContact) return
-      if (this.isRecording) return
-      let stream = this.recordStream
-      if (!stream) {
-        stream = await this.requestRecordPermission()
-        if (!stream) return
-        this.recordStream = stream
-      }
-      this.isRecording = true
-      this.recordShouldCancel = false
-      this.isRecordPaused = false
-      this.audioChunks = []
-      this.recordDuration = 0
-
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
-      this.mediaRecorder = mediaRecorder
-
-      mediaRecorder.ondataavailable = e => {
-        if (e.data.size > 0) {
-          this.audioChunks.push(e.data)
-        }
-      }
-
-      mediaRecorder.onstop = () => {
-      }
-
-      mediaRecorder.start()
-
-      this.recordTimer = setInterval(() => {
-        this.recordDuration++
-      }, 1000)
-    },
-
-    /**
-     * 增加一个录音激活源
-     */
-    async incrRecord() {
-      if (!this.activeContact) return
-
-      this.recordActiveCount++
-
-      if (this.isRecording && !this.isRecordPaused) {
-        // 已录音且非暂停：仅增加计数，保持录音
-        return
-      }
-
-      if (this.isRecordPaused) {
-        // 暂停状态下，恢复录音
-        this.resumeRecord()
-        return
-      }
-
-      // 未录音，开始录音
-      if (this.recordActiveCount === 1) {
-        await this.startRecording()
-      }
-    },
-
-    /**
-     * 减少一个录音激活源
-     */
-    decrRecord(event) {
-      if (this.recordActiveCount <= 0) return
-      this.recordActiveCount--
-
-      // 锁定模式下不因激活源归零而停止录音
-      if (this.isRecordLocked) return
-
-      // 非锁定模式，所有激活源消失，根据状态决定后续操作
-      if (this.recordActiveCount === 0) {
-        this.evaluateRelease(event)
-      }
-    },
-
-    /**
-     * 所有激活源释放后，判断是发送、取消还是其他操作
-     */
-    evaluateRelease(event) {
-      if (this.recordShouldCancel) {
-        this.cancelRecord()
-        return
-      }
-
-      // 如果正处于暂停状态，松手不做任何事
-      if (this.isRecordPaused) return
-
-      if (event) {
-        const target = event.target
-        // 在取消按钮上松开 -> 取消
-        if (this.isHoveringCancel || (target && target.closest('.message-input-record-cancel'))) {
-          this.cancelRecord()
-          return
-        }
-        // 在锁按钮上松开 -> 切换为锁定模式并保持录音
-        if (target && target.closest('.message-input-record-lock')) {
-          this.isRecordLocked = true
-          return
-        }
-        // 在播放/暂停按钮上松开 -> 解锁模式下非暂停则暂停
-        if (target && target.closest('.message-input-record-play-switch')) {
-          if (!this.isRecordPaused) {
-            this.pauseRecord()
-          }
-          return
-        }
-      }
-
-      // 其他情况：发送录音
-      this.finishRecord()
-    },
-
-    /**
-     * 暂停录音
-     */
-    pauseRecord() {
-      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-        this.mediaRecorder.pause()
-        this.isRecordPaused = true
-        if (this.recordTimer) {
-          clearInterval(this.recordTimer)
-          this.recordTimer = null
-        }
-      }
-    },
-
-    /**
-     * 恢复录音
-     */
-    resumeRecord() {
-      if (this.mediaRecorder && this.mediaRecorder.state === 'paused') {
-        this.mediaRecorder.resume()
-        this.isRecordPaused = false
-        if (!this.recordTimer) {
-          this.recordTimer = setInterval(() => {
-            this.recordDuration++
-          }, 1000)
-        }
-      }
-    },
-
-    /**
-     * 完成录音并发送
-     */
-    async finishRecord() {
-      if (!this.isRecording) return
-      this.isRecording = false
-
-      if (this.recordTimer) {
-        clearInterval(this.recordTimer)
-        this.recordTimer = null
-      }
-
-      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-        await new Promise(resolve => {
-          this.mediaRecorder.onstop = () => {
-            resolve()
-          }
-          this.mediaRecorder.stop()
-        })
-      }
-      this.mediaRecorder = null
-
-      const duration = this.recordDuration
-      this.recordDuration = 0
-      this.isRecordPaused = false
-      this.recordActiveCount = 0
-
-      if (duration < 1) {
-        showWarningToast('录音时间太短')
-        this.audioChunks = []
-        return
-      }
-
-      if (this.recordShouldCancel) {
-        this.audioChunks = []
-        this.recordShouldCancel = false
-        return
-      }
-
-      if (this.audioChunks.length > 0) {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' })
-        this.audioChunks = []
-        const fileName = `record_${Date.now()}.webm`
-        const file = new File([audioBlob], fileName, { type: 'audio/webm' })
-        const contact = toRaw(this.activeContact)
-        if (contact) {
-          fetchSendFiles({ contact, files: file, type: 'record' }).then(r => {
-            if (r?.status === 'error') {
-              console.log('Send record error:', r)
-            }
-          })
-        }
-      }
-    },
-
-    /**
-     * 取消录音（不发送）
-     */
-    cancelRecord() {
-      if (!this.isRecording && this.recordActiveCount <= 0) return
-
-      this.recordShouldCancel = true
-      this.recordActiveCount = 0
-      this.isRecording = false
-      this.isRecordPaused = false
-
-      if (this.recordTimer) {
-        clearInterval(this.recordTimer)
-        this.recordTimer = null
-      }
-
-      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-        this.mediaRecorder.stop()
-      }
-      this.mediaRecorder = null
-
-      this.recordDuration = 0
-      this.audioChunks = []
-    },
-
-    async handleRecordIconMouseDown(e) {
-      // 只处理麦克风图标的 mousedown，排除锁和播放按钮
-      const target = e.target
-      if (!target.closest('.message-input-record-microphone')) return
-
-      // 锁定且正在录音时，忽略长按（麦克风此时作为发送按钮）
-      if (this.isRecordLocked && this.isRecording) return
-      await this.incrRecord()
-      document.addEventListener('mouseup', this.handleRecordIconDocMouseUp)
-    },
-
-    handleRecordIconDocMouseUp(e) {
-      document.removeEventListener('mouseup', this.handleRecordIconDocMouseUp)
-      this.decrRecord(e)
-    },
-
-    /**
-     * 发送录音（锁定模式时点击发送图标触发）
-     */
-    handleSendRecord() {
-      if (this.isRecording) {
-        this.finishRecord()
-      }
-    },
-
-    handleWindowRecordKeyDown(e) {
-      if (!this.isShowRecordPanel) return
-      this.handleRecordPanelKeyDown(e)
-    },
-
-    handleWindowRecordKeyUp(e) {
-      if (!this.isShowRecordPanel) return
-      this.handleRecordPanelKeyUp(e)
-    },
-
-    async handleRecordPanelKeyDown(e) {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        if (this.isRecording) {
-          this.cancelRecord()
-        } else {
-          this.isShowRecordPanel = false
-        }
-        return
-      }
-
-      // 空格键按下
-      if (e.key === ' ' || e.code === 'Space') {
-        if (!e.repeat) {
-          e.preventDefault()
-          if (this.isRecording && this.isRecordLocked) {
-            // 锁定模式下，切换暂停/非暂停
-            if (this.isRecordPaused) {
-              this.resumeRecord()
-            } else {
-              this.pauseRecord()
-            }
-          } else {
-            // 非锁定模式：增加激活源（开始录音或恢复录音）
-            await this.incrRecord()
-          }
-        }
-      }
-    },
-
-    handleRecordPanelKeyUp(e) {
-      if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault()
-        // 锁定模式下空格已在 keydown 中处理，keyup 不做任何事
-        if (!(this.isRecording && this.isRecordLocked)) {
-          this.decrRecord()
-        }
-      }
-    },
-
-    handleRecordCancelMouseEnter() {
-      this.isHoveringCancel = true
-    },
-
-    handleRecordCancelMouseLeave() {
-      this.isHoveringCancel = false
-    },
-
-    handleLockClick() {
-      if (this.isRecording) {
-        if (this.isRecordLocked) {
-          // 锁定 -> 解锁，并暂停
-          this.isRecordLocked = false
-          this.pauseRecord()
-        } else {
-          // 解锁 -> 锁定，保持录音
-          this.isRecordLocked = true
-        }
-      } else {
-        // 未录音，仅切换锁定状态
-        this.isRecordLocked = !this.isRecordLocked
-      }
-    },
-
-    handlePlaySwitchClick() {
-      if (!this.isRecording) {
-        // 未录音：锁定并开始录音
-        this.isRecordLocked = true
-        this.startRecording()
-      } else {
-        // 录音中
-        if (this.isRecordLocked) {
-          // 锁定模式：自由切换暂停/恢复
-          if (this.isRecordPaused) {
-            this.resumeRecord()
-          } else {
-            this.pauseRecord()
-          }
-        } else {
-          // 解锁模式
-          if (this.isRecordPaused) {
-            // 暂停状态：恢复录音并锁定
-            this.resumeRecord()
-            this.isRecordLocked = true
-          } else {
-            // 非暂停：暂停录音
-            this.pauseRecord()
-          }
-        }
-      }
-    },
-
-    handleExitRecordPanel() {
-      if (this.isRecording) {
-        this.cancelRecord()
-      } else {
-        this.isShowRecordPanel = false
-      }
+    handleCloseRecordPanel() {
+      this.isShowRecordPanel = false
     },
   },
   computed: {
-    lockIcon() {
-      return this.isRecordLocked ? 'tabler:lock' : 'tabler:lock-open'
-    },
-    playSwitchIcon() {
-      return (this.isRecording && !this.isRecordPaused)
-        ? 'pause_24'
-        : 'play_fill_24'
-    },
-    emojiGroupList() {
-      const category = {
-        "互动表情": [
-          114, 358, 359,
-          ...(this.isPrivate ? Array.from({ length: 6 }, (_, i) => `poke_${i + 1}`) : [])// 窗口抖动
-        ],
-        "汪汪": [360, 361, 362, 363, 364, 365, 366, 367, 396, 397],
-        "喜花妮": [404, 405, 406, 407, 408, 409, 410, 411, 412, 413],
-        "企鹅": [376, 377, 378, 379, 380, 381, 382, 383, 400, 401],
-        "噗噗星人": [368, 369, 370, 371, 372, 373, 374, 375, 398, 399]
-      }
-      const usedId = []
-      const specialList = []
-      Object.entries(category).forEach(([title, list]) => {
-        usedId.push(...list)
-        specialList.push({ title, list })
-      })
-      return [
-        ...specialList,
-        { title: 'QQ 黄脸', list: this.global.superEmojiids.filter(id => !usedId.includes(parseInt(id))) },
-        { title: '小黄脸表情', list: this.global.normalEmojiids },
-        { title: 'emoji 表情', list: this.global.emojiEmojiids }
-      ]
-    },
     emojiDescribes() {
-      return this.global.emojiDescribes
+      return this.global?.emojiDescribes
     },
     emojiFiles() {
-      return this.global.emojiFiles
+      return this.global?.emojiFiles
     },
     isGroup() {
       return this.activeContact?.type === 'group'
@@ -2680,7 +2137,7 @@ export default defineComponent({
         timestamp: this.selfGroupInfo?.shut_up_timestamp || 0,
         alwaysMD: false
       })
-    }
+    },
   },
   watch: {
     filteredAtGroupUsers() {
@@ -2698,26 +2155,6 @@ export default defineComponent({
         this.remainGroupAtAll = undefined
       }
     },
-    isShowRecordPanel(val) {
-      if (val) {
-        this.$nextTick(() => {
-          this.$refs.recordPanel?.focus()
-        })
-      } else {
-        // 退出录音面板时，如果正在录音则取消
-        if (this.isRecording) {
-          this.cancelRecord()
-        }
-        // 停止并释放录音流
-        if (this.recordStream) {
-          this.recordStream.getTracks().forEach(track => track.stop())
-          this.recordStream = null
-        }
-        // 重置状态
-        // this.isRecordLocked = false
-        this.isRecordPaused = false
-      }
-    }
   }
 });
 </script>
@@ -2776,11 +2213,6 @@ export default defineComponent({
         </div>
       </template>
     </Tooltip>
-    <GroupAiRecordEditor
-      v-if="showGroupAiRecordEditor && isGroup"
-      :group_id="activeContact?.contact_id"
-      @close="handleCloseGroupAiRecordEditor"
-    />
     <vue-resizable
       class="message-input-resizeable"
       :active="['t']"
@@ -2804,59 +2236,21 @@ export default defineComponent({
             </Tooltip>
             <Tooltip
               v-if="refReady"
-              :target="$refs.expressionControl.svg"
+              :target="$refs.expressionControl?.svg"
               :distance-from-target="6"
-              z-index="1001"
+              z-index="1"
               :always-exists="true"
               min-left="(window.innerWidth <= 570) ? 5px : (var(--sidebar-width) + 5px)"
               trigger="toggle"
             >
               <template #content>
-                <div class="message-input-expression-box tooltip-style">
-                  <CustomScrollBar class="message-input-expression-scroller">
-                    <template v-for="(category, i) in emojiGroupList" :key="i">
-                      <p class="message-input-expression-category-title">
-                        {{ category.title }}
-                      </p>
-                      <div class="message-input-expression-category">
-                        <Tooltip
-                          :distance-from-target="0"
-                          use-target-slot
-                          v-for="(emoji, index) in category.list"
-                          :key="index"
-                          z-index="1002"
-                        >
-                          <template #target>
-                            <div
-                              class="message-input-expression-emoji-box"
-                              @click="handleExpressionInput"
-                              :data-emoji="emoji"
-                            >
-                              <img
-                                :src="getPngEmojiUrl(emoji, true)"
-                                alt=""
-                                :data-emoji-animation="getApngEmojiUrl(emoji) ? 'static' : ''"
-                              />
-
-                              <img
-                                v-if="getApngEmojiUrl(emoji)"
-                                :src="getApngEmojiUrl(emoji)"
-                                alt=""
-                                data-emoji-animation="animation"
-                              />
-                            </div>
-                          </template>
-                          <template #content>
-                            <div class="tooltip-style message-input-expression-emoji-tooltip"
-                                 v-if="getEmojiDescription(emoji)">
-                              {{ getEmojiDescription(emoji) }}
-                            </div>
-                          </template>
-                        </Tooltip>
-                      </div>
-                    </template>
-                  </CustomScrollBar>
-                </div>
+                <ExpressionPanel
+                  :global="global"
+                  @select-emoji="handleExpressionSelectEmoji"
+                  @select-add-face="handleSelectAddCustomFaces"
+                  ref="expressionPanel"
+                  @insert-image="insertImageAtCursor"
+                />
               </template>
             </Tooltip>
 
@@ -2941,118 +2335,15 @@ export default defineComponent({
           <div class="message-input-send-button" @click="handleSendMessage">发送</div>
         </div>
       </div>
-      <div class="message-input-record-panel message-input-panel"
-           :class="{ 'display-flex': isShowRecordPanel }"
-           tabindex="-1"
-           ref="recordPanel">
-        <div class="message-input-controls">
-          <div class="message-input-controls-left">
-            <Tooltip
-              content="音频文件"
-              use-target-slot
-            >
-              <template #target>
-                <QIcon
-                  name="folder_24"
-                  class="message-input-ctrl-icon"
-                  @click="handleMessageInputSelectAudios()"
-                />
-              </template>
-            </Tooltip>
-            <Tooltip
-              content="AI 语音"
-              use-target-slot
-              v-if="isGroup"
-            >
-              <template #target>
-                <QIcon
-                  name="ai_label_16"
-                  class="message-input-ctrl-icon"
-                  @click="handleOpenGroupAiRecordEditor"
-                />
-              </template>
-            </Tooltip>
-          </div>
-          <div class="message-input-controls-right">
-            <Tooltip
-              v-if="currentFilesUploadTasks?.filter(task=>task?.type==='record')?.length"
-              content="音频上传列表"
-              use-target-slot
-            >
-              <template #target>
-                <QIcon
-                  name="files_24"
-                  class="message-input-ctrl-icon"
-                  @click="handleFilesUploadTasksViewer"
-                />
-              </template>
-            </Tooltip>
-          </div>
-        </div>
-        <div class="message-input-record-timer">{{ formatRecordTime(recordDuration) }}</div>
-        <div class="message-input-record-container"
-             @mousedown="handleRecordIconMouseDown"
-             @mouseleave="isHoveringCancel = false">
-          <Icon
-            :icon="lockIcon"
-            @click.stop="handleLockClick"
-            class="message-input-record-icon message-input-record-lock"/>
-          <div class="message-input-record-microphone message-input-record-icon"
-               :class="{ active: isRecording && !isRecordPaused }">
-            <template v-if="isRecording && isRecordLocked">
-              <Icon icon="tabler:send" @click.stop="handleSendRecord"/>
-            </template>
-            <template v-else>
-              <QIcon name="microphone_on_24"></QIcon>
-            </template>
-          </div>
-          <QIcon
-            :name="playSwitchIcon"
-            class="message-input-record-icon message-input-record-play-switch"
-            @mousedown.stop
-            @click.stop="handlePlaySwitchClick"
-            :style="{ paddingLeft: playSwitchIcon === 'play_fill_24' ? '12px' : '10px' }"
-          />
-        </div>
-        <div class="text-muted message-input-record-hint">
-          <template v-if="isRecording">
-            <!-- 录音中 -->
-            <!-- 解锁、非暂停：松手发送 -->
-            <template v-if="!isRecordLocked && !isRecordPaused">
-              松手发送，按 Esc 键或点击
-            </template>
-            <!-- 解锁、暂停 -->
-            <template v-else-if="!isRecordLocked && isRecordPaused">
-              录音已暂停，按下空格键或长按麦克风恢复，按 Esc 键或点击
-            </template>
-            <!-- 锁定、暂停 -->
-            <template v-else-if="isRecordLocked && isRecordPaused">
-              录音已暂停（锁定），点击播放继续，点击锁解锁并保持暂停，按 Esc 键或点击
-            </template>
-            <!-- 锁定、非暂停 -->
-            <template v-else>
-              录音中（锁定），点击发送按钮发送，点击锁解锁并暂停，按 Esc 键或点击
-            </template>
-            <span @click="cancelRecord"
-                  @mouseenter="handleRecordCancelMouseEnter"
-                  @mouseleave="handleRecordCancelMouseLeave"
-                  class="message-input-record-cancel">取消发送</span>
-          </template>
-          <template v-else>
-            <!-- 未录音 -->
-            <template v-if="isRecordLocked">
-              已锁定，点击麦克风或空格键开始录音，点击
-            </template>
-            <template v-else>
-              按住空格键开始说话，按 Esc 键或点击
-            </template>
-            <span @click="handleExitRecordPanel"
-                  @mouseenter="handleRecordCancelMouseEnter"
-                  @mouseleave="handleRecordCancelMouseLeave"
-                  class="message-input-record-cancel">退出</span>
-          </template>
-        </div>
-      </div>
+      <!-- 使用拆分后的 RecordPanel 组件 -->
+      <RecordPanel
+        ref="recordPanel"
+        :is-group="isGroup"
+        :currentFilesUploadTasks="currentFilesUploadTasks"
+        @close="handleCloseRecordPanel"
+        @open-files-upload-tasks="handleFilesUploadTasksViewer"
+        @select-audios="handleMessageInputSelectAudios"
+      />
     </vue-resizable>
   </div>
 </template>
@@ -3181,76 +2472,6 @@ export default defineComponent({
   }
 }
 
-.tooltip-style.message-input-expression-box {
-  height: 350px;
-  width: 400px;
-  max-height: 100%;
-  max-width: 100%;
-  padding: 15px 0;
-}
-
-.message-input-expression-category-title {
-  color: $color-text-muted;
-  font-size: 10px;
-  margin: 5px 15px;
-}
-
-.message-input-expression-emoji-box {
-  width: 35px;
-  height: 35px;
-  text-align: center;
-  border-radius: 5px;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
-  flex-wrap: nowrap;
-}
-
-.message-input-expression-emoji-box:hover {
-  background-color: $color-bg-hover-alt;
-}
-
-.message-input-expression-emoji-box:active {
-  background-color: $color-bg-active-alt;
-}
-
-.message-input-expression-category {
-  display: flex;
-  width: 100%;
-  flex-wrap: wrap;
-  flex-direction: row;
-  gap: 2px;
-  padding: 0 15px;
-}
-
-.message-input-expression-emoji-box img {
-  width: 28px;
-  height: 28px;
-}
-
-.message-input-expression-emoji-box img[data-emoji-animation='static'] {
-  display: block;
-}
-
-.message-input-expression-emoji-box img[data-emoji-animation='animation'] {
-  display: none;
-}
-
-.message-input-expression-emoji-box:hover img[data-emoji-animation='static'] {
-  display: none;
-}
-
-.message-input-expression-emoji-box:hover img[data-emoji-animation='animation'] {
-  display: block;
-}
-
-.tooltip-style.message-input-expression-emoji-tooltip {
-  font-size: 11px;
-  padding: 3px;
-}
-
 .message-input-editor {
   :deep(.message-input-editor-emoji) {
     width: 20px;
@@ -3350,93 +2571,6 @@ export default defineComponent({
 .message-input-common-panel {
   align-items: stretch;
   justify-content: flex-start;
-}
-
-.message-input-record-panel {
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.message-input-record-timer {
-  font-weight: 500;
-  color: $color-text-regular;
-  font-variant-numeric: tabular-nums;
-}
-
-.message-input-record-hint {
-  font-size: 13px;
-}
-
-.message-input-record-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-  gap: 30px;
-  padding: 20px 0;
-}
-
-.message-input-record-exit,
-.message-input-record-cancel {
-  color: $color-text-record-cancel;
-  cursor: pointer;
-}
-
-.message-input-record-panel .message-input-controls {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 100%;
-}
-
-.message-input-record-icon {
-  height: 45px;
-  width: 45px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  --inner-color: transparent;
-  --outer-color: transparent;
-  background: radial-gradient(38.02% 38.02% at 50% 50%, var(--inner-color) 0px, var(--outer-color) 100%);
-  color: white;
-  padding: 10px;
-}
-
-.message-input-record-lock {
-  --inner-color: rgb(255, 180, 50);
-  --outer-color: rgb(255 134 0);
-}
-
-.message-input-record-play-switch {
-  --inner-color: rgb(130 255 100);
-  --outer-color: rgb(50, 200, 160);
-}
-
-.message-input-record-microphone {
-  height: 52px;
-  width: 52px;
-  outline: rgba(0, 153, 255, 0.2) solid 2px;
-  transition-duration: 0.3s;
-  transition-timing-function: ease;
-  transition-delay: 0s;
-  transition-property: outline-width;
-  --inner-color: rgb(0, 201, 255);
-  --outer-color: rgb(0, 155, 255);
-}
-
-.message-input-record-microphone.active {
-  outline-width: 6px;
-  --inner-color: rgb(0, 177, 255);
-  --outer-color: rgb(0, 128, 255);
-}
-
-.message-input-record-microphone svg {
-  height: 24px;
-  width: 24px;
 }
 </style>
 

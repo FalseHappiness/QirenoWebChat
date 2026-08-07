@@ -60,7 +60,7 @@ export default defineComponent({
   <div class="prompt-box">
     <SimplePopUp :on-confirm="onConfirm"
                  :on-cancel="onCancel"
-                 :container-styles="$style['prompt-box-container']"
+                 class="prompt-box-container"
                  ref="popUp">
       <div class="prompt-box-header">
         <span class="prompt-box-title">{{ title }}</span>
@@ -87,6 +87,13 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
+.prompt-box-container {
+  width: 360px;
+  height: auto;
+  max-height: calc(100% - 20px);
+  padding: 15px 20px;
+}
+
 .prompt-box-header {
   padding: 4px 0 6px 0;
 }
@@ -176,14 +183,5 @@ export default defineComponent({
 .prompt-box-button-cancel:active {
   background-color: $color-bg-active-alt;
   color: $color-text-muted;
-}
-</style>
-
-<style module>
-.prompt-box-container {
-  width: 360px;
-  height: auto;
-  max-height: calc(100% - 20px);
-  padding: 15px 20px;
 }
 </style>

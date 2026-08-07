@@ -183,7 +183,7 @@ export default defineComponent({
     <SimplePopUp ref="popUp"
                  :on-confirm="onClosed"
                  :on-cancel="onClosed"
-                 :container-styles="$style['download-progress-container']">
+                 class="download-progress-container">
       <div class="download-content">
         <!-- 标题 -->
         <div class="download-title">
@@ -258,7 +258,9 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
-@use "sass:color";
+.download-progress-container {
+  height: unset;
+}
 
 .download-content {
   display: flex;
@@ -400,11 +402,5 @@ export default defineComponent({
 
 .retry-btn:hover {
   background: color-mix(in srgb, $color-retry, black 8%);
-}
-</style>
-
-<style module>
-.download-progress-container {
-  height: unset;
 }
 </style>

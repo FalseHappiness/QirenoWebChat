@@ -7,7 +7,7 @@ export default defineComponent({
   components: { SvgIcon },
   computed: {
     svg() {
-      return this.$refs.svgIcon.svg
+      return this.$refs.svgIcon?.svg
     }
   }
 })

@@ -3,6 +3,7 @@ import { defineComponent } from 'vue'
 
 export default defineComponent({
   name: "SimplePopUp",
+  inheritAttrs: false,
   data() {
     return {
       closed: false
@@ -50,7 +51,7 @@ export default defineComponent({
         confirm ? this.onConfirm(...args) : this.onCancel()
       }, 300)
     }
-  }
+  },
 })
 </script>
 
@@ -58,7 +59,8 @@ export default defineComponent({
   <div class="simple-pop-up">
     <teleport to="body">
       <div class="simple-pop-up-mask" :class="{ closed }" ref="simplePopUpMask">
-        <div class="simple-pop-up-container" :class="containerStyles" :style="inlineStyles" ref="simplePopUpContainer">
+        <div class="simple-pop-up-container" ref="simplePopUpContainer"
+             v-bind="{ ...$attrs, [$parent.$options.__scopeId]: '' }">
           <slot></slot>
         </div>
       </div>
@@ -69,6 +71,7 @@ export default defineComponent({
 <style scoped lang="scss">
 .simple-pop-up-mask {
   @include popup-mask;
+  z-index: 10;
 }
 
 .simple-pop-up-mask.closed {

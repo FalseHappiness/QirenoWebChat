@@ -197,9 +197,9 @@ function filteredAtGroupUsers(groupUsers, atMentionText, can_at_all = false) {
   // 组装缓存昵称
   let atGroupUsers = groupUsers.map((item) => {
     const cacheInfo = getGroupUserInfoCache(item.group_id, item.user_id);
-    const cacheCard = cacheInfo.card;
-    const cacheRemark = cacheInfo.remark;
-    const cacheNick = cacheInfo.nickname;
+    const cacheCard = cacheInfo?.card;
+    const cacheRemark = cacheInfo?.remark;
+    const cacheNick = cacheInfo?.nickname;
 
     return {
       ...item,

@@ -639,8 +639,7 @@
   @include hover-active-bg();
   border-radius: $radius;
   padding: $padding;
-  height: $size;
-  width: $size;
+  @include square-size($size);
   color: $color;
   cursor: pointer;
 }
@@ -663,4 +662,9 @@
 @mixin square-size($size: 100%) {
   height: $size;
   width: $size;
+}
+
+@mixin grid-columns-auto-fill($min) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax($min, 1fr));
 }

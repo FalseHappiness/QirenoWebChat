@@ -2,6 +2,7 @@
 // 常用 %placeholders — 通过 @extend 复用
 // ============================================================
 @use "./variables" as *;
+@use "./mixins" as *;
 
 // ---- 卡片 ----
 %card {
@@ -207,20 +208,22 @@
   align-items: center;
 }
 
+%flex-column-center {
+  @include flex-column-center;
+}
+
 // ---- 水平flex两端对齐 ----
 %flex-row-between {
-  display: flex;
-  align-items: center;
+  @extend %flex-row-center;
   justify-content: space-between;
 }
 
 // ---- flex 项目信息容器 ----
 %flex-item-info {
   display: flex;
-  flex: 1;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  @extend %flex-fill-hide;
 }
 
 // ---- 列表项行 ----
@@ -328,4 +331,9 @@
   &:hover {
     text-decoration: underline;
   }
+}
+
+%flex-fill-hide {
+  flex: 1;
+  overflow: hidden;
 }

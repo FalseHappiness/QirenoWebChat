@@ -74,7 +74,7 @@ export function createUserAvatarContextMenuItems({
     )
   }
 
-  return formatBasicContextItems([
+  return formatBasicContextItems(
     basicContextItem(
       '发送消息',
       () => selectContact(userContact),
@@ -243,7 +243,7 @@ export function createUserAvatarContextMenuItems({
       'message_off_24',
       isGroup && operatePermission && hasBeenMuted
     )
-  ])
+  )
 }
 
 export function createContactContextMenuItems({ contact, showContactInfo, avatarElement }) {

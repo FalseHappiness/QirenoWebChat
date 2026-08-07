@@ -129,7 +129,8 @@ export default defineComponent({
       return ({
         record: "语音消息",
         image: "图片",
-        video: "视频"
+        video: "视频",
+        face: "自定义表情",
       })[type] || "文件"
     }
   }

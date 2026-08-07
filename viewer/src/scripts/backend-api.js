@@ -4,7 +4,7 @@ import { useGlobalStore } from "../store/global.js";
 import { showErrorToast, showSuccessToast, showToast } from "./toast.js";
 import { createSHA256 } from 'hash-wasm';
 import { nanoid } from 'nanoid';
-import { CalledEmitter } from "../composables/useEventBus.js";
+import { CalledEmitter, Emitter } from "../composables/useEventBus.js";
 import {
   convertCategoricalFriendsSL,
   convertContactsSL,
@@ -17,7 +17,7 @@ import {
 } from "./snow-luma-translator.js";
 import { parseJSON, stringifyJSON, trimTrailingSlash } from "./util.js";
 
-import { isArray, isObject, isString, objectHasKey } from "./types-util.js";
+import { isArray, isObject, isString, isUndefined, objectHasKey } from "./types-util.js";
 import {
   CacheNameKey,
   setCacheName,
@@ -597,15 +597,16 @@ const fetchSendFileStream = async (task) => {
     if (result.status === 'file_complete') {
       task.is_merging = false
       task.is_backend_uploading = true
+      const file = result.file_path
       // const elapsed = ((Date.now() - startTimestamp) / 1000).toFixed(1);
       // console.log(`[fetchSendFileStream] ✅ 文件上传成功!`);
       // console.log(`[fetchSendFileStream]    - 文件路径: ${result.file_path}`);
-      // console.log(`[fetchSendFileStream]    - 文件大小: ${result.file_size} 字节`);
+      // console.log(`[fetchSendFileStream]    - 文件大小: ${file} 字节`);
       // console.log(`[fetchSendFileStream]    - SHA256: ${result.sha256}`);
       // console.log(`[fetchSendFileStream]    - 总计耗时: ${elapsed}s`);
 
       const data = {
-        file: result.file_path,
+        file,
         name: fileName
       }
       // 现在发送文件到聊天
@@ -622,6 +623,9 @@ const fetchSendFileStream = async (task) => {
           data.album_name = album_name
           data.album_id = album_id
         }
+      }
+      if (task.type === 'face') {
+        return await fetchAddCustomFaceOptions({ file, signal: controller, timeout })
       }
 
       return await fetchSendMessage(contact, message, controller, timeout)
@@ -927,7 +931,7 @@ const getGroupNoticePicUrl = (pic_url) => {
 }
 
 const isSnowLuma = () => {
-  return useGlobalStore().apiVersionInfo?.app_name?.includes("SnowLuma")
+  return useGlobalStore().apiVersionInfo?.app_name?.includes("SnowLuma") || false
 }
 
 const getGroupFileProxyUrl = (group_id, file_id, name, url) => {
@@ -1088,7 +1092,9 @@ async function fetchSetGroupMemberTitle(group_id, user_id, special_title) {
 async function handleApiRequest(apiPromise, successText, failText) {
   const result = await apiPromise
   if (checkResponseOK(result)) {
-    showSuccessToast(successText)
+    if (!isUndefined(successText)) {
+      showSuccessToast(successText)
+    }
     return true
   } else {
     console.error(failText, result)
@@ -1114,6 +1120,73 @@ async function fetchContactShareArk({ contact_id, type }) {
   const ark = await fetchActionData("send_ark_share", params)
   if (!ark) return null
   return wrapJsonMessageSegment(ark?.ark || ark?.arkMsg || ark)
+}
+
+function uniqueByCustomFaceId(arr) {
+  const map = new Map()
+  for (const item of arr) {
+    // 仅当不存在该 face_id 才存入，保留最先出现、舍弃后续重复
+    if (!map.has(item.face_id)) {
+      map.set(item.face_id, item)
+    }
+  }
+  return [...map.values()]
+}
+
+
+function getCustomFaceId(url) {
+  const match = url.match(/\/([^\/]+)\/[^\/]+$/);
+  return match ? match[1] : null
+}
+
+async function fetchCustomFace(count = 114514) {
+  const result = await fetchActionData("fetch_custom_face", { count, return_type: 'url' })
+  return isArray(result) ? uniqueByCustomFaceId(result.map(url => ({
+    face_id: getCustomFaceId(url),
+    url
+  })).reverse()) : null
+}
+
+async function fetchDeleteCustomFace(face_id) {
+  return await fetchAction("delete_custom_face", { emoji_id: face_id, res_id: face_id })
+}
+
+async function fetchMoveCustomFaceToFront(emoji_id) {
+  if (isSnowLuma()) {
+    return await fetchAction("move_custom_face_to_front", { emoji_id })
+  }
+  return null
+}
+
+async function fetchAddCustomFaceOptions({ file, signal, timeout }) {
+  const result = await fetchOptionsAction({ endpoint: "add_custom_face", data: { file }, signal, timeout })
+  if (checkResponseOK(result)) {
+    try {
+      Emitter.emit("add-custom-face-success", result.data)
+    } catch {
+      console.error("添加自定义表情回调失败")
+    }
+  }
+  return result
+}
+
+async function fetchAddCustomFace(file) {
+  return await fetchAddCustomFaceOptions({ file })
+}
+
+/**
+ * 拼装QQ表情地址，自动从字符串提取uin（下划线第一段）
+ * @param {string} input 标识字符串 / 完整url
+ * @returns {string}
+ */
+function buildCustomFaceUrl(input) {
+  if (!isString(input)) return ''
+  const trimStr = input.trim()
+  if (trimStr.startsWith('http')) return trimStr
+  const arr = trimStr.split('_')
+  if (arr.length < 2) return ''
+  const uin = arr[0]
+  return `https://p.qpic.cn/qq_expression/${uin}/${trimStr}/0`
 }
 
 export {
@@ -1193,4 +1266,11 @@ export {
   fetchSetGroupMemberTitle,
   handleApiRequest,
   fetchContactShareArk,
+  fetchCustomFace,
+  fetchDeleteCustomFace,
+  fetchAddCustomFace,
+  fetchMoveCustomFaceToFront,
+  buildCustomFaceUrl,
+  getCustomFaceId,
+  uniqueByCustomFaceId,
 }

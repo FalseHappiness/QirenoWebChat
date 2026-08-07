@@ -74,7 +74,7 @@ export default defineComponent({
   <div class="contacts-picker">
     <SimplePopUp :on-confirm="onConfirm"
                  :on-cancel="onCancel"
-                 :container-styles="$style['contacts-picker-container']"
+                 class="contacts-picker-container"
                  ref="popUp">
       <div class="contacts-picker-contacts-area">
         <div class="contacts-picker-contacts-area-search">
@@ -164,6 +164,15 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
+.contacts-picker-container {
+  width: 520px;
+  height: 540px;
+  flex-direction: row;
+  padding: 10px 12px 15px 15px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 20px);
+}
+
 .contacts-picker-contacts-area {
   width: 50%;
   border-right: 1px solid $color-bg-contact-picker-border;
@@ -353,16 +362,5 @@ export default defineComponent({
   padding: 0 4px 0 0;
   flex: 1 1 auto;
   min-width: 0;
-}
-</style>
-
-<style module>
-.contacts-picker-container {
-  width: 520px;
-  height: 540px;
-  flex-direction: row;
-  padding: 10px 12px 15px 15px;
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
 }
 </style>
