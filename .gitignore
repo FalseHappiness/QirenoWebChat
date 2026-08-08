@@ -27,6 +27,8 @@ dist-ssr
 
 venv
 *.db
+*.db-shm
+*.db-wal
 # 小写test
 *test*
 # 首字母大写

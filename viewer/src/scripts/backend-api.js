@@ -934,11 +934,11 @@ const isSnowLuma = () => {
   return useGlobalStore().apiVersionInfo?.app_name?.includes("SnowLuma") || false
 }
 
-const getGroupFileProxyUrl = (group_id, file_id, name, url) => {
+const getGroupFileProxyUrl = (group_id, file_id, name, url = '') => {
   return `${getApiBaseUrl()}/api/proxy_group_file?group_id=${group_id}&file_id=${encodeURIComponent(file_id)}&name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`
 }
 
-const getPrivateFileProxyUrl = (user_id, file_id, name, url) => {
+const getPrivateFileProxyUrl = (user_id, file_id, name, url = '') => {
   // 校验是否匹配 /asn.com/qqdownloadftnv5 严格路径，跨域直接返回
   try {
     const urlObj = new URL(url);
