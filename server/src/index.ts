@@ -79,12 +79,12 @@ app.register(async function (fastify) {
   fastify.get('/ws/*', { websocket: true }, async (socket, request) => {
     const path = (request.params as Record<string, string>)['*'] ?? '';
     const parts = path.split('/');
-    const name = parts[0];
+    const name = (parts[0] || '').toLowerCase();
     const subName = parts.length > 1 ? parts[1] : null;
 
     if (name === 'frontend') {
       await frontendManager.connect(socket, request, subName);
-    } else if (name === 'napcat') {
+    } else if (['napcat', 'snowluma', 'nc', 'sl'].includes(name)) {
       await onebotManager.connect(socket, request);
     } else {
       socket.close(1008, '404 Not Found');
