@@ -80,9 +80,9 @@ const changeDestView = (key, active) => {
 }
 provide("changeDestView", changeDestView)
 
-const recentContacts = computed(() => {
-  return categorizedContacts.value.find?.(c => c.id === -100)?.contacts || []
-})
+
+const getRecentContacts = () => categorizedContacts.value.find(c => c.id === -100)?.contacts || []
+provide("getRecentContacts", getRecentContacts)
 
 const flattenContacts = computed(() => {
   return flattenCategorizedContacts(categorizedContacts.value)
@@ -99,7 +99,7 @@ const selfId = ref(null)
 
 watch(() => isConnected.value && selfId.value, val => {
   if (val) {
-    console.log(`WebSocket ${wsInited ? '' : 're'}connected, checking for missed messages...`)
+    console.log(`WebSocket ${wsInited.value ? 're' : ''}connected, checking for missed messages...`)
     wsInited.value = true;
   }
 })
@@ -501,13 +501,13 @@ onMounted(() => {
     onNewContact: (newContact) => {
       // 检查是否已存在该联系人
       const findTarget = () => {
-        return recentContacts.value.find((c) => c.contact_id === newContact.contact_id && c.type === newContact.type)
+        return getRecentContacts().find((c) => c.contact_id === newContact.contact_id && c.type === newContact.type)
       }
       let target = findTarget()
 
       if (!target) {
         // 构造新联系人对象
-        recentContacts.value.unshift({
+       getRecentContacts().unshift({
           contact_id: newContact.contact_id,
           type: newContact.type,
         })

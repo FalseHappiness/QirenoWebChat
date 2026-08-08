@@ -806,6 +806,12 @@ async function fetchCategorizedContacts() {
       contacts,
       id: -100
     })
+  } else {
+    categories.push({
+      name: '最近聊天',
+      contacts: [],
+      id: -100
+    })
   }
 
   // 组装好友分组

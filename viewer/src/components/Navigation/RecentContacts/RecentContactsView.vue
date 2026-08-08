@@ -10,15 +10,12 @@ const selfInfo = inject("selfInfo")
 const loading = inject("isLoadingContacts")
 const activeContact = inject("activeContact")
 
-const categorizedContacts = inject("categorizedContacts")
 // 原始会话列表
-const recentContacts = computed(() => {
-  return categorizedContacts.value?.find?.(category => category.id === -100)?.contacts || []
-})
+const getRecentContacts = inject("getRecentContacts")
 
 // 按最后联系时间排序
 const sortedRecentContacts = computed(() => {
-  return recentContacts.value.sort((a, b) => {
+  return [...getRecentContacts()].sort((a, b) => {
     // 兜底，无时间戳给0
     const tsA = a.last_timestamp ?? 0
     const tsB = b.last_timestamp ?? 0
@@ -50,7 +47,7 @@ const changeSelfLongNick = inject("changeSelfLongNick")
 // 修改个性签名
 const handleChangeLongNick = async () => {
   if (selfInfo.value?.long_nick !== selfLongNickModel.value) {
-    changeSelfLongNick(selfLongNickModel.value)
+    await changeSelfLongNick(selfLongNickModel.value)
   }
 }
 

@@ -635,10 +635,10 @@ app.route({
   },
 });
 
-app.post('/api/messages/clear', async () => {
-  db.clearMessages();
-  return { success: true };
-});
+// app.post('/api/messages/clear', async () => {
+//   db.clearMessages();
+//   return { success: true };
+// });
 
 app.route({
   method: ['GET', 'POST'],
@@ -735,12 +735,27 @@ app.route({
       reqData['out_format'] = outFormat;
     }
 
-    const processFile = (data: unknown, _params: Record<string, unknown>): Record<string, unknown> => {
-      const fileData = data as Record<string, unknown>;
+    try {
+      // 读取 self‑id，没有则取首个在线机器人
+      let selfId = parseInt(params['self_id']);
+      selfId = selfId !== 0 ? selfId : (onebotManager.getFirstSelfId() ?? null as unknown as number);
+
+      // 调用 OneBot 获取文件接口，不再封装进 makeApiRequest
+      const apiData = await onebotManager.callAction('get_' + typeVal, {
+        file_id: params.file_id,
+        ...reqData
+      }, selfId || null);
+
+      const fileData = apiData as Record<string, unknown>;
+
       if (typeVal === 'record') {
         const base64Data = (fileData['base64'] as string) ?? '';
         if (base64Data === '') {
-          return processError(new Error('file not found'), {});
+          return reply.status(404).send({
+            status: 'error',
+            code: -1,
+            error: 'file not found'
+          });
         }
         const audioBuffer = Buffer.from(base64Data, 'base64');
 
@@ -755,32 +770,31 @@ app.route({
           filename = 'audio.mp3';
         }
 
-        // 直接返回 audio 数据，使用 hijack 防止 Fastify 重复发送
-        reply.hijack();
-        reply.raw.writeHead(200, {
-          'Content-Type': mediaType,
-          'Content-Disposition': `inline; filename=${filename}`,
-          'Content-Length': audioBuffer.length.toString(),
-        });
-        reply.raw.end(audioBuffer);
-        // 返回空对象，makeApiRequest 不会尝试再次发送
-        return {};
-      } else {
-        return processError(new Error('file not found'), {});
+        // 交给 fastify 发送，onRequest CORS 钩子头部自动带上
+        reply
+          .header('Content-Type', mediaType)
+          .header('Content-Disposition', `inline; filename=${filename}`)
+          .send(audioBuffer);
+        return;
       }
-    };
 
-    const processError = (err: Error, context: Record<string, unknown>): Record<string, unknown> => {
-      const statusCode = context['stage'] === 'unexpected_error' ? 500 : 404;
+      // image、file 类型当前分支未实现
+      return reply.status(404).send({
+        status: 'error',
+        code: -1,
+        error: 'file not found'
+      });
+
+    } catch (err) {
+      // 异常捕获，区分业务错误与未知异常
+      const statusCode = err instanceof ActionFailed ? 404 : 500;
       reply.status(statusCode);
       return {
         status: 'error',
         code: -1,
-        error: `An unexpected error occurred: ${err.message || 'Unknown error'}`,
+        error: `An unexpected error occurred: ${(err as Error).message || 'Unknown error'}`
       };
-    };
-
-    return await makeApiRequest('get_' + typeVal, params, ['file_id'], reqData, processFile, processError);
+    }
   },
 });
 
