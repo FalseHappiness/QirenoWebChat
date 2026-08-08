@@ -769,7 +769,7 @@ function renderNoticeChildren(event, isPreview, promises) {
           children.push(user_id ? canSelfName(user_id) : "未知", '的消息被设为了精华消息')
         } else {
           children.push(
-            user_id ? jumpMsg(canSelfName(user_id)) : "未知的消息",
+            user_id ? jumpMsg(canSelfName(user_id), '的消息') : "未知的消息",
             '被设为了',
             createNoticeExecuteCommand('open-essence-window', '精华消息')
           )

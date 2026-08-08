@@ -37,7 +37,7 @@ import {
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { getCacheGroupUserName, getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
 import { checkSameContact, filteredAtGroupUsers } from "@/scripts/contacts-util.js";
-import { formatTimeOptions } from "@/scripts/util.js";
+import { formatTimeOptions, nowSecondTimestamp } from "@/scripts/util.js";
 // 引入拆分的子组件
 import RecordPanel from "./RecordPanel.vue";
 import ExpressionPanel from "./ExpressionPanel.vue";
@@ -2129,11 +2129,11 @@ export default defineComponent({
     },
 
     hasBeenMuted() {
-      return !!this.selfGroupInfo?.shut_up_timestamp || (this.isGroupAllMuted && !this.isOperatorSelf)
+      return ((this.selfGroupInfo?.shut_up_timestamp || 0) > nowSecondTimestamp()) || (this.isGroupAllMuted && !this.isOperatorSelf)
     },
 
     selfMutedEndTime() {
-      return this.isGroupAllMuted ? "全员禁言中" : formatTimeOptions({
+      return (this.isGroupAllMuted && !this.isOperatorSelf) ? "全员禁言中" : formatTimeOptions({
         timestamp: this.selfGroupInfo?.shut_up_timestamp || 0,
         alwaysMD: false
       })

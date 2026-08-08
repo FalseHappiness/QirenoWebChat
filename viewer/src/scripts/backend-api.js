@@ -1189,6 +1189,10 @@ function buildCustomFaceUrl(input) {
   return `https://p.qpic.cn/qq_expression/${uin}/${trimStr}/0`
 }
 
+async function fetchSetGroupTodo(group_id, message_id) {
+  return await fetchAction("set_group_todo", { group_id, message_id })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1273,4 +1277,5 @@ export {
   buildCustomFaceUrl,
   getCustomFaceId,
   uniqueByCustomFaceId,
+  fetchSetGroupTodo,
 }

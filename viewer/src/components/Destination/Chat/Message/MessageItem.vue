@@ -3,12 +3,20 @@ import { ref, onUnmounted, computed, h, onMounted, inject, toRaw, watch } from '
 import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
-  checkResponseOK, fetchAddCustomFace,
+  checkResponseOK,
+  fetchAddCustomFace,
   fetchChangeEssenceMsg,
   fetchKickGroupUser,
-  fetchRecallMessage, fetchRecordToText,
-  fetchSendMessage, fetchSetGroupAdmin, fetchSetGroupMemberCard, fetchSetGroupMute, fetchTranslateEnglish,
-  getUserLogo, handleApiRequest
+  fetchRecallMessage,
+  fetchRecordToText,
+  fetchSendMessage,
+  fetchSetGroupAdmin,
+  fetchSetGroupMemberCard,
+  fetchSetGroupMute,
+  fetchSetGroupTodo,
+  fetchTranslateEnglish,
+  getUserLogo,
+  handleApiRequest
 } from "@/scripts/backend-api.js";
 import { useGlobalStore } from "@/store/global.js";
 import GroupLevelTitle from "./GroupLevelTitle.vue";
@@ -273,6 +281,8 @@ const pttErrorText = ref(null)
 const customMessageContextMenu = e => {
   const self_info = currentGroupSelfInfo.value
   const sender_info = currentGroupUserInfo.value
+  const isSelfAdmin = isGroupAdmin(self_info)
+  const { message_id } = props.message
   let imageSrc;
   let videoSrc
   const imageContainer = e?.target?.closest(".message-image")
@@ -307,7 +317,7 @@ const customMessageContextMenu = e => {
         isEnabledPTT.value = true
         pttText.value = pttErrorText.value = undefined
         try {
-          pttText.value = await fetchRecordToText(props.message.message_id)
+          pttText.value = await fetchRecordToText(message_id)
         } catch (e) {
           pttErrorText.value = e
           pttText.value = null
@@ -370,7 +380,7 @@ const customMessageContextMenu = e => {
         try {
           const set = !isEssence.value
           settingEssence.value = true
-          const result = await fetchChangeEssenceMsg(props.message.message_id, set)
+          const result = await fetchChangeEssenceMsg(message_id, set)
           if (result.status === 'ok' && (!result?.data || result?.data?.result?.errorCode === 0)) {
             showToast('success', set ? '设置群精华成功' : "该消息已被移除群精华")
             const real_seq = props.message.real_seq
@@ -392,13 +402,23 @@ const customMessageContextMenu = e => {
         settingEssence.value = false
       },
       "essence_message_24",
-      ['owner', 'admin'].includes(self_info.role) &&
+      isSelfAdmin &&
       (!isRecalled.value || !isEssence.value)
+    ),
+    basicContextItem(
+      "设为待办",
+      () => handleApiRequest(
+        fetchSetGroupTodo(groupId.value, message_id),
+        "设置成功",
+        "设置待办失败"
+      ),
+      "tick_square_24",
+      isSelfAdmin && !isRecalled.value
     ),
     contextDividedItem(),
     basicContextItem(
       '撤回', () => {
-        fetchRecallMessage(props.message.message_id)
+        fetchRecallMessage(message_id)
       },
       "recall_24",
       !isRecalled.value &&

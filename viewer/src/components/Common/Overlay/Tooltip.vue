@@ -389,18 +389,21 @@ export default {
       }
 
       // this.addListener(window, "resize", this.updatePosition)
-      this.intersectionObserver = new IntersectionObserver((entries) => {
-        const entry = entries[0]
-        // 完全不可见
-        this.targetVisible = entry.isIntersecting
-        if (!this.targetVisible && this.show) {
-          this.show = false
-          this.showFlag = false
-        }
-      }, {
-        threshold: 0 // 0 = 元素一丁点都看不见就触发隐藏
-      })
-      this.intersectionObserver.observe(targetEl)
+
+      if (targetEl) {
+        this.intersectionObserver = new IntersectionObserver((entries) => {
+          const entry = entries[0]
+          // 完全不可见
+          this.targetVisible = entry.isIntersecting
+          if (!this.targetVisible && this.show) {
+            this.show = false
+            this.showFlag = false
+          }
+        }, {
+          threshold: 0 // 0 = 元素一丁点都看不见就触发隐藏
+        })
+        this.intersectionObserver.observe(targetEl)
+      }
     },
     removeObserver() {
       if (this.resizeObserver) this.resizeObserver.disconnect();
@@ -474,7 +477,7 @@ export default {
       this.addListener(targetEl, 'click', this.toggle);
       if (this.closeOnClickOutside) {
         this.addListener(document, "click", e => {
-          const {target}=e
+          const { target } = e
           if (
             this.show &&
             !this.$refs?.popover?.contains(target) &&
