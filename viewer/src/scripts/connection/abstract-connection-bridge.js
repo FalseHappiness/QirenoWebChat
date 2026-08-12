@@ -41,7 +41,7 @@ export class AbstractConnectionBridge {
 
     // 实例状态（保留 ref 方便 Vue 直接绑定）
     this.socket = ref(null)
-    this.lastMessageId = ref(0)
+    this.lastMessageId = ref(-1)
     this.reconnectAttempts = ref(0)
     this.maxReconnectAttempts = Infinity
     this.reconnectInterval = 3000

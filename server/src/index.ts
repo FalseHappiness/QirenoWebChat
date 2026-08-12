@@ -226,7 +226,7 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
           selfId,
         );
         apiMessages = apiMessages.map(convertEventToMessageData);
-        if (cursorTime !== null) {
+        if (cursorTime) {
           if (direction === 'prev') {
             apiMessages = apiMessages.filter((msg) => (msg['time'] as number ?? cursorTime + 1) <= cursorTime!);
           } else if (direction === 'next') {
@@ -308,15 +308,33 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
     }
 
     const sortedMessages = [...merged.values()].sort((a, b) => {
-      const timeA = (a['time'] as number) ?? Number.MAX_SAFE_INTEGER;
-      const timeB = (b['time'] as number) ?? Number.MAX_SAFE_INTEGER;
-      if (timeA !== timeB) return timeA - timeB;
-      const seqA = (a['real_seq'] as number) ?? Number.MAX_SAFE_INTEGER;
-      const seqB = (b['real_seq'] as number) ?? Number.MAX_SAFE_INTEGER;
-      if (seqA !== seqB) return seqA - seqB;
-      const idA = (a['id'] as number) ?? Number.MAX_SAFE_INTEGER;
-      const idB = (b['id'] as number) ?? Number.MAX_SAFE_INTEGER;
-      return idA - idB;
+      const isValidNum = (val: unknown): val is number => typeof val === 'number' && !isNaN(val);
+
+      const timeA = a['time'];
+      const timeB = b['time'];
+      const validTimeA = isValidNum(timeA);
+      const validTimeB = isValidNum(timeB);
+
+      if (validTimeA !== validTimeB) return validTimeA ? -1 : 1;
+      if (validTimeA && timeA !== timeB) return timeA - timeB;
+
+      const seqA = a['real_seq'];
+      const seqB = b['real_seq'];
+      const validSeqA = isValidNum(seqA);
+      const validSeqB = isValidNum(seqB);
+
+      if (validSeqA !== validSeqB) return validSeqA ? -1 : 1;
+      if (validSeqA && seqA !== seqB) return seqA - seqB;
+
+      const idA = a['id'];
+      const idB = b['id'];
+      const validIdA = isValidNum(idA);
+      const validIdB = isValidNum(idB);
+
+      if (validIdA !== validIdB) return validIdA ? -1 : 1;
+      if (validIdA) return idA - idB;
+
+      return 0;
     });
 
     // 根据include_cursor过滤

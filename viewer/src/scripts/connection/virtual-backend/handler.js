@@ -11,6 +11,7 @@ export function convertEventToMessageData(event) {
   try {
     realSeq = parseInt(eventDict.real_seq ?? eventDict.message_seq, 10);
   } catch {
+    // ignore
   }
 
   let userId = eventDict.user_id;
@@ -133,7 +134,7 @@ export async function processAndStoreEvent(event, db) {
 // ===================== OneBotHandler 方法 =====================
 
 /**
- * 获取消息历史（递归）
+ * 从 OneBot 获取消息历史（递归）
  * 与 Python 端 OneBotHandler.get_messages 等效
  *
  * @param {object} onebotWS - OneBotWSConnection 实例
@@ -236,26 +237,26 @@ export async function getContactsCore(db, onebotWS) {
   const apiContacts = await getRecentContacts(onebotWS);
   const contactMap = new Map();
 
-  // 统一取时间戳兜底
-  const getTs = item => item.last_timestamp ?? new Date(item.last_time).getTime();
-  // 配置合并字段 + 专属判断条件
-  const mergeRules = [
-    { key: "latest_msg", cond: api => api.latest_msg && api.has_message },
-    { key: "temp" },
-    { key: "last_timestamp", cond: api => !!api.last_timestamp },
-    { key: "name" },
-    { key: "real_name" },
-    { key: "remark" },
+  // 安全获取时间戳
+  const getTs = item => item.last_timestamp ?? 0;
+  // 需要合并的字段配置：[字段名, 前置判断函数]
+  const mergeFields = [
+    ['latest_msg', (a, b) => !!a.latest_msg && !!a.has_message],
+    ['temp', null],
+    ['last_timestamp', (a, b) => !!a.last_timestamp],
+    ['name', null],
+    ['real_name', null],
+    ['remark', null],
   ];
 
-  // 载入数据库联系人
+  // 载入数据库联系人（使用 _ 分隔符，与真实后端一致）
   for (const c of dbContacts) {
-    contactMap.set(`${c.contact_id}:${c.type}`, { ...c });
+    contactMap.set(`${c.contact_id}_${c.type}`, { ...c });
   }
 
   // 合并API联系人，时间靠后者优先
   for (const apiItem of apiContacts) {
-    const mapKey = `${apiItem.contact_id}:${apiItem.type}`;
+    const mapKey = `${apiItem.contact_id}_${apiItem.type}`;
     if (!contactMap.has(mapKey)) {
       contactMap.set(mapKey, { ...apiItem });
       continue;
@@ -268,22 +269,33 @@ export async function getContactsCore(db, onebotWS) {
 
     if (apiTs > dbTs) {
       // API更新，直接覆盖符合条件字段
-      mergeRules.forEach(({ key, cond }) => {
-        if (!cond || cond(apiItem)) merged[key] = apiItem[key];
-      });
+      for (const [field, cond] of mergeFields) {
+        if (cond === null || cond(apiItem, dbItem)) {
+          merged[field] = apiItem[field];
+        }
+      }
     } else {
-      // DB更新，仅填充空值
-      mergeRules.forEach(({ key, cond }) => {
-        const valid = !cond || cond(apiItem);
-        if (valid && merged[key] == null) merged[key] = apiItem[key];
-      });
+      // DB更新，仅填充空字段（使用 undefined 检查，与真实后端一致）
+      for (const [field, cond] of mergeFields) {
+        if (cond !== null && !cond(apiItem, dbItem)) continue;
+        if (merged[field] === undefined && field in apiItem) {
+          merged[field] = apiItem[field];
+        }
+      }
     }
 
     contactMap.set(mapKey, merged);
   }
 
-  // 按时间倒序排序
-  return Array.from(contactMap.values()).sort((a, b) => getTs(b) - getTs(a));
+  // 排序：先按 last_timestamp 倒序，再按 last_time 倒序（与真实后端一致）
+  return Array.from(contactMap.values()).sort((a, b) => {
+    const tsA = -(a.last_timestamp ?? 0);
+    const tsB = -(b.last_timestamp ?? 0);
+    if (tsA !== tsB) return tsA - tsB;
+    const timeA = a.last_time ? new Date(a.last_time).getTime() : 0;
+    const timeB = b.last_time ? new Date(b.last_time).getTime() : 0;
+    return timeB - timeA;
+  });
 }
 
 /**
@@ -347,6 +359,8 @@ export async function syncMessagesCore(params, db) {
 /**
  * 获取消息列表（合并数据库 + OneBot API）
  * 与 Python 端 get_messages_core 等效
+ *
+ * 优化：与真实后端 server/src/index.ts 逻辑对齐
  *
  * @param {object} params - 请求参数
  * @param {object} db - virtualDB 实例
@@ -444,39 +458,43 @@ export async function getMessagesCore(params, db, onebotWS) {
 
     if (noticeMessage) {
       if (direction === 'prev') {
-        if (noticeAfterCursor === -1) {
-          // 尝试找到接近通知的消息
+        // 与真实后端一致：先赋值 noticeAfterCursor，再检查是否为 -1
+        messageId = noticeAfterCursor;
+        if (messageId === -1) {
+          // 尝试找到接近通知之后的消息（getAfter=true）
           const afterMessage = await db.getNearestMessageToNotice(
             cursor,
             groupId !== -1 ? groupId : null,
             targetId !== -1 ? targetId : null,
-            true,  // get_after
-            false  // get_before
+            false,  // getBefore
+            true    // getAfter
           );
-          if (afterMessage) {
-            messageId = afterMessage.message_id;
+          // 检查返回值是否为单个消息对象（非 {before, after} 字典）
+          if (afterMessage && !Array.isArray(afterMessage) && !('before' in afterMessage)) {
+            messageId = afterMessage.message_id ?? 0;
           } else {
             messageId = 0;
           }
-        } else {
-          messageId = noticeAfterCursor;
         }
         foundMessageId = true;
       } else if (direction === 'next') {
-        if (noticeBeforeCursor === -1) {
+        // 与真实后端一致：先赋值 noticeBeforeCursor，再检查是否为 -1
+        messageId = noticeBeforeCursor;
+        if (messageId === -1) {
+          // 尝试找到接近通知之前的消息（getBefore=true）
           const beforeMessage = await db.getNearestMessageToNotice(
             cursor,
             groupId !== -1 ? groupId : null,
             targetId !== -1 ? targetId : null,
-            false,  // get_after
-            true   // get_before
+            true,   // getBefore
+            false   // getAfter
           );
-          if (beforeMessage) {
-            messageId = beforeMessage.message_id;
+          // 检查返回值是否为单个消息对象
+          if (beforeMessage && !Array.isArray(beforeMessage) && !('before' in beforeMessage)) {
+            messageId = beforeMessage.message_id ?? 0;
             foundMessageId = true;
           }
         } else {
-          messageId = noticeBeforeCursor;
           foundMessageId = true;
         }
       }
@@ -518,7 +536,7 @@ export async function getMessagesCore(params, db, onebotWS) {
         const key = `${msg.post_type}_${realSeq}`;
         const oldMsg = merged.get(key);
 
-        // 处理 event 合并逻辑（与 Python 端一致）
+        // 处理 event 合并逻辑（与真实后端一致）
         if (oldMsg && isString(msg.event) && isString(oldMsg.event)) {
           try {
             const oldEvent = JSON.parse(oldMsg.event);
@@ -543,6 +561,7 @@ export async function getMessagesCore(params, db, onebotWS) {
               }
             }
           } catch {
+            // ignore
           }
         }
         merged.set(key, msg);

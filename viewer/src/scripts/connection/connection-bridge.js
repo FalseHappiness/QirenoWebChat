@@ -112,10 +112,14 @@ export class ConnectionBridge extends AbstractConnectionBridge {
   // 同步新消息
   async syncMessages() {
     try {
-      const result = await fetchSyncMessages(this.lastMessageId.value)
-      result?.messages?.forEach(message => {
-        this.onReceiveMessage(message)
-      })
+      if (this.lastMessageId.value !== -1) {
+        const result = await fetchSyncMessages(this.lastMessageId.value)
+        result?.messages?.forEach(message => {
+          this.onReceiveMessage(message)
+        })
+      } else {
+        console.log("无最后收到消息 ID，不进行同步")
+      }
       this.shouldSync.value = false
     } catch (error) {
       console.error('Sync failed:', error)
