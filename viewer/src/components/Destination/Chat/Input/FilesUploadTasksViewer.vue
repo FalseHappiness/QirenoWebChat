@@ -100,13 +100,13 @@ export default defineComponent({
       if (!isFinite(ms) || ms <= 0) return ''
       if (ms < 1000) return '1秒'
       const seconds = Math.ceil(ms / 1000)
-      if (seconds < 60) return `${seconds}秒`
+      if (seconds < 60) return `${ seconds }秒`
       const minutes = Math.floor(seconds / 60)
       const secs = seconds % 60
-      if (minutes < 60) return `${minutes}分${secs}秒`
+      if (minutes < 60) return `${ minutes }分${ secs }秒`
       const hours = Math.floor(minutes / 60)
       const mins = minutes % 60
-      return `${hours}时${mins}分`
+      return `${ hours }时${ mins }分`
     },
     /**
      * 格式化速度显示
@@ -115,15 +115,19 @@ export default defineComponent({
       // speedBps 是 bytes/ms，转换为 bytes/s
       const bytesPerSec = speedBps * 1000
       if (bytesPerSec <= 0) return ''
-      if (bytesPerSec < 1024) return `${bytesPerSec.toFixed(1)} B/s`
-      if (bytesPerSec < 1024 * 1024) return `${(bytesPerSec / 1024).toFixed(1)} KB/s`
-      return `${(bytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`
+      if (bytesPerSec < 1024) return `${ bytesPerSec.toFixed(1) } B/s`
+      if (bytesPerSec < 1024 * 1024) return `${ (bytesPerSec / 1024).toFixed(1) } KB/s`
+      return `${ (bytesPerSec / (1024 * 1024)).toFixed(1) } MB/s`
     },
     formatTaskType(task) {
       const type = task.type || 'file'
+      const { attachInfo } = task
       if (type === 'file') {
-        return task.type === 'group' ? "群文件" : "文件"
-      } else if (["image", "video"].includes(type) && task.attachInfo) {
+        if (attachInfo?.flash) {
+          return "闪传文件-文件集：" + attachInfo.flash_name
+        }
+        return task.contact.type === 'group' ? "群文件" : "文件"
+      } else if (["image", "video"].includes(type) && attachInfo) {
         return "群相片"
       }
       return ({
@@ -131,6 +135,7 @@ export default defineComponent({
         image: "图片",
         video: "视频",
         face: "自定义表情",
+        flashtransfer: "闪传文件集"
       })[type] || "文件"
     }
   }
@@ -148,7 +153,10 @@ export default defineComponent({
     <!-- 任务列表 -->
     <CustomScrollBar class="files-upload-tasks-list">
       <div class="files-upload-tasks-item" v-for="(task, index) in tasks" :key="`${index}-${task?.chunk_index}`">
-        <img alt="" :src="qqFileIcon(getFileIcon(task.file.name))" class="files-upload-tasks-item-icon">
+        <QIcon name="fast_folder_new_24" v-if="task.type === 'flashtransfer'"
+               style="color: #0099ff;" class="files-upload-tasks-item-icon"/>
+        <img v-else alt="" :src="qqFileIcon(getFileIcon(task.file.name))"
+             class="files-upload-tasks-item-icon">
         <div class="files-upload-tasks-item-info">
           <TruncatedText one-line :content="task.file.name"/>
           <div class="files-upload-tasks-item-type">类型: {{ formatTaskType(task) }}</div>
@@ -180,6 +188,10 @@ export default defineComponent({
             <!-- 转换图片中 -->
             <template v-else-if="task.is_converting_image">
               <span class="status-hashing">转换图片中...</span>
+            </template>
+            <!-- 等待文件上传后端 -->
+            <template v-else-if="task.is_preparing_files">
+              <span class="status-hashing">等待文件上传后端中...</span>
             </template>
             <!-- 分片上传中 -->
             <template v-else-if="task.chunked">

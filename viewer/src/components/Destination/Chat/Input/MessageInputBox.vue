@@ -6,7 +6,7 @@ import 'simplebar-vue/dist/simplebar.min.css';
 import Tooltip from "../../../Common/Overlay/Tooltip.vue";
 import { useGlobalStore } from "@/store/global.js";
 import {
-  checkResponseOK,
+  checkResponseOK, fetchCreateFlashTask,
   fetchForwardSingleMsg,
   fetchRemainGroupAtAll,
   fetchSendFiles,
@@ -44,6 +44,7 @@ import ExpressionPanel from "./ExpressionPanel.vue";
 // 引入 composables
 import { useEditorHistory } from "./composables/useEditorHistory.js";
 import { useEditorEmoji } from "./composables/useEditorEmoji.js";
+import { showPromptBox } from "@/scripts/popup-box-api.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -238,9 +239,11 @@ export default defineComponent({
           return target.closest(selectors)
         }
         const isEditor = this.$refs.editor?.contains(target)
-        const isChatContainer = closest('.chat-container')
+        const isFile = closest('.chat-container') || closest(".message-input-ctrl-icon-file")
         const isRecord = closest(".message-input-record-panel, .message-input-ctrl-icon-microphone")
         const isGroupFilesViewer = closest(".group-files-viewer-container")
+        const isFlashFile = closest(".message-input-ctrl-icon-flash-file")
+        const isImage = closest(".message-input-ctrl-icon-image")
         let isGroupAlbumViewer = closest(".group-album-viewer-container")
         let groupAlbumAttachInfo;
         if (isObject(isGroupAlbumViewer?.dataset)) {
@@ -257,13 +260,17 @@ export default defineComponent({
         return {
           target,
           isEditor,
-          isChatContainer,
+          isChatContainer: isFile,
           isRecord,
           isGroupFilesViewer,
           isGroupAlbumViewer,
           groupAlbumAttachInfo,
           isCustomFacePanel,
-          shouldHandle: isEditor || isChatContainer || isRecord || isGroupFilesViewer || isGroupAlbumViewer || isCustomFacePanel
+          isFlashFile,
+          isImage,
+          shouldHandle: isEditor || isFile || isRecord ||
+            isGroupFilesViewer || isGroupAlbumViewer || isCustomFacePanel ||
+            isFlashFile || isImage,
         }
       }
       return {
@@ -283,14 +290,16 @@ export default defineComponent({
 
     async handleDocumentDrop(e) {
       const {
-        isEditor, isChatContainer, isRecord, isGroupFilesViewer, isGroupAlbumViewer, groupAlbumAttachInfo, shouldHandle,
-        isCustomFacePanel
+        isEditor, isFile, isRecord, isGroupFilesViewer,
+        isGroupAlbumViewer, groupAlbumAttachInfo, shouldHandle,
+        isCustomFacePanel,
+        isFlashFile, isImage,
       } = this.parseDragTarget(e)
       if (shouldHandle) {
         e.preventDefault();
         if (isEditor) {
           await this.handleDrop(e);
-        } else if (isChatContainer) {
+        } else if (isFile) {
           await this.handleDropFiles(e, 'file')
         } else if (isRecord) {
           await this.handleDropFiles(e, 'record')
@@ -304,6 +313,18 @@ export default defineComponent({
           )
         } else if (isCustomFacePanel) {
           await this.handleDropFiles(e, 'face')
+        } else if (isFlashFile) {
+          const files = this.processSelectedFiles(Array.from(e?.dataTransfer?.files || []))
+
+          if (files.length) {
+            await this.handleDropFiles(
+              files,
+              'file',
+              await this.handleAttachFlashName({}, files)
+            )
+          }
+        } else if (isImage) {
+          await this.handleDropFiles(e, 'image')
         }
       }
     },
@@ -320,6 +341,9 @@ export default defineComponent({
         if (isObject(attachInfo)) {
           if (attachInfo.folder_id) {
             return "群文件"
+          }
+          if (attachInfo.flash_name) {
+            return "闪传文件集-" + attachInfo.flash_name
           }
         }
       } else if (type === 'media') {
@@ -424,6 +448,7 @@ export default defineComponent({
       this.clearPendingFilesUpload()
       const maxSize = 20 * 1024 * 1024; // 20MB
       const forceStream = isObject(attachInfo) || type === 'face'
+      const isFlash = !!attachInfo?.flash
       const minFiles = forceStream ? [] : files.filter(f => f.size <= maxSize);
       const bigFiles = files.filter(f => !minFiles.includes(f))
       const contact = toRaw(this.activeContact)
@@ -442,6 +467,7 @@ export default defineComponent({
           console.error("Send file error:", error)
         }
       }
+      const flashPromises = []
       for (const file of minFiles) {
         const task_id = nanoid()
         const controller = new AbortController();
@@ -511,9 +537,65 @@ export default defineComponent({
           }
         } else if (type === 'face') {
           convertImageSend()
+        } else if (isFlash) {
+          flashPromises.push((async () => {
+            try {
+              const result = await fetchSendFileStream(task)
+              handleResult(task)(result)
+              return result.data.file
+            } catch (e) {
+              handleError(task)(e)
+              throw e
+            }
+          })())
         } else {
           send()
         }
+      }
+      if (isFlash) {
+        const task_id = nanoid()
+        const controller = new AbortController()
+        this.filesUploadTasks.push({
+          contact,
+          controller,
+          task_id,
+          type: 'flashtransfer',
+          completed: false,
+          cancelled: false,
+          create_time: Date.now(),
+          is_preparing_files: true,
+          attachInfo,
+          file: {
+            name: attachInfo?.flash_name
+          }
+        })
+        const task = this.filesUploadTasks.find(t => t.task_id === task_id)
+        controller.signal.onabort = () => {
+          task.cancelled = true
+        }
+        Promise.all(flashPromises)
+          .then(async files => {
+            task.is_preparing_files = false
+            let result
+            try {
+              const data = await fetchCreateFlashTask(files, attachInfo?.flash_name || "闪传文件")
+              const fileSetId = data.fileset_id || data.task_id
+              result = await fetchSendMessage(
+                contact,
+                [{
+                  type: "flashtransfer",
+                  data: {
+                    fileSetId
+                  }
+                }],
+                controller
+              )
+            } catch (e) {
+              handleError(task)(e)
+            }
+            handleResult(task)(result)
+          })
+          .catch(handleError(task))
       }
     },
 
@@ -1799,7 +1881,7 @@ export default defineComponent({
       this.deleteAtMention()
       const link = document.createElement('a');
       link.classList.add("message-input-editor-at-user");
-      link.innerText = `@${user.name}`
+      link.innerText = `@${ user.name }`
       link.dataset.qq = user.qq
       link.contenteditable = false
       const span = document.createElement('span')
@@ -1911,14 +1993,14 @@ export default defineComponent({
 
           const parts = [];
           if (contacts.group.length > 0) {
-            parts.push(`群聊: ${contacts.group.slice(0, 2).join(', ')}${contacts.group.length > 2 ? '...' : ''}`);
+            parts.push(`群聊: ${ contacts.group.slice(0, 2).join(', ') }${ contacts.group.length > 2 ? '...' : '' }`);
           }
           if (contacts.private.length > 0) {
-            parts.push(`私聊: ${contacts.private.slice(0, 2).join(', ')}${contacts.private.length > 2 ? '...' : ''}`);
+            parts.push(`私聊: ${ contacts.private.slice(0, 2).join(', ') }${ contacts.private.length > 2 ? '...' : '' }`);
           }
           if (parts.length > 0) {
-            const prefix = key !== 'send' ? `消息ID: ${key} ` : ''
-            displayedErrors.push(`${prefix}发送失败, ${parts.join('; ')}`);
+            const prefix = key !== 'send' ? `消息ID: ${ key } ` : ''
+            displayedErrors.push(`${ prefix }发送失败, ${ parts.join('; ') }`);
             msgCount++;
           }
         }
@@ -2015,7 +2097,19 @@ export default defineComponent({
         excludeAcceptAllOption: false
       };
 
-      await this.handleDropFiles(this.processSelectedFiles(await this.openFilePicker(pickerOpts)), 'file', attachInfo)
+      const selectedFiles = this.processSelectedFiles(await this.openFilePicker(pickerOpts))
+
+      if (attachInfo?.flash && selectedFiles?.length) {
+        await this.handleAttachFlashName(attachInfo, selectedFiles)
+      }
+
+      await this.handleDropFiles(selectedFiles, 'file', attachInfo)
+    },
+
+    async handleAttachFlashName(attachInfo, selectedFiles) {
+      attachInfo.flash = true
+      attachInfo.flash_name = await showPromptBox('闪传任务名称', undefined, "闪传任务", selectedFiles?.[0]?.data?.name) ?? "闪传任务"
+      return attachInfo
     },
 
     // 选择音频文件
@@ -2259,7 +2353,20 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <QIcon @click="handleMessageInputSelectFiles()" class="message-input-ctrl-icon" name="folder_24"/>
+                <QIcon @click="handleMessageInputSelectFiles()"
+                       class="message-input-ctrl-icon message-input-ctrl-icon-file"
+                       name="folder_24"/>
+              </template>
+            </Tooltip>
+
+            <Tooltip
+              content="闪传文件"
+              use-target-slot
+            >
+              <template #target>
+                <QIcon @click="handleMessageInputSelectFiles({flash:true})"
+                       class="message-input-ctrl-icon message-input-ctrl-icon-flash-file"
+                       name="fast_folder_new_24"/>
               </template>
             </Tooltip>
 
@@ -2268,7 +2375,9 @@ export default defineComponent({
               use-target-slot
             >
               <template #target>
-                <QIcon @click="handleMessageInputSelectImages()" class="message-input-ctrl-icon" name="image_24"/>
+                <QIcon @click="handleMessageInputSelectImages()"
+                       class="message-input-ctrl-icon message-input-ctrl-icon-image"
+                       name="image_24"/>
               </template>
             </Tooltip>
 
