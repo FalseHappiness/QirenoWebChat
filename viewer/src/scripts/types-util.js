@@ -102,12 +102,12 @@ function mergeNotEmpty(target, source) {
 }
 
 /**
- * 仅判断未定义、空null
+ * 仅判断未定义、空null、NaN
  * @param {*} val
  * @returns {boolean}
  */
 function isNil(val) {
-  return val === undefined || val === null;
+  return val === undefined || val === null || isNaN(val);
 }
 
 function isPromise(variable) {

@@ -1,4 +1,4 @@
-import { isObject, isString } from "../../types-util.js";
+import { isNil, isObject, isString } from "../../types-util.js";
 
 /**
  * 将 OneBot 原始事件转换为标准化的消息数据格式
@@ -531,7 +531,7 @@ export async function getMessagesCore(params, db, onebotWS) {
 
     for (const msg of allMsgs) {
       const realSeq = msg.real_seq ?? msg.message_seq;
-      if (realSeq !== null && realSeq !== undefined) {
+      if (!isNil(realSeq)) {
         msg.real_seq = realSeq;
         const key = `${msg.post_type}_${realSeq}`;
         const oldMsg = merged.get(key);
