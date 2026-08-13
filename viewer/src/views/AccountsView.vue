@@ -5,6 +5,8 @@ import { renderPolar } from "../QQ/app/scripts/polar.modify.ai-anti-obf.js";
 import CustomScrollBar from "../components/Common/Scrolling/CustomScrollBar.vue";
 import { Checkbox as ACheckbox } from 'ant-design-vue'
 import { strToBool } from "../scripts/types-util.js";
+import { Icon } from "@iconify/vue"
+import QIcon from "@/components/Common/Icons/QIcon.vue";
 
 const props = defineProps({
   forceShowWelcome: {
@@ -26,7 +28,9 @@ const isSecureContext = ref(false);
 const connectingIndex = ref(-1);
 
 const showAddForm = ref(false);
-const newConnForm = ref({ wsUri: "", wsToken: "" });
+const newConnForm = ref({ wsUri: "", wsToken: "", remark: "" });
+const editingId = ref(-1);
+const editForm = ref({ wsUri: "", wsToken: "", remark: "" });
 
 const savedAccount = ref(null);
 const autoLoginEnabled = ref(false);
@@ -104,12 +108,12 @@ onUnmounted(() => {
 // 添加直连连接
 const addDirectConnection = () => {
   showAddForm.value = true;
-  newConnForm.value = { wsUri: "", wsToken: "" };
+  newConnForm.value = { wsUri: "", wsToken: "", remark: "" };
 };
 
 const cancelAddConnection = () => {
   showAddForm.value = false;
-  newConnForm.value = { wsUri: "", wsToken: "" };
+  newConnForm.value = { wsUri: "", wsToken: "", remark: "" };
 };
 
 const saveNewConnection = () => {
@@ -121,15 +125,47 @@ const saveNewConnection = () => {
     id: ++connIdCounter,
     wsUri: newConnForm.value.wsUri,
     wsToken: newConnForm.value.wsToken || "",
+    remark: newConnForm.value.remark || "",
   });
   saveConnectionsToStorage();
   showAddForm.value = false;
-  newConnForm.value = { wsUri: "", wsToken: "" };
+  newConnForm.value = { wsUri: "", wsToken: "", remark: "" };
 };
 
 const removeDirectConnection = (id) => {
   directConnections.value = directConnections.value.filter((c) => c.id !== id);
   saveConnectionsToStorage();
+};
+
+// 编辑直连连接
+const startEditConnection = (conn) => {
+  editingId.value = conn.id;
+  editForm.value = {
+    wsUri: conn.wsUri,
+    wsToken: conn.wsToken || "",
+    remark: conn.remark || "",
+  };
+};
+
+const cancelEditConnection = () => {
+  editingId.value = -1;
+  editForm.value = { wsUri: "", wsToken: "", remark: "" };
+};
+
+const saveEditConnection = (id) => {
+  if (!editForm.value.wsUri) {
+    alert("WebSocket 地址不能为空");
+    return;
+  }
+  const index = directConnections.value.findIndex((c) => c.id === id);
+  if (index !== -1) {
+    directConnections.value[index].wsUri = editForm.value.wsUri;
+    directConnections.value[index].wsToken = editForm.value.wsToken || "";
+    directConnections.value[index].remark = editForm.value.remark || "";
+    saveConnectionsToStorage();
+  }
+  editingId.value = -1;
+  editForm.value = { wsUri: "", wsToken: "", remark: "" };
 };
 
 // 检测后端
@@ -182,7 +218,7 @@ const connectDirect = async (index) => {
       mode: "direct",
       self_id: null,
       user_id: null,
-      nickname: conn.nickname || conn.wsUri,
+      nickname: conn.remark || conn.wsUri,
       wsUri: conn.wsUri,
       wsToken: conn.wsToken || "",
       autoLogin: autoLoginEnabled.value,
@@ -330,6 +366,15 @@ const clearAndReselect = () => {
           <div v-if="showAddForm" class="direct-connection-entry">
             <div class="direct-connection-fields">
               <div class="form-group">
+                <label>备注名</label>
+                <input
+                  v-model="newConnForm.remark"
+                  type="text"
+                  placeholder="例如：我的机器人"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group">
                 <label>WebSocket 地址</label>
                 <input
                   v-model="newConnForm.wsUri"
@@ -362,24 +407,67 @@ const clearAndReselect = () => {
                 :key="conn.id"
                 class="saved-connection-item"
               >
-                <div class="saved-connection-info">
-                  <div class="saved-connection-uri">{{ conn.wsUri }}</div>
-                  <div v-if="conn.wsToken" class="saved-connection-token">Token: {{ conn.wsToken }}</div>
-                </div>
-                <div class="saved-connection-actions">
-                  <button
-                    class="btn btn--connect"
-                    @click="connectDirect(index)"
-                    :disabled="connectingIndex === index"
-                  >
-                    {{ connectingIndex === index ? "连接中..." : "连接" }}
-                  </button>
-                  <button class="btn btn--icon btn--danger" @click="removeDirectConnection(conn.id)" title="删除此连接">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                    </svg>
-                  </button>
-                </div>
+                <!-- 编辑模式 -->
+                <template v-if="editingId === conn.id">
+                  <div class="edit-connection-entry">
+                    <div class="form-group">
+                      <label>备注名</label>
+                      <input
+                        v-model="editForm.remark"
+                        type="text"
+                        placeholder="备注名"
+                        class="form-input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>WebSocket 地址</label>
+                      <input
+                        v-model="editForm.wsUri"
+                        type="text"
+                        placeholder="ws://127.0.0.1:3001"
+                        class="form-input"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Token（可选）</label>
+                      <input
+                        v-model="editForm.wsToken"
+                        type="text"
+                        placeholder="OneBot 访问令牌"
+                        class="form-input"
+                      />
+                    </div>
+                    <div class="edit-connection-actions">
+                      <button class="btn btn--save" @click="saveEditConnection(conn.id)" :disabled="!editForm.wsUri">
+                        保存
+                      </button>
+                      <button class="btn btn--cancel" @click="cancelEditConnection">取消</button>
+                    </div>
+                  </div>
+                </template>
+                <!-- 显示模式 -->
+                <template v-else>
+                  <div class="saved-connection-info">
+                    <div class="saved-connection-remark">{{ conn.remark || '(未设置备注)' }}</div>
+                    <div class="saved-connection-uri">{{ conn.wsUri }}</div>
+                  </div>
+                  <div class="saved-connection-actions">
+                    <button
+                      class="btn btn--connect"
+                      @click="connectDirect(index)"
+                      :disabled="connectingIndex === index"
+                    >
+                      {{ connectingIndex === index ? "连接中..." : "连接" }}
+                    </button>
+                    <button class="btn btn--icon" @click="startEditConnection(conn)" title="编辑此连接">
+                      <Icon icon="tabler:pencil"/>
+                    </button>
+                    <button class="btn btn--icon btn--danger" @click="removeDirectConnection(conn.id)"
+                            title="删除此连接">
+                      <QIcon name="close_16"/>
+                    </button>
+                  </div>
+                </template>
               </div>
             </div>
           </template>
@@ -715,18 +803,30 @@ const clearAndReselect = () => {
   overflow: hidden;
 }
 
-.saved-connection-uri {
-  font-size: 13px;
+.saved-connection-remark {
+  font-size: 14px;
   color: $color-text-regular;
-  font-weight: 500;
+  font-weight: 600;
   @include text-ellipsis;
 }
 
-.saved-connection-token {
-  font-size: 11px;
-  color: $color-text-muted;
+.saved-connection-uri {
+  font-size: 12px;
+  color: $color-text-secondary;
   margin-top: 2px;
   @include text-ellipsis;
+}
+
+.edit-connection-entry {
+  width: 100%;
+  padding: 8px 0;
+}
+
+.edit-connection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .saved-connection-actions {
@@ -842,9 +942,17 @@ const clearAndReselect = () => {
   @include btn-icon;
 }
 
-.btn--danger:hover {
-  background: #fee;
-  color: $color-error;
-  border-color: #fcc;
+.btn--danger {
+  padding: 4px;
+
+  svg {
+    @include square-size(100%)
+  }
+
+  :hover {
+    background: #fee;
+    color: $color-error;
+    border-color: #fcc;
+  }
 }
 </style>
