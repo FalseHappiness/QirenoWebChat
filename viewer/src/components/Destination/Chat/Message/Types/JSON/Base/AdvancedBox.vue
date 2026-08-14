@@ -5,6 +5,7 @@ import BasicBox from "./BasicBox.vue";
 export default defineComponent({
   name: "AdvancedBox",
   components: { BasicBox },
+  emits: ["cover-error"],
   props: {
     footerIcon: String,
     footerText: String,
@@ -16,7 +17,7 @@ export default defineComponent({
 
 <template>
   <BasicBox :jump-url="jumpUrl" class="advanced-box">
-    <img alt="" :src="coverUrl" class="cover-img" v-if="coverUrl"/>
+    <img alt="" :src="coverUrl" class="cover-img" v-if="coverUrl" @error="$emit('cover-error', $event)"/>
     <div class="advanced-box-container">
       <div class="advanced-box-slot">
         <slot></slot>

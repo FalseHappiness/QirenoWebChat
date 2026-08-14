@@ -344,8 +344,7 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
             if (isString(title)) {
               text += " " + title
             }
-            children.push(text
-            )
+            children.push(text)
             break
           }
 

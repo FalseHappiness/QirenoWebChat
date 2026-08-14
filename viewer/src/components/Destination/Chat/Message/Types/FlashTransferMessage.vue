@@ -7,16 +7,23 @@ import { qqWebFile } from "@/composables/useBase.js";
 
 export default {
   name: "FlashTransferMessage",
-  methods: { qqWebFile },
+  methods: {
+    qqWebFile,
+    coverError(e) {
+      e.target.src = this.defaultCover;
+    }
+  },
   components: { AdvancedBox },
   props: {
     fileSetId: String,
     title: { type: String, default: "" },
+    thumb: { type: String, default: undefined },
   },
   data() {
     return {
       shareLink: undefined,
       fileList: undefined,
+      defaultCover: qqWebFile('flash_transfer', 'default_cover.png')
     }
   },
   computed: {
@@ -53,18 +60,16 @@ export default {
     footer-icon="https://qfile.qq.com/favicon.ico"
     footer-text="QQ 闪传"
     :jump-url="shareLink"
-    :cover-url="qqWebFile('flash_transfer', 'poster.DLsmWTVn.png')">
+    :cover-url="thumb || defaultCover"
+    @cover-error="coverError">
     <p class="title">{{ title }}</p>
     <p class="text-muted">{{ info }}</p>
   </AdvancedBox>
 </template>
 
 <style scoped lang="scss">
-.message-flash-transfer {
-  :deep(.cover-img) {
-    padding: 0 20px;
-    background-color: #F0F1F5;
-  }
+.message-flash-transfer:deep(.cover-img) {
+  background-color: #e2e4eb;
 }
 
 p {

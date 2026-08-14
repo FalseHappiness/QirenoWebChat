@@ -1214,7 +1214,10 @@ async function fetchSetGroupTodo(group_id, message_id) {
 }
 
 async function fetchCreateFlashTask(files, name) {
-  return await fetchActionData("create_flash_task", { files, name })
+  return await fetchActionData("create_flash_task", {
+    files, name,
+    thumb_path: "https://downv6.qq.com/qqface/default_cover.png"
+  })
 }
 
 async function fetchFlashFileList(fileset_id) {
