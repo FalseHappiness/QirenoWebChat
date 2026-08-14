@@ -31,7 +31,7 @@ import {
   updateGroupMemberInfoCache
 } from "./user-info-util.js";
 import { isGroupContact } from "@/scripts/contacts-util.js";
-import { isSnowLuma } from "@/scripts/onebot-version-util.js";
+import { gteSnowLuma, isSnowLuma } from "@/scripts/onebot-version-util.js";
 
 /**
  * 替换URL中的 sitehost 为当前页面真实主机（支持 sitehost:自定义端口 格式）
@@ -1164,11 +1164,60 @@ async function fetchCustomFace(count = 114514) {
   return isArray(result) ? uniqueByCustomFaceId(result.map(url => ({
     face_id: getCustomFaceId(url),
     url
-  })).reverse()) : null
+  })).reverse()) : result
 }
 
-async function fetchDeleteCustomFace(face_id) {
-  return await fetchAction("delete_custom_face", { emoji_id: face_id, res_id: face_id })
+async function fetchCustomFaceDetail(count = 114514) {
+  const result = await fetchActionData("fetch_custom_face_detail", { count })
+  return isArray(result) ? uniqueByCustomFaceId(
+    result.map(
+      face => ({
+        ...face,
+        res_id: face.res_id || face.resId,
+        face_id: face.emoji_id || face.res_id || face.resId || getCustomFaceId(face.url)
+      })
+    ).reverse()
+  ) : result
+}
+
+async function fetchCustomFaceCompatibly(count) {
+  if (!isSnowLuma() || gteSnowLuma(1, 14, 4)) {
+    try {
+      return await fetchCustomFaceDetail(count)
+    } catch (e) {
+      if (!e?.message?.includes("unknown action")) {
+        throw e
+      }
+    }
+  }
+  return await fetchCustomFace(count)
+}
+
+async function fetchDeleteCustomFace(face) {
+  face = isString(face) ? { face_id: face } : face
+  const { face_id, emoji_id, res_id, md5 } = face
+  return await fetchAction(
+    "delete_custom_face",
+    { emoji_id: emoji_id || face_id, res_id: res_id || face_id, md5 }
+  )
+}
+
+async function fetchModifyCustomFaceDescription(face, desc) {
+  face = isString(face) ? { face_id: face } : face
+  const { face_id, emoji_id, res_id, md5 } = face
+  if (isSnowLuma()) {
+    return await fetchAction("modify_custom_face", {
+      emoji_id: emoji_id || face_id,
+      desc
+    })
+  } else {
+    return await fetchAction("set_custom_face_desc", {
+      emoji_id: emoji_id || face_id,
+      res_id: res_id || face_id,
+      md5,
+      desc,
+    })
+  }
 }
 
 async function fetchMoveCustomFaceToFront(emoji_id) {
@@ -1305,9 +1354,10 @@ export {
   fetchSetGroupMemberTitle,
   handleApiRequest,
   fetchContactShareArk,
-  fetchCustomFace,
+  fetchCustomFaceCompatibly,
   fetchDeleteCustomFace,
   fetchAddCustomFace,
+  fetchModifyCustomFaceDescription,
   fetchMoveCustomFaceToFront,
   buildCustomFaceUrl,
   getCustomFaceId,

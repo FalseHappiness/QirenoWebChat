@@ -60,7 +60,7 @@ export default defineComponent({
   <div class="prompt-box">
     <SimplePopUp :on-confirm="onConfirm"
                  :on-cancel="onCancel"
-                 class="prompt-box-container"
+                 class="popup-prompt-box-container"
                  ref="popUp">
       <div class="prompt-box-header">
         <span class="prompt-box-title">{{ title }}</span>
@@ -87,7 +87,7 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
-.prompt-box-container {
+.popup-prompt-box-container {
   width: 360px;
   height: auto;
   max-height: calc(100% - 20px);

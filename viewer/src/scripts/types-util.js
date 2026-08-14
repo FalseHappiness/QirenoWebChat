@@ -107,7 +107,7 @@ function mergeNotEmpty(target, source) {
  * @returns {boolean}
  */
 function isNil(val) {
-  return val === undefined || val === null || isNaN(val);
+  return val === undefined || val === null || (isNumber(val) && isNaN(val));
 }
 
 function isPromise(variable) {
@@ -154,6 +154,29 @@ function removeItems(arr, predicate, mutate = false) {
   return arr
 }
 
+/**
+ * 修改数组中所有满足条件的项
+ * @param {Array} arr 源数组
+ * @param {Function} predicate (item, index, arr)=>boolean 匹配项判断函数，返回true代表需要修改该元素
+ * @param {Function} mutator (item, index, arr)=>any 修改回调，返回值作为替换后的新元素
+ * @param {boolean} mutate 是否原地修改原数组，默认false返回新数组
+ * @returns {Array} 处理完成后的数组
+ */
+function modifyExistItems(arr, predicate, mutator, mutate = false) {
+  if (!mutate) {
+    return arr.map((item, idx, src) => {
+      return predicate(item, idx, src) ? mutator(item, idx, src) : item
+    })
+  }
+  // 原地修改，正序遍历即可（仅改写元素引用，不改变数组长度，下标不会错乱）
+  for (let i = 0, len = arr.length; i < len; i++) {
+    if (predicate(arr[i], i, arr)) {
+      arr[i] = mutator(arr[i], i, arr)
+    }
+  }
+  return arr
+}
+
 export {
   isNumber,
   isFunction,
@@ -171,4 +194,5 @@ export {
   isPromise,
   moveItemToFront,
   removeItems,
+  modifyExistItems,
 };

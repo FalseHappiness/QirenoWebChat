@@ -9,15 +9,23 @@ import { useEditorEmoji } from "./composables/useEditorEmoji.js"
 import QIcon from "@/components/Common/Icons/QIcon.vue";
 import {
   buildCustomFaceUrl,
-  fetchCustomFace,
-  fetchDeleteCustomFace,
+  fetchCustomFaceCompatibly,
+  fetchDeleteCustomFace, fetchModifyCustomFaceDescription,
   fetchMoveCustomFaceToFront, getCustomFaceId,
   handleApiRequest,
   uniqueByCustomFaceId
 } from "@/scripts/backend-api.js";
-import { isArray, isObject, isString, moveItemToFront, removeItems } from "@/scripts/types-util.js";
+import {
+  isArray,
+  isNil,
+  isObject,
+  isString,
+  modifyExistItems,
+  moveItemToFront,
+  removeItems
+} from "@/scripts/types-util.js";
 import { basicContextItem, formatBasicContextItems, vCustomMenu } from "@/directives/context-menu.js";
-import { showConfirmBox } from "@/scripts/popup-box-api.js";
+import { showConfirmBox, showPromptBox } from "@/scripts/popup-box-api.js";
 import { showErrorToast } from "@/scripts/toast.js";
 import LoadingSpinner from "@/components/Common/Widgets/LoadingSpinner.vue";
 import { Emitter } from "@/composables/useEventBus.js";
@@ -96,7 +104,7 @@ export default {
       this.isLoadCustomFacesError = false
       this.isLoadingCustomFaces = true
       try {
-        const result = await fetchCustomFace();
+        const result = await fetchCustomFaceCompatibly();
         if (isArray(result)) {
           this.customFaces = uniqueByCustomFaceId(result)
         }
@@ -109,12 +117,13 @@ export default {
     },
     handleCustomFaceContextMenu(face) {
       const { face_id } = face
+      const sameFace = f => f.face_id === face_id
       return () => formatBasicContextItems(
         basicContextItem(
           "移至最前",
           async () =>
             await handleApiRequest(fetchMoveCustomFaceToFront(face_id)) &&
-            moveItemToFront(this.customFaces, f => f.face_id === face_id, true)
+            moveItemToFront(this.customFaces, sameFace, true)
           ,
           undefined,
           isSnowLuma()
@@ -123,8 +132,30 @@ export default {
           "删除",
           async () =>
             await showConfirmBox("确认删除") &&
-            await handleApiRequest(fetchDeleteCustomFace(face_id), '删除成功') &&
-            removeItems(this.customFaces, f => f.face_id === face_id, true)
+            await handleApiRequest(fetchDeleteCustomFace(face), '删除成功') &&
+            removeItems(this.customFaces, sameFace, true)
+        ),
+        basicContextItem(
+          "修改备注",
+          async () => {
+            const desc = await showPromptBox(
+              "修改备注",
+              undefined,
+              "请输入备注",
+              face.desc || ""
+            )
+            if (!isNil(desc)) {
+              await handleApiRequest(
+                fetchModifyCustomFaceDescription(face, desc),
+                '修改成功'
+              ) && modifyExistItems(
+                this.customFaces,
+                sameFace,
+                f => f.desc = desc,
+                false
+              )
+            }
+          }
         )
       )
     },
@@ -201,11 +232,15 @@ export default {
             加载失败
           </template>
           <template v-else>
-            <div class="custom-face" v-for="face in customFaces"
-                 :key="face.face_id" @click="$emit('insert-image', face.url, '[动画表情]', 1)"
-                 v-custom-menu="handleCustomFaceContextMenu(face)">
-              <img alt="" :src="face.url"/>
-            </div>
+            <Tooltip v-for="face in customFaces" :content="face.desc" use-target-slot>
+              <template #target>
+                <div class="custom-face"
+                     :key="face.face_id" @click="$emit('insert-image', face.url, '[动画表情]', 1)"
+                     v-custom-menu="handleCustomFaceContextMenu(face)">
+                  <img alt="" :src="face.url"/>
+                </div>
+              </template>
+            </Tooltip>
           </template>
         </div>
       </CustomScrollBar>
