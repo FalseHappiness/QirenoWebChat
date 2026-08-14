@@ -32,6 +32,7 @@ import { isArray, objectHasKey } from "./types-util.js";
 import { CacheNameKey, fetchDisplayName, getCacheName } from "./user-info-util.js";
 import ViewInvite from "@/components/Destination/Chat/Message/Types/JSON/ViewInvite.vue";
 import ViewLocationShare from "@/components/Destination/Chat/Message/Types/JSON/ViewLocationShare.vue";
+import FlashTransferMessage from "@/components/Destination/Chat/Message/Types/FlashTransferMessage.vue";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -76,7 +77,7 @@ const getEmojiPublicPath = (emoji_id, type, emoji_id_suffix = '', suffix = undef
   if (!suffix) {
     suffix = ({ 'png': '.png', 'apng': '.png', 'lottie': '.json' })[type]
   }
-  return qqSystemEmoji(encodeURIComponent(emoji_id), type, `${encodeURIComponent(emoji_id)}${emoji_id_suffix}${suffix}/`)
+  return qqSystemEmoji(encodeURIComponent(emoji_id), type, `${ encodeURIComponent(emoji_id) }${ emoji_id_suffix }${ suffix }/`)
 }
 
 const getEmojiPngPath = emoji_id => getEmojiPublicPath(emoji_id, 'png')
@@ -329,7 +330,7 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
           case 'poke': {
             const poke_id = data.id
             const poke_name = getPokeDescription(poke_id)
-            children.push(`[${poke_name || '未解析的戳一戳'}]`)
+            children.push(`[${ poke_name || '未解析的戳一戳' }]`)
             if (!poke_name) {
               console.log("Unparsed poke message segment:", item)
             }
@@ -339,7 +340,7 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
           default:
             // 通用类型判断
             if (objectHasKey(messagePreviewDirectConversionTypes, type)) {
-              children.push(`[${messagePreviewDirectConversionTypes[type]}]`);
+              children.push(`[${ messagePreviewDirectConversionTypes[type] }]`);
             }
             break
         }
@@ -383,7 +384,7 @@ const parseMessage = (wrappedMsg) => {
           }
 
           const emojiFiles = useGlobalStore().emojiFiles;
-          const lottiePath = getEmojiLottiePath(face_id, resultId ? `_${resultId}` : '');
+          const lottiePath = getEmojiLottiePath(face_id, resultId ? `_${ resultId }` : '');
 
           if (emojiFiles.includes(lottiePath)) {
             // 加载 Lottie
@@ -477,6 +478,11 @@ const parseMessage = (wrappedMsg) => {
               }
               break
             }
+            case "flashtransfer":
+              children.push(
+                h(FlashTransferMessage, data)
+              )
+              break
             default:
           }
           if (children?.length) {
@@ -551,13 +557,13 @@ const parseMessage = (wrappedMsg) => {
                   // noinspection JSIgnoredPromiseFromCall
                   fetchDisplayName(id_list, type, newName => {
                     if (vnode?.el) {
-                      vnode.el.textContent = `@${newName}`;
+                      vnode.el.textContent = `@${ newName }`;
                       vnode.el.dataset.displayName = newName
                     }
                   });
                 },
                 class: "at-somebody-link message-execute-command",
-                innerText: `@${getCacheName(id_list, type) || id}`,
+                innerText: `@${ getCacheName(id_list, type) || id }`,
                 'data-user-id': id,
                 'data-command': 'at-somebody',
                 'data-display-name': "未获取"
@@ -627,7 +633,7 @@ const parseBanDuration = (duration) => {
   for (const { value, unit } of timeUnits) {
     const count = Math.floor(t / value);
     if (count > 0) {
-      res.push(`${count}${unit}`);
+      res.push(`${ count }${ unit }`);
       t %= value;
     }
   }
@@ -663,7 +669,7 @@ function toDataAttr(obj) {
   const res = {}
   for (let key in obj) {
     const kebab = key.replace(/[A-Z]/g, m => '-' + m.toLowerCase())
-    res[`data-${kebab}`] = obj[key]
+    res[`data-${ kebab }`] = obj[key]
   }
   return res
 }

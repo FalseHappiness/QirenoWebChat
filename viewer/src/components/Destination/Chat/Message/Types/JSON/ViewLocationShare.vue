@@ -1,10 +1,10 @@
 <script>
 import { defineComponent } from 'vue'
-import BasicBoxWithFooter from "@/components/Destination/Chat/Message/Types/JSON/Base/BasicBoxWithFooter.vue";
+import AdvancedBox from "@/components/Destination/Chat/Message/Types/JSON/Base/AdvancedBox.vue";
 
 export default defineComponent({
   name: "LocationShare",
-  components: { BasicBoxWithFooter },
+  components: { AdvancedBox },
   props: { json: Object },
   computed: {
     loc() {
@@ -15,12 +15,12 @@ export default defineComponent({
 </script>
 
 <template>
-  <BasicBoxWithFooter class="message-location-share" footer-text="位置分享">
+  <AdvancedBox class="message-location-share" footer-text="位置分享">
     <div class="container">
       <p class="text-truncate">{{ loc.name }}</p>
       <p class="text-muted text-truncate">{{ loc.address }}</p>
     </div>
-  </BasicBoxWithFooter>
+  </AdvancedBox>
 </template>
 
 <style scoped lang="scss">

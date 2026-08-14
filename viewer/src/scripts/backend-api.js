@@ -1219,6 +1219,15 @@ async function fetchCreateFlashTask(files, name) {
   return await fetchActionData("create_flash_task", { files, name })
 }
 
+async function fetchFlashFileList(fileset_id) {
+  return await fetchActionData("get_flash_file_list", { fileset_id })
+}
+
+async function fetchFlashShareLink(fileset_id) {
+  const result = await fetchActionData("get_share_link", { fileset_id })
+  return isObject(result) ? result.url : (isString(result) ? result : null)
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1305,4 +1314,6 @@ export {
   uniqueByCustomFaceId,
   fetchSetGroupTodo,
   fetchCreateFlashTask,
+  fetchFlashFileList,
+  fetchFlashShareLink,
 }

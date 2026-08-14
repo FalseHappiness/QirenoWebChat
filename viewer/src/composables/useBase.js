@@ -45,6 +45,10 @@ function qqSystemEmoji(emojiId, type, fileName) {
   return qqWrapBase("EmojiSystermResource", emojiId, type, fileName)
 }
 
+function qqWebFile(...paths) {
+  return qqWrapBase("web", ...paths)
+}
+
 export {
   useBase,
   wrapBase,
@@ -54,4 +58,5 @@ export {
   qqFileIcon,
   qqAppPoke,
   qqSystemEmoji,
+  qqWebFile,
 }

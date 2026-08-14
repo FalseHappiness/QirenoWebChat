@@ -1,10 +1,10 @@
 <script>
 import { defineComponent } from 'vue'
-import BasicBoxWithFooter from "./Base/BasicBoxWithFooter.vue";
+import AdvancedBox from "./Base/AdvancedBox.vue";
 
 export default defineComponent({
   name: "StructMsg",
-  components: { BasicBoxWithFooter },
+  components: { AdvancedBox },
   props: { json: Object },
   computed: {
     view() {
@@ -16,7 +16,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <BasicBoxWithFooter
+  <AdvancedBox
     class="message-struct-msg"
     :footer-icon="view.tagIcon"
     :footer-text="view.tag"
@@ -28,7 +28,7 @@ export default defineComponent({
         <img alt="" :src="view.preview" class="preview-image">
       </div>
     </div>
-  </BasicBoxWithFooter>
+  </AdvancedBox>
 </template>
 
 <style scoped lang="scss">

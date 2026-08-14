@@ -1,10 +1,10 @@
 <script>
 import { defineComponent } from 'vue'
-import BasicBoxWithFooter from "./Base/BasicBoxWithFooter.vue";
+import AdvancedBox from "./Base/AdvancedBox.vue";
 
 export default defineComponent({
   name: "ActivityMD",
-  components: { BasicBoxWithFooter },
+  components: { AdvancedBox },
   props: { json: Object },
   computed: {
     activity() {
@@ -21,12 +21,12 @@ export default defineComponent({
 </script>
 
 <template>
-  <BasicBoxWithFooter
+  <AdvancedBox
     class="message-activity-md"
     :footer-icon="activity.tagIcon"
     :footer-text="activity.tag"
-    :jump-url="activity.jumpUrl?.jumpUrl">
-    <img alt="" :src="activity.preview" class="activity-md-preview-img">
+    :jump-url="activity.jumpUrl?.jumpUrl"
+    :cover-url="activity.preview">
     <p class="desc-text">{{ activity.desc }}</p>
     <a class="activity-md-button"
        v-if="activity.isEnabledButton"
@@ -35,17 +35,10 @@ export default defineComponent({
        target="_blank">
       {{ activity.buttonText }}
     </a>
-  </BasicBoxWithFooter>
+  </AdvancedBox>
 </template>
 
 <style scoped lang="scss">
-.activity-md-preview-img {
-  width: 100%;
-  max-height: 500px;
-  border-radius: 5px;
-  margin: 5px 0;
-}
-
 .desc-text {
   font-size: 80%;
   margin: 2px 0;

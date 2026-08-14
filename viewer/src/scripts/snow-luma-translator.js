@@ -1,5 +1,4 @@
 import { parseJSON, stringifyJSON } from "./util.js";
-import { getStreamFileDataUrl } from "./backend-api.js";
 import { isArray, isObject, objectHasKey } from "./types-util.js";
 
 const convertNoticeSL = event => {
@@ -39,13 +38,19 @@ const convertMessageSL = event => {
     if (Array.isArray(event.message)) {
       const contents = []
       for (const content of event.message) {
-        if (content.type === 'poke') {
+        const { type, data } = content
+        if (type === 'poke') {
           contents.push({
             ...content,
             data: {
-              id: content?.data?.id || content?.data?.type,
-              type: content?.data?.type || content?.data?.id
+              id: data?.id || data?.type,
+              type: data?.type || data?.id
             }
+          })
+        } else if (type === "flash_file") {
+          contents.push({
+            type: 'flashtransfer',
+            data: objectFieldCompatMap(data, { fileSetId: "file_set_id" })
           })
         } else {
           contents.push(content)

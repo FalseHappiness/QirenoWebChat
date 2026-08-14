@@ -1,10 +1,10 @@
 <script>
 import { defineComponent } from 'vue'
-import BasicBoxWithFooter from "./Base/BasicBoxWithFooter.vue";
+import AdvancedBox from "./Base/AdvancedBox.vue";
 
 export default defineComponent({
   name: "ViewInviteMsg",
-  components: { BasicBoxWithFooter },
+  components: { AdvancedBox },
   props: { json: Object },
   computed: {
     invite() {
@@ -15,13 +15,13 @@ export default defineComponent({
 </script>
 
 <template>
-  <BasicBoxWithFooter
+  <AdvancedBox
     class="message-view-invite-msg"
     :footer-text="invite.title">
     <p class="summary text-truncate">{{ invite.summary }}</p>
     <img class="cover" alt="" :src="invite.cover">
     <div class="button">{{ invite.button }}</div>
-  </BasicBoxWithFooter>
+  </AdvancedBox>
 </template>
 
 <style scoped lang="scss">
