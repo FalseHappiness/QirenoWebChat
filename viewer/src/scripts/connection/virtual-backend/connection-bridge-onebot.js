@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { useGlobalStore } from '../../../store/global.js';
+import { useGlobalStore } from '@/store/global.js';
 import { convertWrappedMsgSL } from '../../snow-luma-translator.js';
 import { AbstractConnectionBridge } from '../abstract-connection-bridge.js';
 import { OneBotWSConnection } from './onebot-ws.js';
@@ -18,6 +18,7 @@ import VirtualProtocol, {
   createProxyPrivateFileHandler,
 } from './virtual-protocol.js';
 import { isObject } from "../../types-util.js";
+import { checkResponseOK } from "@/scripts/backend-api.js";
 
 /**
  * ConnectionBridgeOnebot
@@ -58,7 +59,8 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
 
       this.onebotWS.callAction('get_version_info', {})
         .then(res => {
-          useGlobalStore().apiVersionInfo = res.data || res;
+          if (!checkResponseOK(res)) throw new Error(JSON.stringify(res))
+          useGlobalStore().apiVersionInfo = res.dat;
         })
         .catch(e => console.log('Unable to get api version info:', e));
 
@@ -162,7 +164,7 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
         if (pendingMap.has(echo)) {
           pendingMap.delete(echo);
           cleanup();
-          reject(new Error(`${options.action || options.endpoint} timed out after ${timeout}ms`));
+          reject(new Error(`${ options.action || options.endpoint } timed out after ${ timeout }ms`));
         }
       }, timeout);
 
@@ -238,7 +240,7 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
         return { status: 'success', data: syncResult };
       }
       default:
-        throw new Error(`Unknown backend endpoint: ${endpoint}`);
+        throw new Error(`Unknown backend endpoint: ${ endpoint }`);
     }
   }
 

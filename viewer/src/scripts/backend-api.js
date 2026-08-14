@@ -1,6 +1,5 @@
 // 获取显示名称的函数
 import axios from "axios";
-import { useGlobalStore } from "../store/global.js";
 import { showErrorToast, showSuccessToast, showToast } from "./toast.js";
 import { createSHA256 } from 'hash-wasm';
 import { nanoid } from 'nanoid';
@@ -22,12 +21,17 @@ import {
   CacheNameKey,
   setCacheName,
   setFriendListCache,
-  setGroupInfoCache, setGroupListCache,
+  setGroupInfoCache,
+  setGroupListCache,
   setGroupMemberInfoCache,
   setGroupMemberListCache,
-  setStrangerInfoCache, setUserPersonalization, updateGroupInfoCache, updateGroupMemberInfoCache
+  setStrangerInfoCache,
+  setUserPersonalization,
+  updateGroupInfoCache,
+  updateGroupMemberInfoCache
 } from "./user-info-util.js";
 import { isGroupContact } from "@/scripts/contacts-util.js";
+import { isSnowLuma } from "@/scripts/onebot-version-util.js";
 
 /**
  * 替换URL中的 sitehost 为当前页面真实主机（支持 sitehost:自定义端口 格式）
@@ -634,9 +638,7 @@ const fetchSendFileStream = async (task) => {
         } else if (attachInfo.flash) {
           return {
             status: "ok",
-            data: {
-              file
-            }
+            data
           }
         }
       }
@@ -950,10 +952,6 @@ const getUserLogo = (user_id, size = 100) => {
 
 const getGroupNoticePicUrl = (pic_url) => {
   return `https://gdynamic.qpic.cn/gdynamic/${ pic_url }/0`
-}
-
-const isSnowLuma = () => {
-  return useGlobalStore().apiVersionInfo?.app_name?.includes("SnowLuma") || false
 }
 
 const getGroupFileProxyUrl = (group_id, file_id, name, url = '') => {
@@ -1275,7 +1273,6 @@ export {
   fetchGroupAlbumMediaList,
   fetchBackendHealth,
   fetchBackendBots,
-  isSnowLuma,
   fetchCategorizedContacts,
   fetchTranslateEnglish,
   fetchRecordToText,

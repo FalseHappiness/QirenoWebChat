@@ -159,7 +159,8 @@ export const useGlobalStore = defineStore(
       allEmojiids,
       responseCacheMap,
       apiVersionInfo: {
-        app_name: "NapCat.Onebot"
+        app_name: "NapCat.Onebot",
+        app_version: "0.0.0"
       },
       theme,
     };

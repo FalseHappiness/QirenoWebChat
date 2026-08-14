@@ -13,7 +13,7 @@ import {
   fetchDeleteCustomFace,
   fetchMoveCustomFaceToFront, getCustomFaceId,
   handleApiRequest,
-  isSnowLuma, uniqueByCustomFaceId
+  uniqueByCustomFaceId
 } from "@/scripts/backend-api.js";
 import { isArray, isObject, isString, moveItemToFront, removeItems } from "@/scripts/types-util.js";
 import { basicContextItem, formatBasicContextItems, vCustomMenu } from "@/directives/context-menu.js";
@@ -21,6 +21,7 @@ import { showConfirmBox } from "@/scripts/popup-box-api.js";
 import { showErrorToast } from "@/scripts/toast.js";
 import LoadingSpinner from "@/components/Common/Widgets/LoadingSpinner.vue";
 import { Emitter } from "@/composables/useEventBus.js";
+import { isSnowLuma } from "@/scripts/onebot-version-util.js";
 
 export default {
   name: "ExpressionPanel",

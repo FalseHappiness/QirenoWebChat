@@ -8,7 +8,7 @@ import {
   checkResponseOK,
   fetchDeleteGroupFolder,
   fetchDeleteGroupFile,
-  fetchRenameGroupFolder, fetchRenameGroupFile, isSnowLuma,
+  fetchRenameGroupFolder, fetchRenameGroupFile,
 } from "@/scripts/backend-api.js";
 import { formatTimeOptions } from "@/scripts/util.js";
 import { getFileIcon, formatFileSize } from "../Message/Types/FileMessage.vue";
@@ -25,6 +25,7 @@ import { isGroupOperator } from "@/scripts/user-info-util.js";
 import { Emitter } from "@/composables/useEventBus.js";
 import { checkSameContact, createGroupContact } from "@/scripts/contacts-util.js";
 import { isString } from "@/scripts/types-util.js";
+import { isSnowLuma } from "@/scripts/onebot-version-util.js";
 
 export default defineComponent({
   name: "GroupFilesViewer",

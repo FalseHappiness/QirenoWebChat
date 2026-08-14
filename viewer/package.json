@@ -46,6 +46,7 @@
     "pinia": "^4.0.2",
     "pinia-plugin-persistedstate": "^4.7.1",
     "pinyin-pro": "^3.28.1",
+    "semver": "^7.8.5",
     "simplebar": "^6.3.3",
     "simplebar-vue": "^2.4.2",
     "vue-resizable": "^2.1.7",

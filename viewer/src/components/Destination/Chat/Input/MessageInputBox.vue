@@ -45,6 +45,7 @@ import ExpressionPanel from "./ExpressionPanel.vue";
 import { useEditorHistory } from "./composables/useEditorHistory.js";
 import { useEditorEmoji } from "./composables/useEditorEmoji.js";
 import { showPromptBox } from "@/scripts/popup-box-api.js";
+import { gteSnowLuma } from "@/scripts/onebot-version-util.js";
 
 export default defineComponent({
   name: "MessageInputBox",
@@ -542,7 +543,7 @@ export default defineComponent({
             try {
               const result = await fetchSendFileStream(task)
               handleResult(task)(result)
-              return result.data.file
+              return result.data
             } catch (e) {
               handleError(task)(e)
               throw e
@@ -575,6 +576,7 @@ export default defineComponent({
         }
         Promise.all(flashPromises)
           .then(async files => {
+            if (!gteSnowLuma(1, 14, 8)) files = files.map(data => data.file)
             task.is_preparing_files = false
             let result
             try {

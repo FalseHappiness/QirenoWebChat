@@ -3,7 +3,7 @@ import {
   fetchMsg,
   getFileDataUrl, getGroupFileProxyUrl,
   getMultimediaProxyUrl, getPrivateFileProxyUrl,
-  getStreamFileDataUrl, isSnowLuma
+  getStreamFileDataUrl
 } from "./backend-api.js";
 import { useGlobalStore } from "../store/global.js";
 import TroopShareCard from "../components/Destination/Chat/Message/Types/JSON/TroopShareCard.vue";
@@ -28,11 +28,12 @@ import ActivityMD from "../components/Destination/Chat/Message/Types/JSON/Activi
 import UnparsedMessage from "../components/Destination/Chat/Message/Types/UnparsedMessage.vue";
 import { getPokeDescription } from "./faces-config.js";
 import { qqFileIcon, qqSystemEmoji } from "../composables/useBase.js";
-import { isArray, objectHasKey } from "./types-util.js";
+import { isArray, isString, objectHasKey } from "./types-util.js";
 import { CacheNameKey, fetchDisplayName, getCacheName } from "./user-info-util.js";
 import ViewInvite from "@/components/Destination/Chat/Message/Types/JSON/ViewInvite.vue";
 import ViewLocationShare from "@/components/Destination/Chat/Message/Types/JSON/ViewLocationShare.vue";
 import FlashTransferMessage from "@/components/Destination/Chat/Message/Types/FlashTransferMessage.vue";
+import { isSnowLuma } from "@/scripts/onebot-version-util.js";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -334,6 +335,17 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
             if (!poke_name) {
               console.log("Unparsed poke message segment:", item)
             }
+            break
+          }
+
+          case "flashtransfer": {
+            const title = data.title
+            let text = "[QQ 闪传]"
+            if (isString(title)) {
+              text += " " + title
+            }
+            children.push(text
+            )
             break
           }
 
