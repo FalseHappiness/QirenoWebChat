@@ -102,7 +102,7 @@ const getOlderMessages = async (msg, _, count, include) => {
 }
 
 const getMsgId = msg => {
-  return `${msg?.id}_${msg?.real_seq}_${msg?.time}`
+  return `${ msg?.id }_${ msg?.real_seq }_${ msg?.time }`
 }
 
 const detectMsgCursor = (msg, key) => {
@@ -565,6 +565,12 @@ const videoPlayer = ref(null)
 provide("openVideoPlayer", src => {
   videoPlayer.value?.open?.(src)
 })
+
+const selectedMessagesMap = ref(new Map())
+provide("selectedMessagesMap", selectedMessagesMap)
+
+const isMultiSelectMessagesMode = ref(false)
+provide("isMultiSelectMessagesMode", isMultiSelectMessagesMode)
 
 // 联系人更改时获取名称
 watch(() => activeContact.value, (newVal, oldVal) => {

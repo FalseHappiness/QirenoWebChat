@@ -21,7 +21,7 @@ import ContactsPicker from "./ContactsPicker.vue";
 import { Emitter } from "@/composables/useEventBus.js";
 import { nanoid } from "nanoid";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
-import { showErrorToast, showInfoToast } from "@/scripts/toast.js";
+import { showErrorToast, showInfoToast, showSuccessToast, showToast } from "@/scripts/toast.js";
 import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
 import {
@@ -46,10 +46,12 @@ import { useEditorHistory } from "./composables/useEditorHistory.js";
 import { useEditorEmoji } from "./composables/useEditorEmoji.js";
 import { showPromptBox } from "@/scripts/popup-box-api.js";
 import { gteSnowLuma } from "@/scripts/onebot-version-util.js";
+import MultiSelectPanel from "@/components/Destination/Chat/Input/MultiSelectPanel.vue";
 
 export default defineComponent({
   name: "MessageInputBox",
   components: {
+    MultiSelectPanel,
     QIcon,
     GroupAiRecordEditor,
     CustomScrollBar,
@@ -65,7 +67,10 @@ export default defineComponent({
     RecordPanel,
     ExpressionPanel,
   },
-  inject: ['activeContact', "groupUsers", "filesUploadTasks", "selfId"],
+  inject: [
+    'activeContact', "groupUsers", "filesUploadTasks", "selfId",
+    "selectedMessagesMap", "isMultiSelectMessagesMode"
+  ],
   data() {
     return {
       lastCaretPosition: null,
@@ -83,7 +88,9 @@ export default defineComponent({
       pendingForwardInfo: {
         confirming: false,
         messageId: null,
-        messageContent: null
+        messageContent: null,
+        multiSelectMessages: null,
+        forwardType: null
       },
       showFilesUploadTasks: false,
       remainGroupAtAll: undefined,
@@ -1884,7 +1891,7 @@ export default defineComponent({
       const link = document.createElement('a');
       link.classList.add("message-input-editor-at-user");
       link.innerText = `@${ user.name }`
-      link.dataset.qq = user.qq
+      link.dataset.qq = user.user_id
       link.contenteditable = false
       const span = document.createElement('span')
       span.innerHTML = '&nbsp;'
@@ -1910,12 +1917,35 @@ export default defineComponent({
       }
     },
 
+    handleMultiSelectForwardOneByOne() {
+      if (!this.selectedMessagesMap.size || !this.activeContact) return
+      const sortedMessages = [...this.selectedMessagesMap.values()]
+        .sort((a, b) => (a.time || 0) - (b.time || 0))
+      this.pendingForwardInfo = {
+        confirming: true,
+        multiSelectMessages: sortedMessages,
+        forwardType: 'one-by-one'
+      }
+    },
+
+    handleMultiSelectForwardCombine() {
+      if (!this.selectedMessagesMap.size || !this.activeContact) return
+      const sortedMessages = [...this.selectedMessagesMap.values()]
+        .sort((a, b) => (a.time || 0) - (b.time || 0))
+      this.pendingForwardInfo = {
+        confirming: true,
+        multiSelectMessages: sortedMessages,
+        forwardType: 'combine'
+      }
+    },
+
     async handleContactsPickerConfirm(selectedContacts) {
-      let { messageId, messageContent } = this.pendingForwardInfo
+      let { messageId, messageContent, multiSelectMessages, forwardType } = this.pendingForwardInfo
       this.clearPendingForwardInfo()
 
       const isForward = messageId && (messageContent || !messageContent)
-      const isSend = !messageId && messageContent
+      const isSend = !messageId && messageContent && !multiSelectMessages
+      const isMultiSelect = multiSelectMessages && multiSelectMessages.length > 0
 
       const promises = selectedContacts.map(async (contact) => {
         if (isForward) {
@@ -1935,6 +1965,62 @@ export default defineComponent({
               contact_id: contact.contact_id,
               type: contact.type,
               error
+            }
+          }
+        } else if (isMultiSelect) {
+          if (forwardType === 'one-by-one') {
+            // 逐条转发：依次 await 每条消息
+            const results = []
+            for (const msg of multiSelectMessages) {
+              try {
+                const response = await fetchForwardSingleMsg(msg.message_id, contact)
+                results.push({
+                  status: response?.status || "error",
+                  msg_id: msg.message_id,
+                  contact_id: contact.contact_id,
+                  type: contact.type,
+                  error: response?.message || '请求失败'
+                })
+              } catch (error) {
+                results.push({
+                  status: 'error',
+                  msg_id: msg.message_id,
+                  contact_id: contact.contact_id,
+                  type: contact.type,
+                  error,
+                })
+              }
+            }
+            // 只要有一条成功就算成功
+            const anySuccess = results.some(r => r.status !== 'error')
+            const firstError = results.find(r => r.status === 'error')
+            return {
+              status: anySuccess ? 'ok' : 'error',
+              contact_id: contact.contact_id,
+              type: contact.type,
+              error: firstError?.error || undefined,
+              results
+            }
+          } else if (forwardType === 'combine') {
+            // 合并转发：构建 forward 消息一次性发送
+            try {
+              const response = await fetchSendMessage(contact, [{
+                type: "forward",
+                data: { content: multiSelectMessages }
+              }])
+              return {
+                status: response?.status || "error",
+                contact_id: contact.contact_id,
+                type: contact.type,
+                error: response?.message || '请求失败'
+              }
+            } catch (error) {
+              return {
+                status: 'error',
+                contact_id: contact.contact_id,
+                type: contact.type,
+                error,
+              }
             }
           }
         } else if (isSend) {
@@ -1963,11 +2049,17 @@ export default defineComponent({
       // 筛选出失败的结果
       const failedResults = allResults.filter(result => result.status === 'error');
 
+      const getActionLabel = () => {
+        if (isMultiSelect) return forwardType === 'one-by-one' ? '逐条转发' : '合并转发'
+        if (isForward) return '转发'
+        return '发送'
+      }
+
       if (failedResults.length > 0) {
-        console.error(isForward ? '转发消息失败结果:' : '发送消息失败结果:', failedResults);
+        console.error(`${getActionLabel()}消息失败结果:`, failedResults);
         if (failedResults.length !== allResults.length) {
-          showToast('success', isForward ? '部分转发成功' : '部分发送成功')
-          console.log(isForward ? '转发消息成功结果:' : '发送消息成功结果:', allResults.filter(result => result.status !== 'error'));
+          showSuccessToast(`部分${getActionLabel()}成功`)
+          console.log(`${getActionLabel()}消息成功结果:`, allResults.filter(result => result.status !== 'error'));
         }
         // 按消息ID和类型归类
         const errorsByContact = failedResults.reduce((acc, failed) => {
@@ -2012,7 +2104,7 @@ export default defineComponent({
 
         showToast('error', errorMessage);
       } else {
-        showToast('success', isForward ? '已转发' : '已发送');
+        showSuccessToast(`已${getActionLabel()}`);
       }
     },
 
@@ -2020,7 +2112,9 @@ export default defineComponent({
       this.pendingForwardInfo = {
         confirming: false,
         messageId: null,
-        messageContent: null
+        messageContent: null,
+        multiSelectMessages: null,
+        forwardType: null
       }
     },
 
@@ -2234,6 +2328,11 @@ export default defineComponent({
         alwaysMD: false
       })
     },
+
+    closeMultiSelectPanel() {
+      this.isMultiSelectMessagesMode = false
+      this.selectedMessagesMap = new Map()
+    }
   },
   watch: {
     filteredAtGroupUsers() {
@@ -2319,7 +2418,8 @@ export default defineComponent({
         禁言中...
         <p>解除时间：{{ selfMutedEndTime }}</p>
       </div>
-      <div class="message-input-common-panel message-input-panel" :class="{ 'display-none': isShowRecordPanel }">
+      <div class="message-input-common-panel message-input-panel"
+           :class="{ 'display-none': isShowRecordPanel || isMultiSelectMessagesMode }">
         <div class="message-input-controls">
           <div class="message-input-controls-left">
             <Tooltip
@@ -2455,6 +2555,9 @@ export default defineComponent({
         @open-files-upload-tasks="handleFilesUploadTasksViewer"
         @select-audios="handleMessageInputSelectAudios"
       />
+      <MultiSelectPanel
+        @forward-one-by-one="handleMultiSelectForwardOneByOne"
+        @forward-combine="handleMultiSelectForwardCombine"/>
     </vue-resizable>
   </div>
 </template>

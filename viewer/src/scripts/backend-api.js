@@ -282,6 +282,19 @@ const fetchForwardMessage = async (id) => {
   return (await fetchActionData('get_forward_msg', { message_id: id })).messages
 }
 
+const convertMessagesToForwardNodes = messages => messages.map(
+  event => ({
+    type: "node",
+    data: {
+      id: event.message_id,
+      user_id: event.user_id,
+      nickname: event.sender.nickname,
+      content: event.message,
+      time: event.time,
+    }
+  })
+)
+
 /**
  * 发送消息接口封装
  * @param {object} contact 联系人对象 { type: 'group'|'private', contact_id: number }
@@ -359,6 +372,13 @@ const fetchSendMessageOptions = async ({ contact, message, signal, timeout = und
             return await fetchAction("send_flash_msg", {
               fileset_id: fileSetId,
               [idField]: contact_id
+            })
+          }
+          // 合并转发特殊逻辑
+          if (type === "forward") {
+            return await fetchAction("send_forward_msg", {
+              [idField]: contact_id,
+              messages: convertMessagesToForwardNodes(data.content)
             })
           }
         }

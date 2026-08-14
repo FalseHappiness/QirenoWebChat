@@ -352,6 +352,14 @@ const customMessageContextMenu = e => {
       const event = messageEvent.value;
       Emitter.emit('forward-single-msg', event.message_id, event.message)
     }, "one_by_one_forward_24"),
+    basicContextItem(
+      '多选',
+      () => {
+        isMultiSelectMessagesMode.value = true
+        selectedMessagesMap.value.set(messageEvent.value.message_id, messageEvent.value)
+      },
+      "tick_circle_new_24",
+    ),
     basicContextItem('引用', () => {
       emit('quote-message', toRaw(props.message), isGroup.value ? {
         name: displayName.value,
@@ -541,6 +549,24 @@ const avatarElement = ref(null)
 
 const avatarFrameUrl = computed(() => getUserAvatarFrameCache(props.message?.user_id))
 
+const selectedMessagesMap = inject('selectedMessagesMap')
+const isMultiSelectMessagesMode = inject("isMultiSelectMessagesMode")
+
+const handleMessageContainerClick = e => {
+  if (isMultiSelectMessagesMode.value) {
+    e.preventDefault()
+    e.stopPropagation()
+    e.stopImmediatePropagation()
+    const msgId = props.message.message_id
+    if (msgId === undefined || msgId === null) return
+    if (selectedMessagesMap.value.has(msgId)) {
+      selectedMessagesMap.value.delete(msgId)
+    } else {
+      selectedMessagesMap.value.set(msgId, messageEvent.value)
+    }
+  }
+}
+
 // 组件加载时
 onMounted(() => {
   document.addEventListener('mouseenter', handleMouseEnter, { capture: true })
@@ -602,8 +628,13 @@ onUnmounted(() => {
     :class="[
       message.self_id === message.user_id ? 'message-out' : 'message-in' ,
       isGroup ? 'group' : 'private',
-      { recalled: isRecalled }
+      {
+        recalled: isRecalled,
+        selected: selectedMessagesMap.has(message.message_id),
+        'select-mode': isMultiSelectMessagesMode,
+      }
     ]"
+    @click.capture="handleMessageContainerClick"
   >
     <div
       :data-has-frame="!!avatarFrameUrl"
@@ -670,12 +701,34 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+    <div class="message-container-checkbox">
+      <QIcon name="tick_24"/>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .message-container {
   @extend %message-container;
+
+  &.select-mode {
+    .message-container-checkbox {
+      display: block;
+    }
+  }
+
+  &.selected {
+    background-color: $color-bg-active;
+
+    .message-container-checkbox {
+      border: 1px solid $color-primary;
+      background-color: $color-primary;
+
+      svg {
+        display: block;
+      }
+    }
+  }
 }
 
 .message {
@@ -739,45 +792,74 @@ onUnmounted(() => {
   margin: 0 8px;
   height: 24px;
   white-space: nowrap;
+
+  .message-send-time {
+    direction: ltr;
+    display: inline-block;
+  }
+
 }
 
-.message-in .message-before {
-  direction: ltr;
+.message {
+  &-in {
+    direction: ltr;
+    text-align: left;
+
+    .message-before {
+      direction: ltr;
+    }
+
+    .message {
+      @include message-bubble-in;
+    }
+
+    .message-avatar {
+      margin-left: 20px;
+    }
+
+    .message-container-checkbox {
+      right: 15px;
+    }
+  }
+
+  &-out {
+    direction: rtl;
+    text-align: right;
+
+    .message-before {
+      direction: rtl;
+    }
+
+    .message {
+      @include message-bubble-out;
+    }
+
+    .message-avatar {
+      margin-right: 20px;
+    }
+
+    .message-container-checkbox {
+      left: 15px;
+    }
+  }
 }
 
-.message-out .message-before {
-  direction: rtl;
-}
+.message-container-checkbox {
+  border: 1px solid $color-border;
+  border-radius: $radius-circle;
+  @extend %flex-center-children;
+  @include square-size(20px);
+  padding: 3px;
+  position: absolute;
+  top: 15px;
+  display: none;
 
-.message-before .message-send-time {
-  direction: ltr;
-  display: inline-block;
-}
-
-.message-in {
-  direction: ltr;
-  text-align: left;
-}
-
-.message-out {
-  direction: rtl;
-  text-align: right;
-}
-
-.message-in .message {
-  @include message-bubble-in;
-}
-
-.message-out .message {
-  @include message-bubble-out;
-}
-
-.message-in .message-avatar {
-  margin-left: 20px;
-}
-
-.message-out .message-avatar {
-  margin-right: 20px;
+  svg {
+    @include square-size(100%);
+    margin-top: 1px;
+    display: none;
+    color: white;
+  }
 }
 
 @include small-mobile {

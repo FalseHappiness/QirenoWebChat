@@ -17,7 +17,7 @@
 
 // ---- 头像圆形 ----
 %avatar-rounded {
-  border-radius: $radius-avatar;
+  border-radius: $radius-circle;
   flex-shrink: 0;
 }
 
@@ -279,7 +279,7 @@
   width: 36px;
   height: 36px;
   background: rgba(0, 0, 0, 0.5);
-  border-radius: $radius-avatar;
+  border-radius: $radius-circle;
   display: flex;
   align-items: center;
   justify-content: center;

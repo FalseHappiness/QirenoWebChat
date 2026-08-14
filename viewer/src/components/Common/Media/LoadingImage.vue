@@ -324,7 +324,7 @@ export default defineComponent({
   width: 40px;
   height: 40px;
   background: #ffffffb8;
-  border-radius: $radius-avatar;
+  border-radius: $radius-circle;
   color: #000000b8;
   backdrop-filter: blur(4px);
 }

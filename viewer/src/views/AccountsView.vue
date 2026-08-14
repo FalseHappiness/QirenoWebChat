@@ -562,7 +562,7 @@ const clearAndReselect = () => {
 .saved-account-avatar {
   width: $avatar-lg;
   height: $avatar-lg;
-  border-radius: $radius-avatar;
+  border-radius: $radius-circle;
   overflow: hidden;
   flex-shrink: 0;
   background: rgba(221, 221, 221, 0.5);

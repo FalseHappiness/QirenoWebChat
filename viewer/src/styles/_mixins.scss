@@ -7,7 +7,7 @@
 @mixin avatar($size: 40px) {
   width: $size;
   height: $size;
-  border-radius: $radius-avatar;
+  border-radius: $radius-circle;
   flex-shrink: 0;
 }
 
@@ -419,7 +419,7 @@
   z-index: 890;
   color: $color-text-white;
   opacity: 0.75;
-  border-radius: $radius-avatar;
+  border-radius: $radius-circle;
   display: flex;
   align-items: center;
   justify-content: center;

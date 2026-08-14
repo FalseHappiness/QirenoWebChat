@@ -776,7 +776,7 @@ export default {
 .message-avatar {
   width: 40px;
   height: 40px;
-  border-radius: $radius-avatar;
+  border-radius: $radius-circle;
   background: $color-theme-green;
   color: $color-text-white;
   display: flex;

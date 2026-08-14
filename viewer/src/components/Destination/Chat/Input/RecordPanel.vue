@@ -19,7 +19,7 @@ export default {
     Tooltip,
     Icon,
   },
-  inject: ['activeContact'],
+  inject: ['activeContact', "isMultiSelectMessagesMode"],
   props: {
     isGroup: {
       type: Boolean,
@@ -70,9 +70,9 @@ export default {
       const minutes = Math.floor((seconds % 3600) / 60)
       const secs = seconds % 60
       let result = ''
-      if (days > 0) result += `${String(days).padStart(2, '0')} 天 `
-      if (hours > 0) result += `${String(hours).padStart(2, '0')}:`
-      result += `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+      if (days > 0) result += `${ String(days).padStart(2, '0') } 天 `
+      if (hours > 0) result += `${ String(hours).padStart(2, '0') }:`
+      result += `${ String(minutes).padStart(2, '0') }:${ String(secs).padStart(2, '0') }`
       return result
     },
 
@@ -284,7 +284,7 @@ export default {
       if (this.audioChunks.length > 0) {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' })
         this.audioChunks = []
-        const fileName = `record_${Date.now()}.webm`
+        const fileName = `record_${ Date.now() }.webm`
         const file = new File([audioBlob], fileName, { type: 'audio/webm' })
         const contact = toRaw(this.activeContact)
         if (contact) {
@@ -511,7 +511,7 @@ export default {
 
 <template>
   <div class="message-input-record-panel message-input-panel"
-       :class="{ 'display-flex': isShowRecordPanel }"
+       :class="{ 'display-flex': isShowRecordPanel && !isMultiSelectMessagesMode }"
        tabindex="-1"
        ref="recordPanel">
     <GroupAiRecordEditor
@@ -696,7 +696,7 @@ export default {
 .message-input-record-microphone {
   height: 52px;
   width: 52px;
-  outline: rgba(0, 153, 255, 0.2) solid 2px;
+  outline: solid 2px rgba(0, 153, 255, 0.2);
   transition-duration: 0.3s;
   transition-timing-function: ease;
   transition-delay: 0s;
