@@ -34,6 +34,7 @@ import ViewInvite from "@/components/Destination/Chat/Message/Types/JSON/ViewInv
 import ViewLocationShare from "@/components/Destination/Chat/Message/Types/JSON/ViewLocationShare.vue";
 import FlashTransferMessage from "@/components/Destination/Chat/Message/Types/FlashTransferMessage.vue";
 import { isSnowLuma } from "@/scripts/onebot-version-util.js";
+import InlineKeyboardMessage from "../components/Destination/Chat/Message/Types/InlineKeyboardMessage.vue";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -219,6 +220,36 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
                 })
               )
               break
+            }
+            break
+
+          case 'markdown':
+            // Markdown 预览：去除 Markdown 语法标记，转为纯文本，用空格替代换行
+            if (data.content) {
+              const plainText = data.content
+                // 去除图片链接 ![alt](url)
+                .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+                // 去除链接 [text](url)
+                .replace(/\[([^\]]*)\]\([^)]+\)/g, '$1')
+                // 去除加粗/斜体/删除线等标记
+                .replace(/(\*{1,3}|_{1,3}|~~|`|#+|>+|[-*+]\s)/g, '')
+                // 去除表格分隔行
+                .replace(/^\s*\|?\s*[-:]+\s*\|?\s*$/gm, '')
+                // 去除行首的序号标记（如 1. 1)）
+                .replace(/^\s*\d+[.)]\s*/gm, '')
+                // 将换行替换为空格
+                .replace(/[\r\n]+/g, ' ')
+                // 合并多个空格
+                .replace(/[ ]+/g, ' ')
+                // 去除首尾空格
+                .trim();
+              if (plainText) {
+                children.push(plainText);
+              } else {
+                children.push('[Markdown]');
+              }
+            } else {
+              children.push('[Markdown]');
             }
             break
 
@@ -510,15 +541,6 @@ const parseMessage = (wrappedMsg) => {
         const item = message[0]
         const { type, data } = item
         switch (type) {
-          case 'markdown':
-            children.push(
-              h(MarkdownMessage, {
-                content: data.content,
-                class: 'message-markdown-box',
-              })
-            );
-
-            return children;
           case'reply':
             children.push(
               h('div', [
@@ -609,7 +631,23 @@ const parseMessage = (wrappedMsg) => {
                 decideMaxWidth: '.message-container'
               })
             );
+            break
           }
+          case 'markdown':
+            children.push(
+              h(MarkdownMessage, {
+                content: data.content,
+                class: 'message-markdown-box',
+              })
+            );
+            break
+          case 'inline_keyboard':
+            children.push(
+              h(InlineKeyboardMessage, {
+                rows: data.rows || [],
+                botAppId: data.bot_appid || ''
+              })
+            );
             break
           default:
         }

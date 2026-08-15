@@ -1,10 +1,49 @@
 <template>
-  <div class="markdown-message" v-html="renderedContent"></div>
+  <div class="message-markdown-box" v-html="renderedContent"></div>
 </template>
 
 <script>
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+
+// 自定义图片渲染器：解析 alt(text) 中的 #width #height 语法
+// marked v5+ renderer 函数接收 token 对象 { href, text, title }
+const customImageRenderer = (href, text, title) => {
+  const sizes = { width: '', height: '' };
+  // 匹配 alt 中形如 #900px 或 #900 的标记
+  const cleanedAlt = (text || '').replace(/#(\d+(?:\.\d+)?)(px|em|rem|%|pt|mm|cm|in|pc|ex|ch|vw|vh|vmin|vmax)?\s*/gi, (match, value, unit) => {
+    const unitStr = unit || 'px';
+    if (!sizes.width) {
+      sizes.width = value + unitStr;
+    } else if (!sizes.height) {
+      sizes.height = value + unitStr;
+    }
+    return '';
+  }).trim();
+
+  let imgTag = `<img src="${ href }" alt="${ cleanedAlt }"`;
+  if (title) {
+    imgTag += ` title="${ title }"`;
+  }
+  if (sizes.width) {
+    imgTag += ` width="${ sizes.width }"`;
+  }
+  if (sizes.height) {
+    imgTag += ` height="${ sizes.height }"`;
+  }
+  imgTag += '>';
+  return imgTag;
+};
+
+// 注册自定义图片 renderer（模块加载时只执行一次）
+// marked v5+ 的 renderer 函数接收 token 对象，而非展开的参数
+marked.use({
+  renderer: {
+    image(token) {
+      return customImageRenderer(token.href, token.text, token.title);
+    }
+  }
+});
 
 export default {
   name: 'MarkdownMessage',
@@ -22,7 +61,7 @@ export default {
     // 可选：是否在表格和代码块中使用更严格的解析
     breaks: {
       type: Boolean,
-      // 单回车换行
+      // 是否单回车换行
       default: true
     },
     // 可选：是否启用代码高亮
@@ -33,7 +72,7 @@ export default {
   },
   computed: {
     renderedContent() {
-      // 配置 marked
+      // 配置 marked 选项
       marked.setOptions({
         gfm: this.gfm,
         breaks: this.breaks,
@@ -42,7 +81,9 @@ export default {
 
       // 渲染 Markdown 并净化 HTML
       const rawMarkdown = marked(this.content || '');
-      return DOMPurify.sanitize(rawMarkdown);
+      return DOMPurify.sanitize(rawMarkdown, {
+        ADD_ATTR: ['width', 'height']
+      });
     }
   },
   methods: {
@@ -63,93 +104,110 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.markdown-message {
+.message-markdown-box {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;
   color: $color-text-regular;
   display: block;
-}
+  white-space: normal;
+  width: 350px;
+  max-width: 100%;
 
-.markdown-message :deep(img) {
-  max-width: 100%
-}
+  :deep() {
+    img {
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: $radius-sm;
+    }
 
-.markdown-message :deep(hr) {
-  border-top: 1px solid $color-border-markdown-hr;
-}
+    hr {
+      border-top: 1px solid $color-border-markdown-hr;
+    }
 
-.markdown-message :deep(h1) {
-  font-size: 2em;
-  border-bottom: 1px solid $color-border-markdown-heading;
-  padding-bottom: 0.3em;
-}
+    h1 {
+      font-size: 2em;
+      border-bottom: 1px solid $color-border-markdown-heading;
+      padding-bottom: 0.3em;
+    }
 
-.markdown-message :deep(h2) {
-  font-size: 1.5em;
-  border-bottom: 1px solid $color-border-markdown-heading;
-  padding-bottom: 0.3em;
-}
+    h2 {
+      font-size: 1.5em;
+      border-bottom: 1px solid $color-border-markdown-heading;
+      padding-bottom: 0.3em;
+    }
 
-.markdown-message :deep(p) {
-  /*margin: 16px 0;*/
-  margin: 0;
-}
+    p {
+      margin: 0;
+    }
 
-.markdown-message :deep(a) {
-  color: $color-text-link-markdown;
-  text-decoration: none;
-  cursor: pointer;
-}
+    a {
+      color: $color-text-link-markdown;
+      text-decoration: none;
+      cursor: pointer;
 
-.markdown-message :deep(a:hover) {
-  color: $color-text-link-markdown;
-  text-decoration: none;
-}
+      &:hover {
+        color: $color-text-link-markdown;
+        text-decoration: none;
+      }
+    }
 
-.markdown-message :deep(code) {
-  background-color: rgba(27, 31, 35, 0.05);
-  border-radius: 3px;
-  padding: 0.2em 0.4em;
-  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-}
+    code {
+      background-color: rgba(27, 31, 35, 0.05);
+      border-radius: 3px;
+      padding: 0.2em 0.4em;
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
 
-.markdown-message :deep(pre) {
-  background-color: $color-bg-code;
-  border-radius: $radius-xs;
-  padding: 16px;
-  overflow: auto;
-}
+    pre {
+      background-color: $color-bg-code;
+      border-radius: $radius-xs;
+      padding: 16px;
+      overflow: auto;
 
-.markdown-message :deep(pre code) {
-  background-color: transparent;
-  padding: 0;
-}
+      code {
+        background-color: transparent;
+        padding: 0;
+      }
+    }
 
-.markdown-message :deep(blockquote) {
-  border-left: 2px solid $color-bg-card-alt;
-  color: $color-text-muted;
-  padding: 0 1em;
-  margin: 0 0 8px 0;
-}
+    blockquote {
+      border-left: 2px solid $color-bg-card-alt;
+      color: $color-text-muted;
+      padding: 0 1em;
+      margin: 0 0 8px 0;
+    }
 
-.markdown-message :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 16px 0;
-}
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 16px 0;
 
-.markdown-message :deep(table th),
-.markdown-message :deep(table td) {
-  border: 1px solid $color-border-markdown-table;
-  padding: 6px 13px;
-}
+      th, td {
+        border: 1px solid $color-border-markdown-table;
+        padding: 6px 13px;
+      }
 
-.markdown-message :deep(table tr) {
-  background-color: $color-bg-card;
-  border-top: 1px solid $color-border-markdown-table-header;
-}
+      tr {
+        background-color: $color-bg-card;
+        border-top: 1px solid $color-border-markdown-table-header;
 
-.markdown-message :deep(table tr:nth-child(2n)) {
-  background-color: $color-bg-code;
+        &:nth-child(2n) {
+          background-color: $color-bg-code;
+        }
+      }
+    }
+
+    hr {
+      margin: 10px 0;
+    }
+
+    /* 针对文档流中DOM上紧跟空a的br */
+    a:empty + br {
+      display: none;
+      visibility: hidden;
+      height: 0;
+    }
+  }
 }
 </style>
