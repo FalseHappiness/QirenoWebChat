@@ -951,8 +951,7 @@ onUnmounted(() => {
 
 .message:has(.message-markdown-box) {
   padding: 10px 9px;
-  width: min(80%, 430px);
-  max-width: 430px;
+  max-width: 100%;
 }
 
 .message:has(.audio-message) {
