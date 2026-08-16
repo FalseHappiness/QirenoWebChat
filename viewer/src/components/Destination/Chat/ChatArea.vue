@@ -346,6 +346,7 @@ const getGroupNotice = async () => {
 }
 
 const groupSelfInfo = computed(() => groupUsers.value?.find(user => user.user_id === selfInfo.value?.user_id));
+provide("currentGroupSelfInfo", groupSelfInfo)
 
 watch(() => groupSelfInfo.value, newVal => {
   if (newVal != null) {
@@ -431,12 +432,6 @@ const handleClickShowContactInfo = (e, user_id) => {
   })
 }
 
-const createChangeView = refVar => {
-  return (isShow = true) => {
-    refVar.value = isShow;
-  }
-}
-
 const selfGroupOperator = computed(() => isGroupOperator(groupSelfInfo.value))
 
 const groupNameModel = ref(null)
@@ -501,8 +496,17 @@ const handleDeleteFriend = async () => {
   }
 }
 
+const createChangeView = refVar => {
+  return (isShow = true) => {
+    refVar.value = isShow;
+  }
+}
+
 const showGroupAnnounceViewer = ref(false);
-const changeShowGroupAnnounce = createChangeView(showGroupAnnounceViewer)
+const changeShowGroupAnnounce = (isShow = true) => {
+  createChangeView(showGroupAnnounceViewer)(isShow)
+  isShow && getGroupNotice()
+}
 
 const showGroupEssenceListViewer = ref(false);
 const changeShowGroupEssenceList = createChangeView(showGroupEssenceListViewer)
@@ -607,6 +611,7 @@ defineExpose({
       :group_id="activeContact?.contact_id"
       :notices="groupNotifications || []"
       @close="() => changeShowGroupAnnounce(false)"
+      @update-group-notice="getGroupNotice"
     />
     <GroupEssenceMsgViewer
       v-if="showGroupEssenceListViewer && isGroup"

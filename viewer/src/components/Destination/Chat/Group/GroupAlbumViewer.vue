@@ -1,6 +1,11 @@
 <script>
 import { defineComponent } from 'vue'
-import { fetchGroupAlbumList, fetchGroupAlbumMediaList } from "@/scripts/backend-api.js"
+import {
+  fetchDeleteGroupAlbumMedia,
+  fetchGroupAlbumList,
+  fetchGroupAlbumMediaList,
+  handleApiRequest
+} from "@/scripts/backend-api.js"
 import { formatTimeOptions } from "@/scripts/util.js"
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue"
 import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue"
@@ -11,12 +16,18 @@ import QIcon from "../../../Common/Icons/QIcon.vue";
 import { Emitter } from "@/composables/useEventBus.js";
 import { checkSameContact, createGroupContact } from "@/scripts/contacts-util.js";
 import { isString } from "@/scripts/types-util.js";
+import { basicContextItem, formatBasicContextItems, vCustomMenu } from "@/directives/context-menu.js";
+import { showConfirmBox } from "@/scripts/popup-box-api.js";
+import { isGroupOperator } from "@/scripts/user-info-util.js";
 
 export default defineComponent({
   name: "GroupAlbumViewer",
   components: { QIcon, CustomScrollBar, SimpleWindow, ImageViewer, VideoPlayer },
   props: {
     group_id: { type: [Number, String], required: true },
+  },
+  directives: {
+    customMenu: vCustomMenu
   },
   data() {
     return {
@@ -51,7 +62,7 @@ export default defineComponent({
       mediaScrollEl: null,
     }
   },
-  inject: ["filesUploadTasks"],
+  inject: ["filesUploadTasks", "currentGroupSelfInfo"],
   computed: {
     windowTitle() {
       if (this.view === 'albums') return '群相册'
@@ -77,7 +88,7 @@ export default defineComponent({
     },
     // 媒体计数器文本
     counterText() {
-      return `${(this.currentMediaIndex || 0) + 1} / ${this.currentAlbum?.upload_number || this.mediaList?.length}`
+      return `${ (this.currentMediaIndex || 0) + 1 } / ${ this.currentAlbum?.upload_number || this.mediaList?.length }`
     },
     filteredUploadTasks() {
       return this.filesUploadTasks.filter(
@@ -93,7 +104,7 @@ export default defineComponent({
       const year = date.getFullYear()
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
+      return `${ year }-${ month }-${ day }`
     },
 
     formatDateTime(timestamp) {
@@ -104,7 +115,7 @@ export default defineComponent({
       const day = String(date.getDate()).padStart(2, '0')
       const hours = String(date.getHours()).padStart(2, '0')
       const minutes = String(date.getMinutes()).padStart(2, '0')
-      return `${year}-${month}-${day} ${hours}:${minutes}`
+      return `${ year }-${ month }-${ day } ${ hours }:${ minutes }`
     },
 
     formatDateLabel(timestamp) {
@@ -116,10 +127,10 @@ export default defineComponent({
       const diffDays = Math.floor((today - target) / (86400000))
       if (diffDays === 0) return '今天'
       if (diffDays === 1) return '昨天'
-      if (diffDays < 7) return `${diffDays}天前`
+      if (diffDays < 7) return `${ diffDays }天前`
       const month = String(date.getMonth() + 1).padStart(2, '0')
       const day = String(date.getDate()).padStart(2, '0')
-      return `${date.getFullYear()}年${month}月${day}日`
+      return `${ date.getFullYear() }年${ month }月${ day }日`
     },
 
     formatTime(timestamp) {
@@ -453,6 +464,29 @@ export default defineComponent({
     },
     showUploadTasks() {
       Emitter.emit("show-files-upload-tasks")
+    },
+
+    handleMediaContextMenu(info) {
+      const lloc = info.image?.lloc || info.video?.id
+      const album_id = this.currentAlbum.album_id
+      return () => formatBasicContextItems(
+        basicContextItem(
+          "删除",
+          async () =>
+            await showConfirmBox("确定删除该影像？") &&
+            await handleApiRequest(
+              fetchDeleteGroupAlbumMedia(
+                this.group_id,
+                album_id,
+                lloc
+              ),
+              "删除成功",
+              "删除失败"
+            ),
+          "delete_new_24",
+          isGroupOperator(this.currentGroupSelfInfo)
+        )
+      )
     }
   },
   mounted() {
@@ -528,6 +562,7 @@ export default defineComponent({
               <div class="gav-media-date-header">{{ formatDateLabel(group.items[0].upload_time) }}</div>
               <div class="gav-grid">
                 <div v-for="(media, idx) in group.items" :key="media.batch_id + '-' + media.upload_time"
+                     v-custom-menu="handleMediaContextMenu(media)"
                      class="gav-grid-item" @click="enterDetail(mediaList.indexOf(media))">
                   <div class="gav-grid-item-cover">
                     <img v-if="getMediaThumbUrl(media)" :src="getMediaThumbUrl(media)" alt=""

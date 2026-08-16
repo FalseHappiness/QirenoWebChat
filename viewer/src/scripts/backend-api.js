@@ -699,6 +699,10 @@ const fetchGroupNotice = async (group_id) => {
   return fetchActionData('_get_group_notice', { group_id })
 }
 
+const fetchDeleteGroupNotice = async (group_id, notice_id) => {
+  return fetchAction('_del_group_notice', { group_id, notice_id })
+}
+
 const fetchLoginInfo = async (group_id) => {
   return fetchActionData('get_login_info', { group_id })
 }
@@ -774,6 +778,10 @@ const fetchGroupAlbumMediaList = async (group_id, album_id, attach_info) => {
     album_id,
     attach_info
   }))
+}
+
+const fetchDeleteGroupAlbumMedia = async (group_id, album_id, lloc) => {
+  return await fetchAction("del_group_album_media", { group_id, album_id, lloc })
 }
 
 
@@ -1386,4 +1394,6 @@ export {
   fetchCreateFlashTask,
   fetchFlashFileList,
   fetchFlashShareLink,
+  fetchDeleteGroupAlbumMedia,
+  fetchDeleteGroupNotice,
 }

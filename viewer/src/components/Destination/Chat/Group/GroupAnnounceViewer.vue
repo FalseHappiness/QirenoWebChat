@@ -1,6 +1,6 @@
 <script>
 import { defineComponent } from 'vue'
-import { getGroupNoticePicUrl } from "@/scripts/backend-api.js";
+import { fetchDeleteGroupNotice, getGroupNoticePicUrl, handleApiRequest } from "@/scripts/backend-api.js";
 import { convertMessageTextHTMLSyntax } from "@/scripts/parse-message.js";
 import SimplePopUp from "../../../Common/Overlay/SimplePopUp.vue";
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
@@ -8,6 +8,7 @@ import { formatTimeOptions } from "@/scripts/util.js";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { CacheNameKey, fetchDisplayName } from "@/scripts/user-info-util.js";
 import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
+import { showConfirmBox } from "@/scripts/popup-box-api.js";
 
 export default defineComponent({
   name: "GroupAnnounceViewer",
@@ -22,6 +23,7 @@ export default defineComponent({
       default: () => []
     },
   },
+  emits: ["update-group-notice"],
   data() {
     return {
       userNameMap: {}
@@ -60,7 +62,19 @@ export default defineComponent({
     getCachedName(user_id) {
       return this.userNameMap[user_id] || user_id
     },
-  }
+    async handleDeleteNotice(notice_id) {
+      if (await showConfirmBox("确定删除此群公告吗？")) {
+        await handleApiRequest(
+          fetchDeleteGroupNotice(this.group_id, notice_id),
+          "删除成功",
+          "删除失败"
+        ) && this.updateGroupNotice()
+      }
+    },
+    updateGroupNotice() {
+      this.$emit('update-group-notice')
+    }
+  },
 })
 </script>
 
@@ -78,6 +92,9 @@ export default defineComponent({
                 }}</span>
           <span class="group-announce-viewer-notice-time">{{ formatTime(notice.publish_time) }}</span>
           <span class="group-announce-viewer-notice-pinned" v-if="notice.pinned">置顶</span>
+          <QIcon class="group-announce-viewer-notice-icon"
+                 @click="handleDeleteNotice(notice.notice_id)"
+                 name="delete_new_24"/>
         </div>
         <div class="group-announce-viewer-notice-content" v-html="renderText(notice.message.text)">
         </div>
@@ -137,6 +154,16 @@ export default defineComponent({
   padding: 0 4px;
   font-size: 10px;
   margin-left: 2px;
+}
+
+.group-announce-viewer-notice-icon {
+  margin: 0 5px;
+  color: $color-text-muted;
+  @include square-size(20px);
+
+  &:hover {
+    color: $color-text-primary;
+  }
 }
 
 .group-announce-viewer-notice-content {
