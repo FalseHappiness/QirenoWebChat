@@ -196,6 +196,10 @@ const parseMessagePreview = (message, returnPromise = false, replyMode = false) 
     if (event.message && Array.isArray(event.message)) {
       const children = [];
 
+      if (message[0]?.type === 'at' && message[1]?.type === 'markdown') {
+        message.shift()
+      }
+
       for (const [index, item] of event.message.entries()) {
         const { type, data } = item
 
@@ -552,6 +556,11 @@ const parseMessage = (wrappedMsg) => {
             )
             break
         }
+      }
+
+      // markdown 重复 at 消息段
+      if (message[0]?.type === 'at' && message[1]?.type === 'markdown') {
+        message.shift()
       }
 
       // 混排消息

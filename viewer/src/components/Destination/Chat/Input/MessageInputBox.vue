@@ -1898,8 +1898,8 @@ export default defineComponent({
       this.insertNodesAtCursor(link, span)
     },
 
-    handleInputAtSomebody(qq, name) {
-      this.insertAtUserAtCursor({ qq, name })
+    handleInputAtSomebody(user_id, name) {
+      this.insertAtUserAtCursor({ user_id, name })
     },
 
     handleSelectContactsSendMsg(messageContent) {
