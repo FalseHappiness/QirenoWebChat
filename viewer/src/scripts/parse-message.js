@@ -654,7 +654,8 @@ const parseMessage = (wrappedMsg) => {
             children.push(
               h(InlineKeyboardMessage, {
                 rows: data.rows || [],
-                botAppId: data.bot_appid || ''
+                botAppId: data.bot_appid || '',
+                botUser: event.sender
               })
             );
             break

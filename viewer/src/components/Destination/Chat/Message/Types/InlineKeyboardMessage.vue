@@ -5,22 +5,30 @@
       :key="rowIndex"
       class="inline-keyboard-row"
     >
-      <span
+      <component
+        :is="isLinkButton(button) ? 'a' : 'span'"
         v-for="(button, btnIndex) in row.buttons"
         :key="btnIndex"
         class="inline-keyboard-button"
         :class="button.style === 1 ? 'inline-keyboard-button-primary' : 'inline-keyboard-button-default'"
-        :data-bot-app-id="botAppId"
+        :href="isLinkButton(button) ? button.data : undefined"
+        target="_blank"
+        @click="handleButtonClick(button)"
       >
         <span class="inline-keyboard-button-text">{{ button.label }}</span>
-      </span>
+        <QIcon name="link_new_24" v-if="isLinkButton(button)" class="inline-keyboard-button-icon-link"/>
+      </component>
     </div>
   </div>
 </template>
 
 <script>
+import QIcon from "@/components/Common/Icons/QIcon.vue";
+import { Emitter } from "@/composables/useEventBus.js";
+
 export default {
   name: "InlineKeyboardMessage",
+  components: { QIcon },
   props: {
     rows: {
       type: Array,
@@ -30,6 +38,10 @@ export default {
     botAppId: {
       type: String,
       default: ''
+    },
+    botUser: {
+      type: Object,
+      default: {}
     }
   },
   methods: {
@@ -73,6 +85,14 @@ export default {
 
         textSpan.style.fontSize = best + 'px'
       })
+    },
+    isLinkButton(btn) {
+      return btn.type === 0
+    },
+    handleButtonClick(btn) {
+      if (btn.type === 2) {
+        Emitter.emit("input-at-somebody", this.botUser.user_id, this.botUser.nickname, btn.data)
+      }
     }
   },
   mounted() {
@@ -135,6 +155,7 @@ export default {
   font-weight: bold;
   background-color: $color-bg-card;
   @extend %hover-active-bg;
+  position: relative;
 
   &:active {
     transform: scale(0.95);
@@ -143,6 +164,13 @@ export default {
 
 .inline-keyboard-button-text {
   font-size: 15px;
+}
+
+.inline-keyboard-button-icon-link {
+  @include square-size(18px);
+  position: absolute;
+  top: 2px;
+  right: 2px;
 }
 
 .inline-keyboard-button-default {

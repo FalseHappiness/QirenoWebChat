@@ -1898,8 +1898,18 @@ export default defineComponent({
       this.insertNodesAtCursor(link, span)
     },
 
-    handleInputAtSomebody(user_id, name) {
-      this.insertAtUserAtCursor({ user_id, name })
+    handleInputAtSomebody(user_id, name, attachText) {
+      let insertMention = true
+      const insertAttachText = isString(attachText)
+      if (insertAttachText) {
+        insertMention = !this.$refs.editor.querySelector('.message-input-editor-at-user')
+      }
+      if (insertMention) {
+        this.insertAtUserAtCursor({ user_id, name })
+      }
+      if (insertAttachText) {
+        this.insertTextAtCursor((insertMention ? "" : " ") + attachText)
+      }
     },
 
     handleSelectContactsSendMsg(messageContent) {
@@ -2056,10 +2066,10 @@ export default defineComponent({
       }
 
       if (failedResults.length > 0) {
-        console.error(`${getActionLabel()}消息失败结果:`, failedResults);
+        console.error(`${ getActionLabel() }消息失败结果:`, failedResults);
         if (failedResults.length !== allResults.length) {
-          showSuccessToast(`部分${getActionLabel()}成功`)
-          console.log(`${getActionLabel()}消息成功结果:`, allResults.filter(result => result.status !== 'error'));
+          showSuccessToast(`部分${ getActionLabel() }成功`)
+          console.log(`${ getActionLabel() }消息成功结果:`, allResults.filter(result => result.status !== 'error'));
         }
         // 按消息ID和类型归类
         const errorsByContact = failedResults.reduce((acc, failed) => {
@@ -2104,7 +2114,7 @@ export default defineComponent({
 
         showToast('error', errorMessage);
       } else {
-        showSuccessToast(`已${getActionLabel()}`);
+        showSuccessToast(`已${ getActionLabel() }`);
       }
     },
 
