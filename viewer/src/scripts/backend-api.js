@@ -16,7 +16,7 @@ import {
 } from "./snow-luma-translator.js";
 import { parseJSON, stringifyJSON, trimTrailingSlash } from "./util.js";
 
-import { isArray, isObject, isString, isUndefined, objectHasKey } from "./types-util.js";
+import { isArray, isNumber, isObject, isString, isUndefined, mergeNotEmpty, objectHasKey } from "./types-util.js";
 import {
   CacheNameKey,
   setCacheName,
@@ -1306,6 +1306,73 @@ async function fetchFlashShareLink(fileset_id) {
   return isObject(result) ? result.url : (isString(result) ? result : null)
 }
 
+// 1: 允许任何人加群 2: 需要发送验证信息 3: 不允许任何人加群 4: 需要正确回答问题 5: 需要回答问题并由管理员审核
+async function fetchSetGroupAddOption(group_id, add_type, group_question, group_answer) {
+  return await fetchAction("set_group_add_option", { group_id, add_type, group_question, group_answer })
+}
+
+async function fetchSetGroupMemberPermissions(group_id, allow_member_upload_album, allow_member_temporary_session, allow_member_create_group) {
+  return await fetchAction("set_group_member_permissions", mergeNotEmpty({ group_id }, {
+    allow_member_upload_album,
+    allow_member_temporary_session,
+    allow_member_create_group
+  }))
+}
+
+// 禁止、需要管理员审核、无需审核、群成员少于100人时无需审核
+// 0: disabled 1: no_approval 2: require_approval 3: no_approval_under_100
+async function fetchSetGroupMemberInvitePolicy(group_id, policy) {
+  if (isNumber(policy)) {
+    policy = ["disabled", "no_approval", "require_approval", "no_approval_under_100"][policy] || 'disabled'
+  }
+  return await fetchAction("set_group_member_invite_policy", { group_id, policy })
+}
+
+async function fetchSetGroupNewMemberHistoryVisibility(group_id, visible = true) {
+  return await fetchAction("set_group_new_member_history_visibility", { group_id, visible })
+}
+
+// 需要先设置群名称
+async function fetchSetGroupSearchOption(group_id, search_type) {
+  let no_code_finger_open = 1, no_finger_open = 1;
+  switch (search_type) {
+    case 0: // 不允许被查找
+      no_code_finger_open = 1;
+      no_finger_open = 1;
+      break
+    case 1: // 通过群号搜索
+      no_code_finger_open = 0;
+      no_finger_open = 1;
+      break
+    case 2: // 通过群号及关键词搜索
+      no_code_finger_open = 0;
+      no_finger_open = 0;
+      break
+  }
+  return await fetchAction("set_group_search", mergeNotEmpty({ group_id }, {
+    no_code_finger_open, no_finger_open
+  }))
+}
+
+async function fetchSetGroupRobotAddOption(group_id, add_type) {
+  let robot_member_switch = 1, robot_member_examine = 2;
+  switch (add_type) {
+    case 0: // 禁止 bot 入群
+      robot_member_switch = 1;
+      robot_member_examine = 2;
+      break
+    case 1: // 无需管理员审核
+      robot_member_switch = 0;
+      robot_member_examine = 0;
+      break
+    case 2: // 需要管理员审核
+      robot_member_switch = 0;
+      robot_member_examine = 2;
+      break
+  }
+  return await fetchAction("set_group_robot_add_option", { group_id, robot_member_switch, robot_member_examine })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1396,4 +1463,10 @@ export {
   fetchFlashShareLink,
   fetchDeleteGroupAlbumMedia,
   fetchDeleteGroupNotice,
+  fetchSetGroupAddOption,
+  fetchSetGroupMemberPermissions,
+  fetchSetGroupMemberInvitePolicy,
+  fetchSetGroupNewMemberHistoryVisibility,
+  fetchSetGroupSearchOption,
+  fetchSetGroupRobotAddOption,
 }

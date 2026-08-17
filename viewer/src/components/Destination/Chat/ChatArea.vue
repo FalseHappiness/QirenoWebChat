@@ -2,10 +2,8 @@
 import { computed, inject, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import MessageItem from './Message/MessageItem.vue'
 import {
-  checkResponseOK, fetchDeleteFriend,
-  fetchGroupNotice, fetchLeaveGroup,
-  fetchMsg, fetchSetGroupAllMuted,
-  fetchSetGroupMemberCard, getGroupLogo, getUserLogo
+  fetchGroupNotice,
+  fetchMsg
 } from "@/scripts/backend-api.js";
 import PageScroller from "../../Common/Scrolling/PageScroller.vue";
 import SimpleBarCore from "simplebar";
@@ -16,26 +14,19 @@ import { parseJSON } from "@/scripts/util.js";
 import Tooltip from "../../Common/Overlay/Tooltip.vue";
 import { CalledEmitter, Emitter } from "@/composables/useEventBus.js";
 import GroupAnnounceViewer from "./Group/GroupAnnounceViewer.vue";
-import EnterArrow from "../../Common/Widgets/EnterArrow.vue";
 import GroupEssenceMsgViewer from "./Group/GroupEssenceMsgViewer.vue";
 import GroupFilesViewer from "./Group/GroupFilesViewer.vue";
 import GroupAlbumViewer from "./Group/GroupAlbumViewer.vue";
-import { qqAppImg } from "@/composables/useBase.js";
-import CustomScrollBar from "../../Common/Scrolling/CustomScrollBar.vue";
 import ImageViewer from "../../Common/Media/ImageViewer.vue";
-import { isEmptyObject, isNumber, isObject, isString } from "@/scripts/types-util.js";
+import { isEmptyObject, isObject, isString } from "@/scripts/types-util.js";
 import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../Common/Icons/QIcon.vue";
-import { getContactNameRef, getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
+import { getContactNameRef } from "@/scripts/user-info-util.js";
 import GroupSignView from "@/components/Destination/Chat/Group/GroupSignView.vue";
 import { checkSameContact } from "@/scripts/contacts-util.js";
-import { Switch as ASwitch } from "ant-design-vue";
-import { showConfirmBox } from "@/scripts/popup-box-api.js";
-import { showErrorToast, showSuccessToast } from "@/scripts/toast.js";
-import GroupMembersViewer from "@/components/Destination/Chat/Group/GroupMembersViewer.vue";
+import ContactDetail from './ContactDetail/ContactDetail.vue'
 
 const activeContact = inject("activeContact")
-const selfInfo = inject("selfInfo")
 const selectContact = inject("selectContact")
 
 const scroller = ref(null)
@@ -45,18 +36,20 @@ const displayName = ref('') // 使用ref来管理名称状态
 const isError = ref(false) // 错误状态
 // const isTempSession = ref(false)
 const showContactMore = ref(false)
-const chatAreaContactMore = ref(null)
+
+const contactDetailRef = ref(null)
 
 const handleChatAreaClick = e => {
   const target = e?.target
   if (target) {
-    if (!chatAreaContactMore.value?.contains(target) && !target.closest?.('.chat-area-ctrl-show-more')) {
+    if (
+      !contactDetailRef.value?.contactDetailRef?.contains(target) &&
+      !target.closest?.('.chat-area-ctrl-show-more, .resizable-t')
+    ) {
       showContactMore.value = false;
     }
   }
 }
-
-watch(showContactMore, val => val ? 0 : changeShowGroupMembers(false))
 
 const getName = async () => {
   await getContactNameRef(activeContact.value, displayName, isError)
@@ -185,7 +178,7 @@ const handleScrollerMounted = async () => {
     scroller.value.changeWrapperElement(chatWrapper.querySelector('.simplebar-content-wrapper'))
 
     /*
-
+    
     // 处理图片加载时高度变化导致布局抖动
     // 创建MutationObserver来监听新增的图片
     const mutationObserver = new MutationObserver((mutations) => {
@@ -205,7 +198,7 @@ const handleScrollerMounted = async () => {
         });
       });
     });
-
+    
     const saveImageSize = (img, currentSize) => {
       if (currentSize === undefined) {
         const rect = img.getBoundingClientRect()
@@ -227,7 +220,7 @@ const handleScrollerMounted = async () => {
         img.heightDifference = currentSize.height - beforeSize.height * scalingRate
       }
     }
-
+    
     const handleImageResize = async (img) => {
       const difference = img?.heightDifference | 0
       // console.log(scroller?.value?.wrapperScrollOffset().bottom, difference)
@@ -239,7 +232,7 @@ const handleScrollerMounted = async () => {
         scroller.value.wrapper.scrollTop += difference
       }
     }
-
+    
     // 创建ResizeObserver来监听图片尺寸变化
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
@@ -249,7 +242,7 @@ const handleScrollerMounted = async () => {
         handleImageResize(img)
       }
     });
-
+    
     // 观察图片尺寸变化
     function observeImageResize(img) {
       if (!img.complete) {
@@ -274,18 +267,18 @@ const handleScrollerMounted = async () => {
         })
       }
     }
-
+    
     // 开始观察容器内的子节点变化
     mutationObserver.observe(chatWrapper, {
       childList: true,
       subtree: true
     });
-
+    
     // 观察已存在的图片
     chatWrapper.querySelectorAll('.message-image, .message-video').forEach(img => {
       observeImageResize(img);
     });
-
+    
      */
   }
 }
@@ -345,39 +338,6 @@ const getGroupNotice = async () => {
   groupNotifications.value = await fetchGroupNotice(activeContact.value.contact_id);
 }
 
-const groupSelfInfo = computed(() => groupUsers.value?.find(user => user.user_id === selfInfo.value?.user_id));
-provide("currentGroupSelfInfo", groupSelfInfo)
-
-watch(() => groupSelfInfo.value, newVal => {
-  if (newVal != null) {
-    groupSelfCardModel.value = newVal.card
-  }
-})
-
-const groupSelfCardModel = ref(null);
-const groupRemarkModel = ref(null);
-
-const handleGroupSelfCardChange = async () => {
-  if (groupSelfCardModel.value !== groupSelfInfo?.value?.card) {
-    await fetchSetGroupMemberCard(activeContact.value.contact_id, selfInfo.value.user_id, groupSelfCardModel.value)
-  }
-}
-
-const changeGroupContactRemark = inject("changeGroupContactRemark")
-
-const handleGroupRemarkChange = () => {
-  if (groupRemarkModel.value !== activeContact.value?.remark) {
-    changeGroupContactRemark(activeContact.value.contact_id, groupRemarkModel.value)
-  }
-}
-
-const handleEnterBlur = (e) => {
-  if (e.key === 'Enter' && !e.isComposing) {
-    e.preventDefault()
-    e.target.blur()
-  }
-}
-
 const showContactInfo = inject("showContactInfo")
 
 const handleClickShowContactInfo = (e, user_id) => {
@@ -432,70 +392,6 @@ const handleClickShowContactInfo = (e, user_id) => {
   })
 }
 
-const selfGroupOperator = computed(() => isGroupOperator(groupSelfInfo.value))
-
-const groupNameModel = ref(null)
-
-const changeGroupContactName = inject("changeGroupContactName")
-
-const handleGroupNameChange = () => {
-  if (groupNameModel.value !== activeContact.value?.real_name) {
-    changeGroupContactName(activeContact.value.contact_id, groupNameModel.value)
-  }
-}
-
-const transGroupAllMuted = (value, toBool = true) => toBool ? value === -1 : (value ? -1 : 0)
-
-const groupAllMutedModel = ref(null)
-
-const currenGroupAllMuted = () => getGroupInfoCacheFromAll(activeContact.value?.contact_id)?.group_all_shut
-
-watch(currenGroupAllMuted, val => {
-  if (isNumber(val)) {
-    groupAllMutedModel.value = transGroupAllMuted(val)
-  }
-})
-
-const handleGroupAllMutedChange = checked => {
-  if (groupAllMutedModel.value !== transGroupAllMuted(currenGroupAllMuted())) {
-    fetchSetGroupAllMuted(activeContact.value.contact_id, checked)
-  }
-}
-
-const handleLeaveGroup = async () => {
-  if (await showConfirmBox("退出群聊", "退出后不会通知群聊中其他成员，且不会再接受此群消息。")) {
-    const group_id = activeContact.value.contact_id
-    const result = await fetchLeaveGroup(group_id)
-    if (checkResponseOK(result)) {
-      showSuccessToast("退出成功")
-    } else {
-      console.error("Leave group error:", group_id, result)
-      showErrorToast("退群失败: " + result?.message)
-    }
-  }
-}
-
-const friendRemarkModel = ref(null)
-const changeFriendContactRemark = inject("changeFriendContactRemark")
-const handleChangeFriendRemark = () => {
-  if (friendRemarkModel.value !== activeContact.value?.remark) {
-    changeFriendContactRemark(activeContact.value?.contact_id, friendRemarkModel.value)
-  }
-}
-
-const handleDeleteFriend = async () => {
-  if (await showConfirmBox("确定删除该好友吗？")) {
-    const user_id = activeContact.value.contact_id
-    const result = await fetchDeleteFriend(user_id)
-    if (checkResponseOK(result)) {
-      showSuccessToast("已删除")
-    } else {
-      console.error("Leave group error:", user_id, result)
-      showErrorToast("删除好友失败: " + result?.message)
-    }
-  }
-}
-
 const createChangeView = refVar => {
   return (isShow = true) => {
     refVar.value = isShow;
@@ -520,19 +416,12 @@ const changeShowGroupAlbum = createChangeView(showGroupAlbumViewer)
 const showGroupSignView = ref(false)
 const changeShowGroupSign = createChangeView(showGroupSignView)
 
-const showGroupMembersViewer = ref(false)
-const changeShowGroupMembers = createChangeView(showGroupMembersViewer)
-
 const initContactInfo = () => {
   // 组件挂载时获取名称
   getName()
   if (isGroup.value) {
-    groupRemarkModel.value = activeContact.value?.remark;
-    groupNameModel.value = activeContact.value?.real_name
     getGroupNotice()
     Emitter.on("show-group-notices", changeShowGroupAnnounce)
-  } else {
-    friendRemarkModel.value = activeContact.value?.remark
   }
 }
 
@@ -665,139 +554,22 @@ defineExpose({
       </span>
     </div>
 
-    <div v-if="activeContact" class="chat-area-contact-more" ref="chatAreaContactMore"
-         :style="{ right: showContactMore ? '0' : '-100%' }">
-      <GroupMembersViewer
-        v-if="showGroupMembersViewer && isGroup"
-        :group_id="activeContact?.contact_id"
-        :group-users="groupUsers"
-        @click-show-contact-info="handleClickShowContactInfo"
-        @close="() => changeShowGroupMembers(false)"
-      />
-      <CustomScrollBar class="chat-area-contact-more-scroller">
-        <template v-if="isGroup">
-          <div class="chat-area-contact-more-area chat-area-contact-info">
-            <img
-              :src="getGroupLogo(activeContact.contact_id)"
-              alt=""
-              class="chat-area-contact-logo">
-            <div class="overflow-ellipsis">
-              <span :title="displayName">{{ displayName }}</span>
-              <br>
-              <small>{{ activeContact.contact_id }}</small>
-            </div>
-          </div>
-
-          <div class="chat-area-contact-more-area display-flex cursor-pointer" @click="changeShowGroupMembers(true)">
-            群聊成员
-            <EnterArrow/>
-          </div>
-
-          <label
-            v-if="selfGroupOperator && isString(groupNameModel)"
-            class="chat-area-contact-more-area with-title input-content"
-            data-title="群聊名称">
-            <input v-model="groupNameModel"
-                   @blur="handleGroupNameChange"
-                   @keydown="handleEnterBlur"
-                   type="text"
-                   placeholder="填写群名称">
-          </label>
-
-          <div class="chat-area-contact-more-area container-inline-size">
-            群应用
-            <div class="group-applications-list">
-              <div @click="changeShowGroupFiles()" class="group-app-list-app-container">
-                <QIcon name="filelook_folder_16" class="group-app-icon"/>
-                群文件
-              </div>
-              <div @click="changeShowGroupAlbum()" class="group-app-list-app-container">
-                <QIcon name="image_24" class="group-app-icon" style="color: var(--color-primary);"/>
-                群相册
-              </div>
-              <div @click="changeShowGroupEssenceList()" class="group-app-list-app-container">
-                <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')" class="group-app-icon"/>
-                群精华
-              </div>
-              <div @click="changeShowGroupSign()" class="group-app-list-app-container">
-                <QIcon name="calendar_24" class="group-app-icon"/>
-                群打卡
-              </div>
-            </div>
-          </div>
-
-          <div class="chat-area-contact-more-area with-title display-flex cursor-pointer" data-title="群公告"
-               @click="changeShowGroupAnnounce()">
-            <span v-if="groupNotifications == null" style="color: var(--color-text-muted);">内容获取中</span>
-            <span v-else-if="!groupNotifications?.length" style="color: var(--color-text-muted);">未设置</span>
-            <span v-else class="overflow-ellipsis">
-          <span v-if="latestGroupNoticeMsg?.image?.length">【图片】</span>
-          <span v-html="latestGroupNoticeMsg.text"></span>
-        </span>
-            <EnterArrow/>
-          </div>
-
-          <label
-            v-if="groupSelfInfo && isString(groupSelfCardModel)"
-            class="chat-area-contact-more-area with-title input-content"
-            data-title="我的本群昵称">
-            <input v-model="groupSelfCardModel"
-                   @blur="handleGroupSelfCardChange"
-                   @keydown="handleEnterBlur"
-                   type="text"
-                   class="overflow-ellipsis"
-                   placeholder="填写我的本群昵称">
-          </label>
-
-          <label
-            v-if="isString(groupRemarkModel)"
-            class="chat-area-contact-more-area with-title input-content"
-            data-title="群聊备注">
-            <input v-model="groupRemarkModel"
-                   @blur="handleGroupRemarkChange"
-                   @keydown="handleEnterBlur"
-                   type="text"
-                   placeholder="填写备注">
-          </label>
-
-          <div
-            v-if="selfGroupOperator"
-            class="chat-area-contact-more-area with-title display-flex cursor-pointer"
-            data-title="发言权限">
-            全员禁言
-            <ASwitch v-model:checked="groupAllMutedModel" @change="handleGroupAllMutedChange" size="small"/>
-          </div>
-
-          <div class="chat-area-contact-more-area contact-more-leave-group" @click="handleLeaveGroup">退出群聊</div>
-        </template>
-        <template v-else>
-          <div class="chat-area-contact-more-area chat-area-contact-info">
-            <img
-              :src="getUserLogo(activeContact.contact_id)"
-              alt=""
-              class="chat-area-contact-logo">
-            <div class="overflow-ellipsis">
-              <span :title="displayName">{{ displayName }}</span>
-              <br>
-              <small>{{ activeContact.contact_id }}</small>
-            </div>
-          </div>
-
-          <label
-            v-if="isString(friendRemarkModel)"
-            class="chat-area-contact-more-area with-title input-content"
-            data-title="好友备注">
-            <input v-model="friendRemarkModel"
-                   @blur="handleChangeFriendRemark"
-                   @keydown="handleEnterBlur"
-                   type="text"
-                   placeholder="填写备注">
-          </label>
-
-          <div class="chat-area-contact-more-area contact-more-delete-friend" @click="handleDeleteFriend">删除好友</div>
-        </template>
-      </CustomScrollBar>
-    </div>
+    <ContactDetail
+      ref="contactDetailRef"
+      :show-contact-more="showContactMore"
+      :display-name="displayName"
+      :is-group="isGroup"
+      :active-contact="activeContact"
+      :group-users="groupUsers"
+      :group-notifications="groupNotifications"
+      :latest-group-notice-msg="latestGroupNoticeMsg"
+      @show-group-announce="changeShowGroupAnnounce"
+      @show-essence-list="changeShowGroupEssenceList"
+      @show-group-files="changeShowGroupFiles"
+      @show-group-album="changeShowGroupAlbum"
+      @show-group-sign="changeShowGroupSign"
+      @show-contact-info="({ e, user_id }) => handleClickShowContactInfo(e, user_id)"
+    />
 
     <div v-if="!activeContact" class="display-flex justify-content-center align-items-center height-100">
       <div class="text-center text-muted">
@@ -940,113 +712,12 @@ defineExpose({
   }
 }
 
-.chat-area-contact-more {
-  position: absolute;
-  height: calc(100% - $chat-area-head-height);
-  top: $chat-area-head-height;
-  width: 350px;
-  background-color: $color-bg-card-alt;
-  border: 1px solid $color-border;
-  right: -100%;
-  z-index: 5;
-  box-shadow: $shadow-contact-more;
-  transition: right ease-out $transition-slow;
+.chat-area-head-display-name {
+  cursor: default;
+  padding: 0 3px;
+  border-radius: 5px;
 
-  .chat-area-contact-more-scroller {
-    padding: 0 18px;
-
-    &:deep(.simplebar-content) {
-      font-size: 15px;
-      gap: 18px;
-      @extend %flex-column;
-    }
-  }
-}
-
-
-.chat-area-contact-more-area {
-  @include card;
-  padding: 8px 12px;
-  display: block;
-  margin: 0;
-
-  &.display-flex {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &.with-title {
-    margin-top: 18px;
-
-    &:before {
-      content: attr(data-title);
-      display: block;
-      position: absolute;
-      margin-top: -32px;
-      color: $color-text-muted;
-      font-size: 14px;
-      pointer-events: none;
-    }
-
-    &.display-flex:before {
-      margin-top: -64px;
-    }
-  }
-
-  &.input-content {
-    outline: 1px solid transparent;
-    width: 100%;
-
-    input {
-      outline: none;
-      border: none;
-      width: 100%;
-    }
-
-    &:has(input:focus) {
-      outline: 1px solid $color-primary;
-    }
-  }
-}
-
-.chat-area-contact-logo {
-  @include avatar(40px);
-  margin: 5px 10px 5px 5px;
-}
-
-.chat-area-contact-info small {
-  color: var(--color-text-muted);
-  display: block;
-  margin-top: -4px;
-}
-
-.chat-area-contact-info {
-  display: flex;
-  align-items: center;
-}
-
-.group-applications-list {
-  padding: 8px 10px 0 10px;
-  gap: 15px;
-  @include grid-columns-auto-fill(50px);
-}
-
-.group-app-list-app-container {
-  @extend %flex-column-center;
-  font-size: 12px;
-  gap: 5px;
-  cursor: pointer;
-}
-
-.group-app-icon {
-  @include square-size(30px);
-}
-
-.contact-more-leave-group, .contact-more-delete-friend {
-  @include flex-center-children;
-  color: $color-text-danger;
-  cursor: pointer;
+  @include hover-active-bg;
 }
 
 @include mobile {
@@ -1061,14 +732,6 @@ defineExpose({
 
   .chat-area-go-back-btn {
     display: block;
-  }
-
-  .chat-area-contact-more {
-    width: 100%;
-    height: calc(100% - 42px);
-    top: 42px;
-    box-shadow: none;
-    transition: right ease-out $transition-normal;
   }
 }
 </style>
@@ -1132,14 +795,6 @@ defineExpose({
     border: 1px solid $color-bg-scroll-btn-active;
     background-color: $color-bg-active-alt;
   }
-}
-
-.chat-area-head-display-name {
-  cursor: default;
-  padding: 0 3px;
-  border-radius: 5px;
-
-  @include hover-active-bg;
 }
 </style>
 

@@ -10,10 +10,11 @@ import { pinyin } from "pinyin-pro"
 import { vCustomMenu } from "@/directives/context-menu.js"
 import { createUserAvatarContextMenuItems } from "@/scripts/contact-content-menu.js"
 import { filterGroupMembers } from "@/scripts/contacts-util.js"
+import ContactDetailSubView from "@/components/Destination/Chat/ContactDetail/ContactDetailSubView.vue";
 
 export default defineComponent({
   name: "GroupMembersViewer",
-  components: { SimpleWindow, VirtualScroller, GroupLevelTitle, QIcon },
+  components: { ContactDetailSubView, SimpleWindow, VirtualScroller, GroupLevelTitle, QIcon },
   directives: { 'custom-menu': vCustomMenu },
   props: {
     group_id: {
@@ -25,12 +26,11 @@ export default defineComponent({
       default: () => []
     }
   },
-  emits: ['close', 'click-show-contact-info'],
+  emits: ['click-show-contact-info'],
   inject: ["activeContact", "flattenContacts", "selectContact", 'selfId'],
   data() {
     return {
       filterText: '',
-      closed: false
     }
   },
   computed: {
@@ -124,20 +124,20 @@ export default defineComponent({
       const items = []
 
       if (ownerAdmin.length) {
-        items.push({ header: `群主/管理员(${ownerAdmin.length}人)` })
+        items.push({ header: `群主/管理员(${ ownerAdmin.length }人)` })
         items.push(...ownerAdmin)
       }
       if (robot.length) {
-        items.push({ header: `机器人(${robot.length}个)` })
+        items.push({ header: `机器人(${ robot.length }个)` })
         items.push(...robot)
       }
       for (const letter of sortedLetters) {
         const members = letterMap[letter]
-        items.push({ header: letter + `(${members.length}人)` })
+        items.push({ header: letter + `(${ members.length }人)` })
         items.push(...members)
       }
       if (special.length) {
-        items.push({ header: `#(${special.length}人)` })
+        items.push({ header: `#(${ special.length }人)` })
         items.push(...special)
       }
 
@@ -203,22 +203,12 @@ export default defineComponent({
       })
     },
     getUserLogo,
-    close() {
-      if (this.closed) return
-      this.closed = true
-      setTimeout(() => this.$emit("close"), 200)
-    }
   }
 })
 </script>
 
 <template>
-  <div class="group-members-viewer" :class="{ closed }">
-    <div class="group-members-title">
-      <QIcon name="arrow_left_24" @click="close"/>
-      群聊成员 {{ groupUsers?.length }}
-    </div>
-
+  <ContactDetailSubView class="group-members-viewer" :title="`群聊成员 ${ groupUsers?.length }`">
     <div class="group-members-search">
       <QIcon name="search_24" class="group-members-search-icon"/>
       <input
@@ -277,41 +267,10 @@ export default defineComponent({
         暂无群成员
       </div>
     </div>
-  </div>
+  </ContactDetailSubView>
 </template>
 
 <style scoped lang="scss">
-.group-members-viewer {
-  @extend %flex-column;
-  @include square-size(100%);
-  overflow: hidden;
-  position: absolute;
-  animation: simplePopUpMaskIn 0.2s ease-in-out;
-  transition: opacity 0.2s ease-in-out;
-  opacity: 1;
-  left: 0;
-  top: 0;
-  background-color: $color-bg-page;
-  z-index: 10;
-}
-
-.group-members-viewer.closed {
-  opacity: 0;
-}
-
-.group-members-title {
-  @extend %flex-row-center;
-  padding: 10px 10px 2px;
-  font-size: 16px;
-  line-height: 100%;
-}
-
-.group-members-title svg {
-  @include square-size($close-btn-size);
-  margin: 0 5px;
-  cursor: pointer;
-}
-
 .group-members-search {
   margin: 8px 12px 4px 12px;
   background-color: $color-bg-hover;
