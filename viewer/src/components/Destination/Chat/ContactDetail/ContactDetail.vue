@@ -345,7 +345,10 @@ defineExpose({ contactDetailRef })
           </div>
           <hr>
           <div class="contact-detail-container-area">
-            群搜索方式
+            <div class="group-search-text">
+              群搜索方式
+              <span class="text-muted">需要先设置群名称</span>
+            </div>
             <ASelect v-model:value="groupSearchOptionModel" size="small">
               <ASelectOption :value="null">不修改</ASelectOption>
               <ASelectOption :value="0">不允许被搜索</ASelectOption>
@@ -457,6 +460,15 @@ defineExpose({ contactDetailRef })
     .ant-select {
       width: 220px;
       flex: 0 1;
+    }
+  }
+
+  .group-search-text {
+    @extend %flex-column;
+    font-size: 14px;
+
+    .text-muted {
+      font-size: 70%;
     }
   }
 }
