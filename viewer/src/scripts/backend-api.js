@@ -1290,6 +1290,10 @@ async function fetchSetGroupTodo(group_id, message_id) {
   return await fetchAction("set_group_todo", { group_id, message_id })
 }
 
+async function fetchCancelGroupTodo(group_id, message_id) {
+  return await fetchAction("cancel_group_todo", { group_id, message_id })
+}
+
 async function fetchCreateFlashTask(files, name) {
   return await fetchActionData("create_flash_task", {
     files, name,
@@ -1371,6 +1375,12 @@ async function fetchSetGroupRobotAddOption(group_id, add_type) {
       break
   }
   return await fetchAction("set_group_robot_add_option", { group_id, robot_member_switch, robot_member_examine })
+}
+
+async function fetchGroupTodoMessage(group_id) {
+  // NapCat get_group_info_ex todoSeq 可获取，暂时无法确定具体代表什么序列
+  if (!gteSnowLuma(1, 14, 4)) return null
+  return (await fetchActionData("get_group_todo_list", { group_id }))[0] || null
 }
 
 export {
@@ -1469,4 +1479,6 @@ export {
   fetchSetGroupNewMemberHistoryVisibility,
   fetchSetGroupSearchOption,
   fetchSetGroupRobotAddOption,
+  fetchGroupTodoMessage,
+  fetchCancelGroupTodo,
 }

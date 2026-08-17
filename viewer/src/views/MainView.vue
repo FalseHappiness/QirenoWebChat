@@ -18,7 +18,7 @@ import {
   fetchFriendList,
   fetchSetFriendRemark,
   checkResponseOK,
-  fetchGroupMutedList, fetchSetGroupName
+  fetchGroupMutedList, fetchSetGroupName, fetchGroupTodoMessage, fetchCancelGroupTodo
 } from "../scripts/backend-api.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
@@ -99,7 +99,7 @@ const selfId = ref(null)
 
 watch(() => isConnected.value && selfId.value, val => {
   if (val) {
-    console.log(`WebSocket ${wsInited.value ? 're' : ''}connected, checking for missed messages...`)
+    console.log(`WebSocket ${ wsInited.value ? 're' : '' }connected, checking for missed messages...`)
     wsInited.value = true;
   }
 })
@@ -107,6 +107,7 @@ watch(() => isConnected.value && selfId.value, val => {
 watch(activeContact, (newContact, oldContact) => {
   if (!checkSameContact(newContact, oldContact)) {
     groupEssenceMsgList.value = null
+    groupTodoMessage.value = null
   }
 })
 
@@ -155,7 +156,7 @@ const changeGroupContactRemark = async (contact_id, remark) => {
     )
   } else {
     console.log("Change group contact remark error: ", contact_id, remark, result)
-    showErrorToast(`改变群 ${contact_id} 备注为 ${remark} 失败`)
+    showErrorToast(`改变群 ${ contact_id } 备注为 ${ remark } 失败`)
   }
 }
 provide("changeGroupContactRemark", changeGroupContactRemark)
@@ -171,7 +172,7 @@ const changeSelfLongNick = async longNick => {
     selfInfo.value.long_nick = selfInfo.value.longNick = longNick;
   } else {
     console.log("Change self long nick error: ", longNick, result)
-    showErrorToast(`改变个性签名为 ${longNick} 失败`)
+    showErrorToast(`改变个性签名为 ${ longNick } 失败`)
   }
 }
 provide("changeSelfLongNick", changeSelfLongNick)
@@ -185,7 +186,7 @@ const changeFriendContactRemark = async (user_id, remark) => {
     )
   } else {
     console.log("Change private contact remark error: ", user_id, remark, result)
-    showErrorToast(`改变好友 ${user_id} 备注为 ${remark} 失败`)
+    showErrorToast(`改变好友 ${ user_id } 备注为 ${ remark } 失败`)
   }
 }
 provide("changeFriendContactRemark", changeFriendContactRemark)
@@ -218,7 +219,7 @@ const changeGroupContactName = async (contact_id, name) => {
     )
   } else {
     console.log("Change group contact remark error: ", contact_id, name, result)
-    showErrorToast(`改变群 ${contact_id} 名称为 ${name} 失败`)
+    showErrorToast(`改变群 ${ contact_id } 名称为 ${ name } 失败`)
   }
 }
 provide("changeGroupContactName", changeGroupContactName)
@@ -273,6 +274,42 @@ const getEssenceMsgList = async () => {
   return []
 }
 
+const groupTodoMessage = ref(null)
+const getGroupTodoMessage = async () => {
+  try {
+    const contact = toRaw(activeContact.value)
+    if (contact?.type === 'group') {
+      const msg = await fetchGroupTodoMessage(contact.contact_id)
+      if (checkSameContact(activeContact.value, contact)) {
+        groupTodoMessage.value = msg
+        return msg
+      }
+    }
+  } catch (e) {
+    console.error('获取群待办错误', e)
+  }
+  return null
+}
+provide("groupTodoMessage", groupTodoMessage)
+const removeGroupTodoMessage = async (message_id) => {
+  if (!message_id) message_id = groupTodoMessage.value?.message_id
+  try {
+    const contact = toRaw(activeContact.value)
+    if (contact?.type === 'group') {
+      const result = await fetchCancelGroupTodo(contact.contact_id, message_id)
+      if (!checkResponseOK(result)) throw new Error(JSON.stringify(result))
+      if (checkSameContact(activeContact.value, contact)) {
+        groupTodoMessage.value = null
+        return true
+      }
+    }
+  } catch (e) {
+    console.error('获取群待办错误', e)
+  }
+  return false
+}
+provide("removeGroupTodoMessage", removeGroupTodoMessage)
+
 // 获取消息历史
 const getMessages = async (
   message_id,
@@ -313,6 +350,8 @@ const getMessages = async (
       fetchGroupMemberList(params.group_id).then(() => fetchGroupMutedList(params.group_id))
       // noinspection ES6MissingAwait
       getEssenceMsgList()
+      // noinspection ES6MissingAwait
+      getGroupTodoMessage()
     }
 
     const response = await fetchMessages(params);
@@ -414,7 +453,7 @@ onMounted(() => {
     // 后端模式：如果有 self_id，附加到 wsUri 路径中
     let backendWsUri = wsUri
     if (props.account.self_id) {
-      backendWsUri = wsUri.replace(/\/frontend(?:\/|$)?/, `/frontend/${props.account.self_id}`)
+      backendWsUri = wsUri.replace(/\/frontend(?:\/|$)?/, `/frontend/${ props.account.self_id }`)
     }
     url = backendWsUri
   }
@@ -507,7 +546,7 @@ onMounted(() => {
 
       if (!target) {
         // 构造新联系人对象
-       getRecentContacts().unshift({
+        getRecentContacts().unshift({
           contact_id: newContact.contact_id,
           type: newContact.type,
         })

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, h, inject, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import MessageItem from './Message/MessageItem.vue'
 import {
   fetchGroupNotice,
@@ -21,10 +21,13 @@ import ImageViewer from "../../Common/Media/ImageViewer.vue";
 import { isEmptyObject, isObject, isString } from "@/scripts/types-util.js";
 import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../Common/Icons/QIcon.vue";
-import { getContactNameRef } from "@/scripts/user-info-util.js";
+import { getContactNameRef, isGroupOperator } from "@/scripts/user-info-util.js";
 import GroupSignView from "@/components/Destination/Chat/Group/GroupSignView.vue";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import ContactDetail from './ContactDetail/ContactDetail.vue'
+import { parseMessagePreview, parseNotice } from "@/scripts/parse-message.js";
+import { showErrorToast, showSuccessToast, showWarningToast } from "@/scripts/toast.js";
+import { showConfirmBox } from "@/scripts/popup-box-api.js";
 
 const activeContact = inject("activeContact")
 const selectContact = inject("selectContact")
@@ -294,9 +297,10 @@ provide("visibleMessages", () => {
   return scroller?.value?.visibleMessages
 })
 
-provide("scrollToMidwayMsg", (info) => {
+const scrollToMidwayMsg = (info) => {
   scroller?.value?.scrollToMidwayButton(info, true)
-})
+}
+provide("scrollToMidwayMsg", scrollToMidwayMsg)
 
 const quoteMessage = (msg, user) => {
   inputer?.value?.handleQuoteMessage(msg)
@@ -465,6 +469,66 @@ provide("selectedMessagesMap", selectedMessagesMap)
 const isMultiSelectMessagesMode = ref(false)
 provide("isMultiSelectMessagesMode", isMultiSelectMessagesMode)
 
+const selfId = inject("selfId")
+const groupSelfInfo = computed(() => groupUsers.value?.find(u => u.user_id === selfId.value))
+provide("currentGroupSelfInfo", groupSelfInfo)
+const groupSelfOperator = computed(() => isGroupOperator(groupSelfInfo.value))
+
+const groupTodoMessage = inject("groupTodoMessage")
+const groupTodoMessageTemp = computed(() => {
+  let msg = groupTodoMessage.value
+  if (!isObject(msg)) return null
+  msg = { ...msg }
+  msg.group_id = activeContact.value?.contact_id
+  msg.self_id = selfId
+  msg.message_type = 'group'
+  msg.post_type = 'message'
+  return msg
+})
+
+const groupTodoMessageEvent = ref(null)
+watch(groupTodoMessage, async (newVal, oldVal) => {
+  if (isObject(newVal) && newVal?.message_id !== oldVal?.message_id) {
+    groupTodoMessageEvent.value = null
+    groupTodoMessageEvent.value = await findMessage(newVal.message_id)
+    groupTodoVisible.value = true
+  }
+})
+
+const groupTodoHtml = computed(() => {
+  if (!isObject(groupTodoMessage.value)) return
+  return h(
+    "span",
+    parseMessagePreview(groupTodoMessageTemp.value)
+  );
+});
+
+const handleGroupTodoJump = e => {
+  if (!e.target?.closest(".chat-area-group-todo-banner .action")) {
+    if (!groupTodoMessageEvent.value) {
+      showWarningToast("正在获取消息中")
+      return
+    }
+    scrollToMidwayMsg(groupTodoMessageEvent.value)
+  }
+}
+
+const groupTodoVisible = ref(true)
+const removeGroupTodo = inject("removeGroupTodoMessage")
+
+const handleCancelGroupTodo = async () => {
+  if (await showConfirmBox("是否移除群待办？")) {
+    if (await removeGroupTodo()) {
+      showSuccessToast("移除成功")
+    } else {
+      showErrorToast("移除失败")
+    }
+  }
+}
+const handleHideGroupTodo = () => {
+  groupTodoVisible.value = false
+}
+
 // 联系人更改时获取名称
 watch(() => activeContact.value, (newVal, oldVal) => {
   if (newVal?.name) {
@@ -554,6 +618,16 @@ defineExpose({
       </span>
     </div>
 
+    <div class="chat-area-group-todo-banner" v-if="groupTodoMessage && groupTodoVisible" @click="handleGroupTodoJump">
+      <QIcon class="todo-icon" name="tick_square_24"/>
+      <span class="todo-text">
+        群待办 |
+        <groupTodoHtml/>
+      </span>
+      <QIcon class="action" name="recall_24" v-if="groupSelfOperator" @click="handleCancelGroupTodo"/>
+      <QIcon class="action" name="close_16" @click="handleHideGroupTodo"/>
+    </div>
+
     <ContactDetail
       ref="contactDetailRef"
       :show-contact-more="showContactMore"
@@ -634,6 +708,7 @@ defineExpose({
 <style scoped lang="scss">
 .chat-area {
   @extend %flex-column;
+  position: relative;
 }
 
 .chat-area-head-name {
@@ -720,6 +795,41 @@ defineExpose({
   @include hover-active-bg;
 }
 
+.chat-area-group-todo-banner {
+  position: absolute;
+  width: calc(100% - 20px);
+  height: 38px;
+  background-color: color-opacity($color-bg-card, 0.95);
+  backdrop-filter: blur(3px);
+  border-radius: $radius-card;
+  top: 56px;
+  left: 10px;
+  z-index: 1;
+  @extend %flex-row-center;
+  padding: 0 12px;
+  font-size: 14px;
+  cursor: pointer;
+
+  svg {
+    @include square-size(20px);
+
+    &.todo-icon {
+      color: $color-group-todo;
+      margin-right: 8px;
+    }
+
+    &.action {
+      margin-left: 4px;
+      color: $color-text-muted;
+    }
+  }
+
+  .todo-text {
+    @extend %text-ellipsis;
+    flex: 1;
+  }
+}
+
 @include mobile {
   .chat-area-head {
     height: 42px;
@@ -732,6 +842,10 @@ defineExpose({
 
   .chat-area-go-back-btn {
     display: block;
+  }
+
+  .chat-area-group-todo-banner {
+    top: 44px;
   }
 }
 </style>

@@ -3,16 +3,11 @@ import { ref, onUnmounted, computed, h, onMounted, inject, toRaw, watch } from '
 import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
-  checkResponseOK,
   fetchAddCustomFace,
   fetchChangeEssenceMsg,
-  fetchKickGroupUser,
   fetchRecallMessage,
   fetchRecordToText,
   fetchSendMessage,
-  fetchSetGroupAdmin,
-  fetchSetGroupMemberCard,
-  fetchSetGroupMute,
   fetchSetGroupTodo,
   fetchTranslateEnglish,
   getUserLogo,
@@ -44,6 +39,7 @@ import {
   hasGroupMemberOperatePermission, isGroupAdmin, isGroupOperator, isGroupOwner
 } from "@/scripts/user-info-util.js";
 import { createUserAvatarContextMenuItems } from "@/scripts/contact-content-menu.js";
+import { isSnowLuma } from "@/scripts/onebot-version-util.js";
 
 const props = defineProps({
   message: {
@@ -278,7 +274,12 @@ const isEnabledPTT = ref(false);
 const pttText = ref(undefined)
 const pttErrorText = ref(null)
 
+const groupTodoMessage = inject('groupTodoMessage')
+const removeGroupTodo = inject("removeGroupTodoMessage")
+
 const customMessageContextMenu = e => {
+  const contact = toRaw(activeContact.value)
+  const sameContact = () => checkSameContact(contact, activeContact.value)
   const self_info = currentGroupSelfInfo.value
   const sender_info = currentGroupUserInfo.value
   const isSelfAdmin = isGroupAdmin(self_info)
@@ -414,12 +415,23 @@ const customMessageContextMenu = e => {
       (!isRecalled.value || !isEssence.value)
     ),
     basicContextItem(
-      "设为待办",
-      () => handleApiRequest(
-        fetchSetGroupTodo(groupId.value, message_id),
-        "设置成功",
-        "设置待办失败"
-      ),
+      (!isSnowLuma() || !isGroupTodo.value) ? "设为待办" : "取消待办",
+      async () => {
+        const set = !isSnowLuma() || !isGroupTodo.value
+        if (set) {
+          await handleApiRequest(
+            fetchSetGroupTodo(groupId.value, message_id),
+            "设置成功",
+            "设置待办失败"
+          ) && sameContact() && (groupTodoMessage.value = messageEvent.value)
+        } else {
+          if (await removeGroupTodo()) {
+            showSuccessToast("移除成功")
+          } else {
+            showErrorToast("移除待办失败")
+          }
+        }
+      },
       "tick_square_24",
       isSelfAdmin && !isRecalled.value
     ),
@@ -451,6 +463,7 @@ const customMessageContextMenu = e => {
 const isRecalled = computed(() => objectHasKey(messageEvent.value, 'recall_operator'))
 
 const isEssence = computed(() => activeContact.value?.essence_real_seq_list?.includes(props.message.real_seq))
+const isGroupTodo = computed(() => groupTodoMessage.value?.message_id === props.message.message_id)
 
 const isSecretEmoji = computed(() => {
   const event = messageEvent.value;
@@ -527,7 +540,7 @@ const handleMessageDoubleClick = e => {
 }
 
 const currentGroupUserInfo = computed(() => findGroupUser(userId.value))
-const currentGroupSelfInfo = computed(() => findGroupUser(props.message.self_id))
+const currentGroupSelfInfo = inject("currentGroupSelfInfo")
 
 const findGroupUser = user_id => groupUsers.value?.find(user => user.user_id === user_id)
 
@@ -696,6 +709,10 @@ onUnmounted(() => {
           <img alt="" :src="qqAppImg('essence.bbb878de5480c01292f5.svg')">
           精华
         </div>
+        <div class="message-tip" v-if="isGroupTodo">
+          <QIcon name="tick_square_24" class="todo"/>
+          待办
+        </div>
         <div class="message-tip" v-if="isSecretEmoji">
           隐藏表情
         </div>
@@ -774,6 +791,10 @@ onUnmounted(() => {
     width: 12px;
     height: 12px;
     margin-right: 2px;
+
+    &.todo {
+      color: $color-group-todo;
+    }
   }
 }
 

@@ -1,0 +1,9 @@
+/// 透明度函数
+/// @param $color 颜色，可以是 #xxx / rgb() / var(--xxx)
+/// @param $opacity  0 全透明 ｜ 1 完全不透明
+@function color-opacity($color, $opacity) {
+  // 限制区间 0‑1
+  $opacity: clamp(0, $opacity, 1);
+  $percent: $opacity * 100%;
+  @return unquote("color-mix(in srgb, #{$color} #{$percent}, transparent)");
+}

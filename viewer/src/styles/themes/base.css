@@ -143,4 +143,7 @@
     --color-rank-gold-bg: #f5a623;
     --color-rank-silver-bg: #a8b0b8;
     --color-rank-bronze-bg: #cd7f32;
+
+    /* 群待办 */
+    --color-group-todo: #f9b210;
 }

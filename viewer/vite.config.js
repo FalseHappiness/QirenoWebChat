@@ -138,6 +138,7 @@ export default defineConfig(({ mode }) => {
 @use "@/styles/_variables.scss" as *;
 @use "@/styles/_mixins.scss" as *;
 @use "@/styles/_placeholders.scss" as *;
+@use "@/styles/_functions.scss" as *;
 $base-url: "${upOneLevelRelative(base)}";
 `
         }
