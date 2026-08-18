@@ -45,7 +45,7 @@ export default {
 <style scoped lang="scss">
 .contact-detail-sub-view {
   @extend %flex-column;
-  height: 101%;
+  height: calc(100% + 2px);
   width: 100%;
   overflow: hidden;
   position: absolute;
@@ -53,7 +53,7 @@ export default {
   transition: opacity 0.2s ease-in-out;
   opacity: 1;
   left: 0;
-  top: 0;
+  top: -1px;
   background-color: $color-bg-page;
   z-index: 10;
 }

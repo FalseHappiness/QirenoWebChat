@@ -1315,6 +1315,7 @@ async function fetchSetGroupAddOption(group_id, add_type, group_question, group_
   return await fetchAction("set_group_add_option", { group_id, add_type, group_question, group_answer })
 }
 
+// 需要布尔值
 async function fetchSetGroupMemberPermissions(group_id, allow_member_upload_album, allow_member_temporary_session, allow_member_create_group) {
   return await fetchAction("set_group_member_permissions", mergeNotEmpty({ group_id }, {
     allow_member_upload_album,
@@ -1381,6 +1382,11 @@ async function fetchGroupTodoMessage(group_id) {
   // NapCat get_group_info_ex todoSeq 可获取，暂时无法确定具体代表什么序列
   if (!gteSnowLuma(1, 14, 4)) return null
   return (await fetchActionData("get_group_todo_list", { group_id }))[0] || null
+}
+
+async function fetchGroupAdminSettings(group_id) {
+  if (!gteSnowLuma(1, 14, 11)) return undefined
+  return fetchActionData("get_group_admin_settings", { group_id })
 }
 
 export {
@@ -1481,4 +1487,5 @@ export {
   fetchSetGroupRobotAddOption,
   fetchGroupTodoMessage,
   fetchCancelGroupTodo,
+  fetchGroupAdminSettings,
 }

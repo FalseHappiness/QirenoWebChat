@@ -1,7 +1,8 @@
 <script setup>
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
 import {
   checkResponseOK, fetchDeleteFriend, fetchLeaveGroup,
+  fetchGroupAdminSettings,
   fetchSetGroupAllMuted, fetchSetGroupMemberCard,
   fetchSetGroupSearchOption,
   fetchSetGroupNewMemberHistoryVisibility,
@@ -9,7 +10,8 @@ import {
   getGroupLogo, getUserLogo
 } from "@/scripts/backend-api.js";
 import { qqAppImg } from "@/composables/useBase.js";
-import { isNumber, isString } from "@/scripts/types-util.js";
+import { isNumber, isString, isUndefined } from "@/scripts/types-util.js";
+import { gteSnowLuma } from "@/scripts/onebot-version-util.js";
 import { getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
 import { showConfirmBox } from "@/scripts/popup-box-api.js";
 import { showErrorToast, showSuccessToast } from "@/scripts/toast.js";
@@ -186,9 +188,40 @@ const allowGroupMemberTempSession = ref(null)
 const allowGroupMemberCreateGroup = ref(null)
 const groupNewMemberHistoryVisible = ref(null)
 
+// SnowLuma 1.14.11+ 相关
+const isSnowLumaAdmin = computed(() => gteSnowLuma(1, 14, 11))
+const adminSettingsLoaded = ref(false)
+const skipSettingsWatcher = ref(false)
+
+// 批量操作4个管理设置 refs
+const adminRefs = [allowGroupMemberUploadAlbum, allowGroupMemberTempSession, allowGroupMemberCreateGroup, groupNewMemberHistoryVisible]
+const adminApiKeys = ['allow_member_upload_album', 'allow_member_temporary_session', 'allow_member_create_group', 'new_member_history_visible']
+
+function resetAdminSettings(value) {
+  adminRefs.forEach(r => {
+    r.value = value
+  })
+}
+
+function applyAdminSettings(settings) {
+  if (!settings) return
+  adminRefs.forEach((r, i) => {
+    r.value = settings[adminApiKeys[i]]
+  })
+  // 反映射 no_finger_open / no_code_finger_open → search_type
+  // 0: 不允许被搜索, 1: 通过群号搜索, 2: 通过群号及关键词搜索
+  if (settings.no_finger_open === 0 && settings.no_code_finger_open === 0) {
+    groupSearchOptionModel.value = 2
+  } else if (settings.no_finger_open === 1 && settings.no_code_finger_open === 0) {
+    groupSearchOptionModel.value = 1
+  } else {
+    groupSearchOptionModel.value = 0
+  }
+}
+
 function handleSettingChange(requestFn) {
   return async (val) => {
-    if (val === null) return
+    if (isUndefined(val) || val === null) return
     try {
       const result = await requestFn(val)
       if (!checkResponseOK(result)) {
@@ -202,25 +235,66 @@ function handleSettingChange(requestFn) {
   }
 }
 
+function createSettingsWatcher(requestFn) {
+  return handleSettingChange(val => {
+    if (skipSettingsWatcher.value) return { status: 'ok' }
+    return requestFn(val)
+  })
+}
+
 watch(groupSearchOptionModel, handleSettingChange(
-  val => fetchSetGroupSearchOption(contactId.value, val)
+  val => {
+    if (skipSettingsWatcher.value) return { status: 'ok' }
+    return fetchSetGroupSearchOption(contactId.value, val)
+  }
 ))
 
-watch(allowGroupMemberUploadAlbum, handleSettingChange(
+watch(allowGroupMemberUploadAlbum, createSettingsWatcher(
   val => fetchSetGroupMemberPermissions(contactId.value, val, allowGroupMemberTempSession.value, allowGroupMemberCreateGroup.value)
 ))
 
-watch(allowGroupMemberTempSession, handleSettingChange(
+watch(allowGroupMemberTempSession, createSettingsWatcher(
   val => fetchSetGroupMemberPermissions(contactId.value, allowGroupMemberUploadAlbum.value, val, allowGroupMemberCreateGroup.value)
 ))
 
-watch(allowGroupMemberCreateGroup, handleSettingChange(
+watch(allowGroupMemberCreateGroup, createSettingsWatcher(
   val => fetchSetGroupMemberPermissions(contactId.value, allowGroupMemberUploadAlbum.value, allowGroupMemberTempSession.value, val)
 ))
 
-watch(groupNewMemberHistoryVisible, handleSettingChange(
+watch(groupNewMemberHistoryVisible, createSettingsWatcher(
   val => fetchSetGroupNewMemberHistoryVisibility(contactId.value, !!val)
 ))
+
+// 存储完整的管理设置数据，用于传递给子组件
+const groupAdminSettingsData = ref(null)
+
+// SnowLuma 1.14.11+ 通过 get_group_admin_settings 获取群管理设置
+watch([contactId, selfGroupOperator], async ([groupId, isOperator]) => {
+  if (isOperator && groupId && isSnowLumaAdmin.value) {
+    adminSettingsLoaded.value = false
+    skipSettingsWatcher.value = true
+    resetAdminSettings(undefined)
+    groupAdminSettingsData.value = null
+    try {
+      const settings = await fetchGroupAdminSettings(groupId)
+      groupAdminSettingsData.value = settings
+      applyAdminSettings(settings)
+      adminSettingsLoaded.value = true
+    } catch (e) {
+      console.error('Fetch group admin settings error:', e)
+      resetAdminSettings(undefined)
+    } finally {
+      await nextTick()
+      skipSettingsWatcher.value = false
+    }
+  } else {
+    adminSettingsLoaded.value = false
+    skipSettingsWatcher.value = true
+    resetAdminSettings(null)
+    await nextTick()
+    skipSettingsWatcher.value = false
+  }
+}, { immediate: true })
 
 const contactDetailRef = ref(null)
 defineExpose({ contactDetailRef })
@@ -239,6 +313,7 @@ defineExpose({ contactDetailRef })
     <GroupAddOption
       v-if="showGroupAddOptionView && isGroup"
       :group_id="contactId"
+      :admin-settings-data="groupAdminSettingsData"
       @close="() => changeShowGroupAddOption(false)"
     />
     <CustomScrollBar class="contact-detail-scroller">
@@ -339,35 +414,41 @@ defineExpose({ contactDetailRef })
           v-if="selfGroupOperator"
           class="contact-detail-area with-title area-container"
           data-title="开放设置">
-          <div class="contact-detail-container-area cursor-pointer" @click="changeShowGroupAddOption()">
-            加群方式
-            <EnterArrow/>
-          </div>
-          <hr>
-          <div class="contact-detail-container-area">
-            <div class="group-search-text">
-              群搜索方式
-              <span class="text-muted">需要先设置群名称</span>
+          <template v-if="!isSnowLumaAdmin || adminSettingsLoaded">
+            <div class="contact-detail-container-area cursor-pointer" @click="changeShowGroupAddOption()">
+              加群方式
+              <EnterArrow/>
             </div>
-            <ASelect v-model:value="groupSearchOptionModel" size="small">
-              <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="0">不允许被搜索</ASelectOption>
-              <ASelectOption :value="1">通过群号搜索</ASelectOption>
-              <ASelectOption :value="2">通过群号及关键词搜索</ASelectOption>
-            </ASelect>
+            <hr>
+            <div class="contact-detail-container-area">
+              <div class="group-search-text">
+                群搜索方式
+                <span class="text-muted">需要先设置群名称</span>
+              </div>
+              <ASelect v-model:value="groupSearchOptionModel" size="small">
+                <ASelectOption :value="null" v-if="!isSnowLumaAdmin">不修改</ASelectOption>
+                <ASelectOption :value="0">不允许被搜索</ASelectOption>
+                <ASelectOption :value="1">通过群号搜索</ASelectOption>
+                <ASelectOption :value="2">通过群号及关键词搜索</ASelectOption>
+              </ASelect>
+            </div>
+          </template>
+          <div v-if="!adminSettingsLoaded" class="contact-detail-container-area text-muted">
+            加载中…
           </div>
         </div>
 
+        <!-- 非 SnowLuma 或版本低于1.14.11：使用 ASelect 带"不修改"选项 -->
         <div
-          v-if="selfGroupOperator"
+          v-if="selfGroupOperator && !isSnowLumaAdmin"
           class="contact-detail-area with-title area-container member-permissions"
           data-title="成员权限">
           <div class="contact-detail-container-area">
             上传相册
             <ASelect v-model:value="allowGroupMemberUploadAlbum" size="small">
               <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="0">不允许</ASelectOption>
-              <ASelectOption :value="1">允许</ASelectOption>
+              <ASelectOption :value="false">不允许</ASelectOption>
+              <ASelectOption :value="true">允许</ASelectOption>
             </ASelect>
           </div>
           <hr>
@@ -375,8 +456,8 @@ defineExpose({ contactDetailRef })
             发起临时会话
             <ASelect v-model:value="allowGroupMemberTempSession" size="small">
               <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="0">不允许</ASelectOption>
-              <ASelectOption :value="1">允许</ASelectOption>
+              <ASelectOption :value="false">不允许</ASelectOption>
+              <ASelectOption :value="true">允许</ASelectOption>
             </ASelect>
           </div>
           <hr>
@@ -384,8 +465,8 @@ defineExpose({ contactDetailRef })
             发起新的群聊
             <ASelect v-model:value="allowGroupMemberCreateGroup" size="small">
               <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="0">不允许</ASelectOption>
-              <ASelectOption :value="1">允许</ASelectOption>
+              <ASelectOption :value="false">不允许</ASelectOption>
+              <ASelectOption :value="true">允许</ASelectOption>
             </ASelect>
           </div>
           <hr>
@@ -393,9 +474,44 @@ defineExpose({ contactDetailRef })
             加群用户默认可见聊天记录
             <ASelect v-model:value="groupNewMemberHistoryVisible" size="small">
               <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="0">否</ASelectOption>
-              <ASelectOption :value="1">是</ASelectOption>
+              <ASelectOption :value="false">否</ASelectOption>
+              <ASelectOption :value="true">是</ASelectOption>
             </ASelect>
+          </div>
+        </div>
+
+        <!-- SnowLuma 1.14.11+：通过 get_group_admin_settings 获取设置，用 ASwitch，数据加载后才显示 -->
+        <div
+          v-if="selfGroupOperator && isSnowLumaAdmin"
+          class="contact-detail-area with-title area-container member-permissions"
+          data-title="成员权限">
+          <template v-if="adminSettingsLoaded">
+            <div
+              class="contact-detail-container-area">
+              上传相册
+              <ASwitch v-model:checked="allowGroupMemberUploadAlbum" size="small"/>
+            </div>
+            <hr>
+            <div
+              class="contact-detail-container-area">
+              发起临时会话
+              <ASwitch v-model:checked="allowGroupMemberTempSession" size="small"/>
+            </div>
+            <hr>
+            <div
+              class="contact-detail-container-area">
+              发起新的群聊
+              <ASwitch v-model:checked="allowGroupMemberCreateGroup" size="small"/>
+            </div>
+            <hr>
+            <div
+              class="contact-detail-container-area">
+              加群用户默认可见聊天记录
+              <ASwitch v-model:checked="groupNewMemberHistoryVisible" size="small"/>
+            </div>
+          </template>
+          <div v-if="!adminSettingsLoaded" class="contact-detail-container-area text-muted">
+            加载中…
           </div>
         </div>
 

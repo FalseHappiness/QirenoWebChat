@@ -618,7 +618,7 @@ defineExpose({
       </span>
     </div>
 
-    <Transition name="todo-banner">
+    <Transition name="todo-banner" v-if="activeContact">
       <div class="chat-area-group-todo-banner" v-if="groupTodoMessage && groupTodoVisible" @click="handleGroupTodoJump">
         <QIcon class="todo-icon" name="tick_square_24"/>
         <span class="todo-text">
