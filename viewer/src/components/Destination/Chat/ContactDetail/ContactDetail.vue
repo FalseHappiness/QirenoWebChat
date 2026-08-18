@@ -663,6 +663,8 @@ defineExpose({ contactDetailRef })
           padding-left: 0;
         }
       }
+
+      margin: 3px 0;
     }
 
     &-input {
