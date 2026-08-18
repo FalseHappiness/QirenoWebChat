@@ -5,10 +5,11 @@ import { Emitter } from "@/composables/useEventBus.js";
 import { qqFileIcon } from "@/composables/useBase.js";
 import { getFileIcon } from "@/components/Destination/Chat/Message/Types/FileMessage.vue";
 import LoadingSpinner from "@/components/Common/Widgets/LoadingSpinner.vue";
+import SimpleDest from "@/components/Destination/SimpleDest.vue";
 
 export default {
   name: "CollectionView",
-  components: { LoadingSpinner },
+  components: { SimpleDest, LoadingSpinner },
   data() {
     return {
       activeCategory: null,
@@ -112,7 +113,7 @@ export default {
 </script>
 
 <template>
-  <div class="collection-view">
+  <SimpleDest class="collection-view" title="收藏">
     <template v-if="activeCategory">
       <!-- 加载状态 -->
       <div v-if="loading" class="collection-view-loading">
@@ -215,7 +216,7 @@ export default {
     <h3 v-else class="size-100 flex-center-children text-muted font-size-100">
       请选择收藏分类
     </h3>
-  </div>
+  </SimpleDest>
 </template>
 
 <style scoped lang="scss">
