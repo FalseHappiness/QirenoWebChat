@@ -696,8 +696,24 @@ const fetchForwardSingleMsg = async (message_id, contact) => {
 }
 
 const fetchGroupNotice = async (group_id) => {
-  return fetchActionData('_get_group_notice', { group_id })
+  const res = await fetchActionData('_get_group_notice', { group_id })
+  // 如果不是数组直接原样返回
+  if (!isArray(res)) return res
+
+  return [...res].sort((a, b) => {
+    // pinned=1 优先排在前面
+    const aPinned = Number(a.pinned) === 1 ? 1 : 0
+    const bPinned = Number(b.pinned) === 1 ? 1 : 0
+
+    if (aPinned !== bPinned) {
+      // 1 - 0，置顶在前
+      return bPinned - aPinned
+    }
+    // 同组内 publish_time 新到旧（大时间在前）
+    return new Date(b.publish_time || 0) - new Date(a.publish_time || 0)
+  })
 }
+
 
 const fetchDeleteGroupNotice = async (group_id, notice_id) => {
   return fetchAction('_del_group_notice', { group_id, notice_id })
@@ -1389,6 +1405,20 @@ async function fetchGroupAdminSettings(group_id) {
   return fetchActionData("get_group_admin_settings", { group_id })
 }
 
+// 内容 图片路径 使用弹窗展示公告 需群成员确认收到 设为置顶 发送给新成员 引导新成员修改群昵称
+async function fetchSendGroupNotice(group_id, content, image, show_popup, confirm_required, pinned, send_to_new_members, is_show_edit_card) {
+  return fetchAction("_send_group_notice", {
+    group_id,
+    content,
+    image,
+    tip_window_type: show_popup ? 0 : 1,
+    confirm_required: confirm_required ? 1 : 0,
+    pinned: pinned ? 1 : 0,
+    type: send_to_new_members ? 20 : 1
+    , is_show_edit_card: is_show_edit_card ? 1 : 0
+  })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1488,4 +1518,5 @@ export {
   fetchGroupTodoMessage,
   fetchCancelGroupTodo,
   fetchGroupAdminSettings,
+  fetchSendGroupNotice,
 }

@@ -341,6 +341,7 @@ const latestGroupNoticeMsg = computed(() => {
 const getGroupNotice = async () => {
   groupNotifications.value = await fetchGroupNotice(activeContact.value.contact_id);
 }
+provide("updateGroupNotice", getGroupNotice)
 
 const showContactInfo = inject("showContactInfo")
 
@@ -563,6 +564,7 @@ defineExpose({
       v-if="showGroupAnnounceViewer && isGroup"
       :group_id="activeContact?.contact_id"
       :notices="groupNotifications || []"
+      :isOperator="groupSelfOperator"
       @close="() => changeShowGroupAnnounce(false)"
       @update-group-notice="getGroupNotice"
     />
@@ -836,9 +838,11 @@ defineExpose({
 .todo-banner-enter-active {
   animation: todo-banner-in 0.3s ease-out;
 }
+
 .todo-banner-leave-active {
   animation: todo-banner-out 0.25s ease-in forwards;
 }
+
 @keyframes todo-banner-in {
   from {
     opacity: 0;
@@ -849,6 +853,7 @@ defineExpose({
     transform: translateY(0);
   }
 }
+
 @keyframes todo-banner-out {
   from {
     opacity: 1;

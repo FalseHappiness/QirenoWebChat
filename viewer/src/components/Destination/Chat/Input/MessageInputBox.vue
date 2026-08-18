@@ -24,6 +24,7 @@ import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue";
 import { showErrorToast, showInfoToast, showSuccessToast, showToast } from "@/scripts/toast.js";
 import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
+import GroupNoticeEditor from "./GroupNoticeEditor.vue";
 import {
   isArray,
   isBoolean,
@@ -54,6 +55,7 @@ export default defineComponent({
     MultiSelectPanel,
     QIcon,
     GroupAiRecordEditor,
+    GroupNoticeEditor,
     CustomScrollBar,
     ContactsPicker,
     FilesConfirm,
@@ -93,6 +95,7 @@ export default defineComponent({
         forwardType: null
       },
       showFilesUploadTasks: false,
+      showGroupNoticeEditor: false,
       remainGroupAtAll: undefined,
       isShowRecordPanel: false,
       pendingUploadInfo: {
@@ -130,6 +133,7 @@ export default defineComponent({
     Emitter.on('show-files-upload-tasks', this.handleFilesUploadTasksViewer)
     Emitter.on('select-upload-group-images', this.handleSelectUploadGroupImages)
     Emitter.on('select-contacts-send-msg', this.handleSelectContactsSendMsg)
+    Emitter.on('show-group-notice-editor', this.handleShowGroupNoticeEditor)
   },
   beforeDestroy() {
     this.handleUnmounted()
@@ -153,6 +157,28 @@ export default defineComponent({
       Emitter.off('show-files-upload-tasks')
       Emitter.off('select-upload-group-images')
       Emitter.off('select-contacts-send-msg')
+      Emitter.off('show-group-notice-editor')
+    },
+
+    handleShowGroupNoticeEditor() {
+      if (this.activeContact?.type === 'group') {
+        this.showGroupNoticeEditor = true
+      }
+    },
+
+    handleAddNoticeImage() {
+      if (!this.showGroupNoticeEditor) return
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (file) {
+          const converted = await this.convertImageToSafeType(file)
+          this.$refs.groupNoticeEditorRef?.setNoticeImage(converted)
+        }
+      }
+      input.click()
     },
 
     // 兼容代理方法：调用 composable 中的 history 方法
@@ -265,6 +291,7 @@ export default defineComponent({
           }
         }
         const isCustomFacePanel = closest(".message-input-expression-box")
+        const isGroupNoticeEditor = closest(".simple-window-popup")
         return {
           target,
           isEditor,
@@ -276,9 +303,10 @@ export default defineComponent({
           isCustomFacePanel,
           isFlashFile,
           isImage,
+          isGroupNoticeEditor,
           shouldHandle: isEditor || isFile || isRecord ||
             isGroupFilesViewer || isGroupAlbumViewer || isCustomFacePanel ||
-            isFlashFile || isImage,
+            isFlashFile || isImage || isGroupNoticeEditor,
         }
       }
       return {
@@ -301,11 +329,19 @@ export default defineComponent({
         isEditor, isFile, isRecord, isGroupFilesViewer,
         isGroupAlbumViewer, groupAlbumAttachInfo, shouldHandle,
         isCustomFacePanel,
-        isFlashFile, isImage,
+        isFlashFile, isImage, isGroupNoticeEditor,
       } = this.parseDragTarget(e)
       if (shouldHandle) {
         e.preventDefault();
-        if (isEditor) {
+        if (isGroupNoticeEditor && this.showGroupNoticeEditor) {
+          const files = e.dataTransfer?.files
+          if (files?.length) {
+            const file = files[0]
+            if (file.type.startsWith('image/')) {
+              this.$refs.groupNoticeEditorRef?.setNoticeImage(file)
+            }
+          }
+        } else if (isEditor) {
           await this.handleDrop(e);
         } else if (isFile) {
           await this.handleDropFiles(e, 'file')
@@ -2382,6 +2418,14 @@ export default defineComponent({
     <ContactsPicker v-if="pendingForwardInfo.confirming"
                     :on-confirm="handleContactsPickerConfirm"
                     :on-cancel="handleContactsPickerCancel"/>
+    <GroupNoticeEditor
+      ref="groupNoticeEditorRef"
+      v-if="activeContact"
+      :visible="showGroupNoticeEditor"
+      :group-id="activeContact.contact_id"
+      @close="showGroupNoticeEditor = false"
+      @add-notice-image="handleAddNoticeImage"
+    />
     <Tooltip v-if="isGroup && atInputPosition && filteredAtGroupUsers?.length" :tip-position="atInputPosition"
              placement="tr">
       <template #content>

@@ -54,24 +54,22 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="simple-window-popup">
-    <SimplePopUp ref="popUp"
-                 @cancel="close"
-                 @confirm="close"
-                 :class="[ 'simple-window-popup-container', fillMobile ? 'fill-mobile' : '' ]"
-                 :style="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }">
-      <div class="window-title">
-        {{ title }}
-        <QIcon name="close_fill_24" class="window-close-btn cannot-drag"
-               @click="$refs.popUp.confirm(false)"/>
-      </div>
-      <slot/>
-    </SimplePopUp>
-  </div>
+  <SimplePopUp ref="popUp"
+               @cancel="close"
+               @confirm="close"
+               :class="[ 'simple-window-popup', fillMobile ? 'fill-mobile' : '' ]"
+               :style="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }">
+    <div class="window-title">
+      {{ title }}
+      <QIcon name="close_fill_24" class="window-close-btn cannot-drag"
+             @click="$refs.popUp.confirm(false)"/>
+    </div>
+    <slot/>
+  </SimplePopUp>
 </template>
 
 <style scoped lang="scss">
-.simple-window-popup-container {
+.simple-window-popup {
   width: var(--width);
   height: var(--height);
   padding: 4px 2px;

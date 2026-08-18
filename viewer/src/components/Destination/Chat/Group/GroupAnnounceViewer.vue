@@ -9,6 +9,7 @@ import QIcon from "../../../Common/Icons/QIcon.vue";
 import { CacheNameKey, fetchDisplayName } from "@/scripts/user-info-util.js";
 import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 import { showConfirmBox } from "@/scripts/popup-box-api.js";
+import { Emitter } from "@/composables/useEventBus.js";
 
 export default defineComponent({
   name: "GroupAnnounceViewer",
@@ -22,6 +23,10 @@ export default defineComponent({
       type: Array,
       default: () => []
     },
+    isOperator: {
+      type: Boolean,
+      default: false
+    }
   },
   emits: ["update-group-notice"],
   data() {
@@ -73,6 +78,12 @@ export default defineComponent({
     },
     updateGroupNotice() {
       this.$emit('update-group-notice')
+    },
+    refreshView() {
+      this.updateGroupNotice()
+    },
+    openNoticeEditor() {
+      Emitter.emit('show-group-notice-editor')
     }
   },
 })
@@ -84,16 +95,21 @@ export default defineComponent({
     :width="520"
     :height="540"
     title="群公告">
+    <div class="gav-controls">
+      <QIcon class="gav-control-btn-refresh" name="refresh_24" @click="refreshView"/>
+      <div class="gav-control-btn-publish" v-if="isOperator" @click="openNoticeEditor">发布新公告</div>
+    </div>
     <CustomScrollBar class="group-announce-viewer-list">
       <div class="group-announce-viewer-notice" v-for="(notice) in notices" :key="notice.notice_id">
         <div class="group-announce-viewer-notice-header">
-              <span class="group-announce-viewer-notice-name overflow-ellipsis">{{
-                  getCachedName(notice.sender_id)
-                }}</span>
+                <span class="group-announce-viewer-notice-name overflow-ellipsis">{{
+                    getCachedName(notice.sender_id)
+                  }}</span>
           <span class="group-announce-viewer-notice-time">{{ formatTime(notice.publish_time) }}</span>
           <span class="group-announce-viewer-notice-pinned" v-if="notice.pinned">置顶</span>
           <QIcon class="group-announce-viewer-notice-icon"
                  @click="handleDeleteNotice(notice.notice_id)"
+                 v-if="isOperator"
                  name="delete_new_24"/>
         </div>
         <div class="group-announce-viewer-notice-content" v-html="renderText(notice.message.text)">
@@ -117,9 +133,35 @@ export default defineComponent({
 </template>
 
 <style scoped lang="scss">
+.group-announce-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gav-controls {
+  @extend %flex-center;
+  justify-content: flex-end;
+  padding: 5px 4px;
+}
+
+.gav-control-btn-refresh {
+  @include btn-svg();
+  margin: 0 4px;
+}
+
+.gav-control-btn-publish {
+  @include btn-base;
+  @include btn-primary;
+  margin: 0 4px;
+  padding: 5px 10px;
+  border-radius: $radius-btn;
+  font-size: 12px;
+}
+
 .group-announce-viewer-list {
   flex: 1;
-  padding: 10px 10px 0 10px;
+  padding: 0 10px;
   overflow: auto;
 }
 
@@ -159,7 +201,7 @@ export default defineComponent({
 .group-announce-viewer-notice-icon {
   margin: 0 5px;
   color: $color-text-muted;
-  @include square-size(20px);
+  @include square-size(16px);
 
   &:hover {
     color: $color-text-primary;
@@ -196,16 +238,5 @@ export default defineComponent({
   color: $color-text-muted;
   padding: 40px 0;
   font-size: 14px;
-}
-</style>
-
-<style module lang="scss">
-.group-announce-viewer-container {
-  width: 520px;
-  height: 540px;
-  padding: 4px 2px;
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
-  background-color: $color-bg-page;
 }
 </style>

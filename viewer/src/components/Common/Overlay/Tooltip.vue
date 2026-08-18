@@ -484,7 +484,7 @@ export default {
             target !== targetEl &&
             !targetEl.contains(target) &&
             !target?.closest(".mx-context-menu") &&
-            !target?.closest(".popup-confirm-box-container, .popup-prompt-box-container")
+            !target?.closest(".simple-pop-up-mask")
           ) {
             this.show = false
           }
