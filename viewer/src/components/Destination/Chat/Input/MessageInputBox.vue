@@ -2490,7 +2490,7 @@ export default defineComponent({
               :distance-from-target="6"
               z-index="1"
               :always-exists="true"
-              min-left="(window.innerWidth <= 570) ? 5px : (var(--sidebar-width) + 5px)"
+              min-left="Math.max((window.innerWidth <= 570) ? 5px : (var(--sidebar-width) + 5px), 0)"
               trigger="toggle"
             >
               <template #content>

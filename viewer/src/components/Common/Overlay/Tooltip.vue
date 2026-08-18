@@ -76,7 +76,7 @@ export default {
     },
     maxLeft: {
       type: [Number, String],
-      default: "max - 5px"
+      default: "Math.max(max - 5px, 0)"
     },
     minTop: {
       type: [Number, String],
@@ -84,7 +84,7 @@ export default {
     },
     maxTop: {
       type: [Number, String],
-      default: "max - 5px"
+      default: "Math.max(max - 5px, 0)"
     },
     zIndex: {
       type: [Number, String],
@@ -231,11 +231,6 @@ export default {
                 .trim();
               return parseLimitValue(computedValue);
             })
-            // 处理max
-            .replace(/max/g, type === 'left' ? maxLeftValue : maxTopValue)
-            // 处理popover尺寸
-            .replace(/popoverWidth/g, popoverWidth)
-            .replace(/popoverHeight/g, popoverHeight)
             // 处理纯数字+px
             .replaceAll("px", "")
             // 处理百分数
@@ -249,7 +244,14 @@ export default {
             // 计算表达式
             try {
               // 安全评估表达式
-              return new Function(`return ${value}`)();
+              return new Function(`
+// 处理max
+const max = ${ type === 'left' ? maxLeftValue : maxTopValue }
+// 处理popover尺寸
+const popoverWidth = ${ popoverWidth }
+const popoverHeight = ${ popoverHeight }
+return ${ value }
+              `)();
             } catch (e) {
               console.error('Error evaluating limit expression:', e);
               return null;
@@ -290,8 +292,8 @@ export default {
         this.position.top = Math.min(this.position.top, maxTop);
       }
 
-      popover.style.top = `${this.position.top}px`;
-      popover.style.left = `${this.position.left}px`;
+      popover.style.top = `${ this.position.top }px`;
+      popover.style.left = `${ this.position.left }px`;
     },
     getTargetElement() {
       if (this.useTargetSlot) {

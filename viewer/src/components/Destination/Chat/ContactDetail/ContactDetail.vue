@@ -423,7 +423,7 @@ defineExpose({ contactDetailRef })
             <div class="contact-detail-container-area">
               <div class="group-search-text">
                 群搜索方式
-                <span class="text-muted">需要先设置群名称</span>
+                <span class="text-muted">需先设置群名称及头像</span>
               </div>
               <ASelect v-model:value="groupSearchOptionModel" size="small">
                 <ASelectOption :value="null" v-if="!isSnowLumaAdmin">不修改</ASelectOption>
