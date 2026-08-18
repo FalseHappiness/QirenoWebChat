@@ -46,7 +46,7 @@ export default defineComponent({
 
 <template>
   <div class="files-confirm">
-    <SimplePopUp ref="popUp" :on-confirm="onConfirm" :on-cancel="onCancel">
+    <SimplePopUp ref="popUp" @confirm="onConfirm" @cancel="onCancel">
       <div class="files-confirm-title">
         发送<span v-if="typeName">{{ ` ${typeName} ` }}</span>给 {{ contactName }}
         <QIcon name="close_fill_24" class="files-confirm-close-btn cannot-drag"

@@ -41,8 +41,8 @@ export default defineComponent({
 
 <template>
   <div class="confirm-box">
-    <SimplePopUp :on-confirm="onConfirm"
-                 :on-cancel="onCancel"
+    <SimplePopUp @confirm="onConfirm"
+                 @cancel="onCancel"
                  class="popup-confirm-box-container"
                  ref="popUp">
       <div class="confirm-box-header">

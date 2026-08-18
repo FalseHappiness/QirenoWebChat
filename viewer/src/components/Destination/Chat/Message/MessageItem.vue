@@ -22,7 +22,7 @@ import {
   vCustomMenu
 } from "@/directives/context-menu.js";
 import { vDoubleClick } from '@/directives/double-click-directive.js';
-import { formatRelativeTime, getElementCenter, hasEnglish, parseJSON } from "@/scripts/util.js";
+import { formatRelativeTime, hasEnglish, parseJSON } from "@/scripts/util.js";
 import { showErrorToast, showSuccessToast, showToast } from "@/scripts/toast.js";
 import { Emitter } from "@/composables/useEventBus.js";
 import { qqAppImg } from "@/composables/useBase.js";
@@ -30,16 +30,15 @@ import LoadingSpinner from "../../../Common/Widgets/LoadingSpinner.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { isFunction, isString, objectHasKey } from "@/scripts/types-util.js";
 import { checkSameContact } from "@/scripts/contacts-util.js";
-import { showConfirmBox, showPromptBox } from "@/scripts/popup-box-api.js";
 import {
   CacheNameKey,
   fetchDisplayName,
-  getCacheName, getGroupMemberListCache,
+  getCacheName,
   getUserAvatarFrameCache,
-  hasGroupMemberOperatePermission, isGroupAdmin, isGroupOperator, isGroupOwner
+  isGroupAdmin, isGroupOperator, isGroupOwner
 } from "@/scripts/user-info-util.js";
 import { createUserAvatarContextMenuItems } from "@/scripts/contact-content-menu.js";
-import { isSnowLuma } from "@/scripts/onebot-version-util.js";
+import { gteSnowLuma } from "@/scripts/onebot-version-util.js";
 
 const props = defineProps({
   message: {
@@ -295,6 +294,7 @@ const customMessageContextMenu = e => {
     videoSrc = videoContainer.dataset.src
   }
   const mediaSrc = imageSrc || videoSrc
+  const isGroupTodoSet = !gteSnowLuma(1, 14, 4) || !isGroupTodo.value
   return formatBasicContextItems(
     basicContextItem(
       '英译中',
@@ -415,10 +415,9 @@ const customMessageContextMenu = e => {
       (!isRecalled.value || !isEssence.value)
     ),
     basicContextItem(
-      (!isSnowLuma() || !isGroupTodo.value) ? "设为待办" : "取消待办",
+      isGroupTodoSet ? "设为待办" : "取消待办",
       async () => {
-        const set = !isSnowLuma() || !isGroupTodo.value
-        if (set) {
+        if (isGroupTodoSet) {
           await handleApiRequest(
             fetchSetGroupTodo(groupId.value, message_id),
             "设置成功",

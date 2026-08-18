@@ -58,8 +58,8 @@ export default defineComponent({
 
 <template>
   <div class="prompt-box">
-    <SimplePopUp :on-confirm="onConfirm"
-                 :on-cancel="onCancel"
+    <SimplePopUp @confirm="onConfirm"
+                 @cancel="onCancel"
                  class="popup-prompt-box-container"
                  ref="popUp">
       <div class="prompt-box-header">

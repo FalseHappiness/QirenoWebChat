@@ -306,7 +306,7 @@
 // ============================================================
 
 // ---- 弹窗遮罩层 ----
-@mixin popup-mask {
+@mixin popup-mask($set-animation: true) {
   position: fixed;
   top: 0;
   left: 0;
@@ -314,8 +314,10 @@
   height: 100%;
   background-color: $color-bg-mask;
   opacity: 1;
-  --anim-time: 0.3s;
-  animation: simplePopUpMaskIn var(--anim-time) ease-in-out;
+  @if $set-animation {
+    --anim-time: 0.3s;
+    animation: simplePopUpMaskIn var(--anim-time) ease-in-out;
+  }
 }
 
 @keyframes simplePopUpMaskIn {
@@ -328,7 +330,7 @@
 }
 
 // ---- 弹窗容器 ----
-@mixin popup-container($width: 360px, $height: 380px) {
+@mixin popup-container($width: 360px, $height: 380px, $set-animation: true) {
   width: $width;
   height: $height;
   position: fixed;
@@ -342,8 +344,10 @@
   flex-direction: column;
   flex-wrap: nowrap;
   padding: 10px 15px 15px 15px;
-  --anim-time: 0.3s;
-  animation: simplePopUpContainerIn var(--anim-time) ease-in-out;
+  @if $set-animation {
+    --anim-time: 0.3s;
+    animation: simplePopUpContainerIn var(--anim-time) ease-in-out;
+  }
 }
 
 @keyframes simplePopUpContainerIn {

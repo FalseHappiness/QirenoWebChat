@@ -72,8 +72,8 @@ export default defineComponent({
 
 <template>
   <div class="contacts-picker">
-    <SimplePopUp :on-confirm="onConfirm"
-                 :on-cancel="onCancel"
+    <SimplePopUp @confirm="onConfirm"
+                 @cancel="onCancel"
                  class="contacts-picker-container"
                  ref="popUp">
       <div class="contacts-picker-contacts-area">

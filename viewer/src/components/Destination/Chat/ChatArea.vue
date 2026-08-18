@@ -618,15 +618,17 @@ defineExpose({
       </span>
     </div>
 
-    <div class="chat-area-group-todo-banner" v-if="groupTodoMessage && groupTodoVisible" @click="handleGroupTodoJump">
-      <QIcon class="todo-icon" name="tick_square_24"/>
-      <span class="todo-text">
-        群待办 |
-        <groupTodoHtml/>
-      </span>
-      <QIcon class="action" name="recall_24" v-if="groupSelfOperator" @click="handleCancelGroupTodo"/>
-      <QIcon class="action" name="close_16" @click="handleHideGroupTodo"/>
-    </div>
+    <Transition name="todo-banner">
+      <div class="chat-area-group-todo-banner" v-if="groupTodoMessage && groupTodoVisible" @click="handleGroupTodoJump">
+        <QIcon class="todo-icon" name="tick_square_24"/>
+        <span class="todo-text">
+          群待办 |
+          <groupTodoHtml/>
+        </span>
+        <QIcon class="action" name="recall_24" v-if="groupSelfOperator" @click="handleCancelGroupTodo"/>
+        <QIcon class="action" name="close_16" @click="handleHideGroupTodo"/>
+      </div>
+    </Transition>
 
     <ContactDetail
       ref="contactDetailRef"
@@ -827,6 +829,34 @@ defineExpose({
   .todo-text {
     @extend %text-ellipsis;
     flex: 1;
+  }
+}
+
+/* 群待办横幅动画 */
+.todo-banner-enter-active {
+  animation: todo-banner-in 0.3s ease-out;
+}
+.todo-banner-leave-active {
+  animation: todo-banner-out 0.25s ease-in forwards;
+}
+@keyframes todo-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes todo-banner-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-16px);
   }
 }
 

@@ -56,8 +56,8 @@ export default defineComponent({
 <template>
   <div class="simple-window-popup">
     <SimplePopUp ref="popUp"
-                 :on-cancel="close"
-                 :on-confirm="close"
+                 @cancel="close"
+                 @confirm="close"
                  :class="[ 'simple-window-popup-container', fillMobile ? 'fill-mobile' : '' ]"
                  :style="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }">
       <div class="window-title">

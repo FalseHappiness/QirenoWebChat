@@ -181,8 +181,8 @@ export default defineComponent({
 <template>
   <div class="download-progress-popup">
     <SimplePopUp ref="popUp"
-                 :on-confirm="onClosed"
-                 :on-cancel="onClosed"
+                 @confirm="onClosed"
+                 @cancel="onClosed"
                  class="download-progress-container">
       <div class="download-content">
         <!-- 标题 -->
