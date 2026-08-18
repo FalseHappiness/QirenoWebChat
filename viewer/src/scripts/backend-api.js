@@ -1419,6 +1419,18 @@ async function fetchSendGroupNotice(group_id, content, image, show_popup, confir
   })
 }
 
+async function fetchCollectionList(
+  category = 0,// 收藏分类 ID；0 表示全部分类
+  count = 500
+) {
+  const result = await fetchActionData("get_collection_list", { category, count })
+  const list = result?.collectionSearchList?.collectionItemList
+  if (isArray(list)) {
+    return list
+  }
+  return []
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1519,4 +1531,5 @@ export {
   fetchCancelGroupTodo,
   fetchGroupAdminSettings,
   fetchSendGroupNotice,
+  fetchCollectionList,
 }

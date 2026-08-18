@@ -6,16 +6,19 @@ import VueResizable from 'vue-resizable/src/components/vue-resizable.vue';
 import QMaskIcon from "../Common/Icons/QMaskIcon.vue";
 import { NavKey } from "@/scripts/view-keys.js";
 import RecentContactsView from "./RecentContacts/RecentContactsView.vue";
+import QIcon from "@/components/Common/Icons/QIcon.vue";
+import CollectionNavView from "@/components/Navigation/CollectionNavView.vue";
 
 const sidebarResize = ({ width }) => {
-  document.documentElement.style.setProperty('--sidebar-width', `${width}px`)
+  document.documentElement.style.setProperty('--sidebar-width', `${ width }px`)
 }
 
-const currentNavView = ref(NavKey.MESSAGE); // 'messages' 'contacts' 'settings'
+const currentNavView = ref(NavKey.MESSAGE); // 'messages' 'contacts' 'settings' 'collection'
 
 const isNavView = key => currentNavView.value === key
 const isMessageNavView = computed(() => isNavView(NavKey.MESSAGE))
 const isContactNavView = computed(() => isNavView(NavKey.CONTACT))
+const isCollectionNavView = computed(() => isNavView(NavKey.COLLECTION))
 const isSettingsNavView = computed(() => isNavView(NavKey.SETTINGS))
 const changeNavView = key => currentNavView.value = key
 </script>
@@ -29,32 +32,34 @@ const changeNavView = key => currentNavView.value = key
     :maxWidth="335"
     @resize:move="sidebarResize"
   >
-    <template v-if="isMessageNavView">
-      <RecentContactsView/>
-    </template>
+    <RecentContactsView v-if="isMessageNavView"/>
     <template v-else-if="isContactNavView">
       <div class="contacts-view-top-side" v-if="false">
         联系人
       </div>
       <CategorizedContactsView/>
     </template>
-    <template v-else-if="isSettingsNavView">
-      <SettingsView/>
-    </template>
+    <SettingsView v-else-if="isSettingsNavView"/>
+    <CollectionNavView v-else-if="isCollectionNavView"/>
     <div class="navigation-bar">
-      <div class="nav-function-button nav-function-message flex-center-children"
+      <div class="nav-function-button nav-function-message"
            @click="changeNavView(NavKey.MESSAGE)"
            :class="{ active: isMessageNavView }">
         <QMaskIcon :name="`nav_message_${ isMessageNavView ? 'active' : 'normal' }_24`"
                    animate-target="nav_message_active_24"/>
       </div>
-      <div class="nav-function-button nav-function-contact flex-center-children"
+      <div class="nav-function-button nav-function-contact"
            @click="changeNavView(NavKey.CONTACT)"
            :class="{ active: isContactNavView }">
         <QMaskIcon :name="`nav_contact_${ isContactNavView ? 'active' : 'normal' }_24`"
                    animate-target="nav_contact_active_24"/>
       </div>
-      <div class="nav-function-button nav-function-settings flex-center-children"
+      <div class="nav-function-button nav-function-collection"
+           @click="changeNavView(NavKey.COLLECTION)"
+           :class="{ active: isCollectionNavView }">
+        <QIcon name="collection_24"/>
+      </div>
+      <div class="nav-function-button nav-function-settings"
            @click="changeNavView(NavKey.SETTINGS)"
            :class="{ active: isSettingsNavView }">
         <QMaskIcon :name="`nav_setting_normal_16${ isSettingsNavView ? '.modify.fill' : '' }`"
@@ -104,6 +109,7 @@ const changeNavView = key => currentNavView.value = key
   height: 40px;
   width: 40px;
   border-radius: 10px;
+  @extend %flex-center-children;
 }
 
 .nav-function-button:hover {
@@ -125,6 +131,20 @@ const changeNavView = key => currentNavView.value = key
 
 .nav-function-button.active:deep(.icon-new) {
   color: $color-primary !important;
+}
+
+.nav-function-collection {
+  svg {
+    color: black;
+    @include square-size(24px);
+    transition: color 0.2s ease-in-out;
+  }
+
+  &.active {
+    svg {
+      color: $color-primary;
+    }
+  }
 }
 </style>
 
