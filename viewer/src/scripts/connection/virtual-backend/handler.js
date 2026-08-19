@@ -41,6 +41,7 @@ export function convertEventToMessageData(event) {
     sender_id: eventDict.sender_id ?? null,
     post_type: postType,
     notice_type: eventDict.notice_type ?? null,
+    request_type: eventDict.request_type ?? null,
     message_type: messageType,
     sub_type: eventDict.sub_type ?? null,
     user_id: userId ?? null,
@@ -120,6 +121,7 @@ export async function processAndStoreEvent(event, db) {
     sender_id: messageData.sender_id,
     post_type: messageData.post_type,
     notice_type: messageData.notice_type,
+    request_type: messageData.request_type,
     message_type: messageData.message_type,
     sub_type: messageData.sub_type,
     user_id: messageData.user_id,
@@ -367,6 +369,22 @@ export async function syncMessagesCore(params, db) {
  * @param {object} onebotWS - OneBotWSConnection 实例
  * @returns {Promise<{messages: Array, max_id: number, min_id: number, max_real_seq: number|null}>}
  */
+export async function getAddRequestsCore(db) {
+  /*
+  获取加好友/加群请求列表
+
+  从本地数据库查询 post_type='request' 的消息，并标记 approved 状态。
+
+  Args:
+      db: VirtualDB 实例
+
+  Returns:
+      请求列表
+  */
+  const requests = await db.getAddRequests();
+  return requests;
+}
+
 export async function getMessagesCore(params, db, onebotWS) {
   const limit = parseInt(params.limit, 10) || 100;
   const cursor = params.cursor ? parseInt(params.cursor, 10) : null;

@@ -1431,6 +1431,87 @@ async function fetchCollectionList(
   return []
 }
 
+const fetchAddRequests = async () => {
+  const result = await fetchBackendData('get_add_requests', {})
+  if (isArray(result)) {
+    return result.map(result => JSON.parse(result.event))
+  }
+  return result
+}
+
+async function fetchSetFriendAddRequest(flag, approve = true, remark, user_id) {
+  const result = fetchAction("set_friend_add_request", { flag, approve, remark })
+  if (checkResponseOK(result) && isSnowLuma() && remark && user_id) {
+    // noinspection ES6MissingAwait
+    fetchSetFriendRemark(user_id, remark)
+  }
+  return result
+}
+
+async function fetchSetGroupAddRequest(
+  flag,
+  approve = true,
+  reason, // 拒绝理由
+) {
+  return await fetchAction("set_group_add_request", { flag, approve, reason })
+}
+
+// 将加群系统消息转为统一的 request event 格式
+function convertGroupAddRequestToEvent(list) {
+  if (isArray(list)) {
+    for (const req of list) {
+      req.user_name = req.requester_nick || "";
+      req.user_id = req.requester_uin || 0;
+      // req.checked true 表示已经处理 false 表示未处理
+      req.approved = null
+      req.request_type = 'group'
+      req.sub_type = req.invitor_uin ? 'invite' : 'add'
+      req.comment = req.message
+      if (!objectHasKey(req, 'flag')) {
+        req.flag = req.sub_type === 'invite' ?
+          `invite:${ req.group_id }:${ req.request_id }` : `slreq:1:${ req.request_id }:${ req.group_id }:2:0`
+      }
+    }
+  }
+  return list
+}
+
+async function fetchGroupAddRequest(count = 100) {
+  const result = await fetchActionData("get_group_system_msg", { count })
+  let list = null
+  if (isArray(result)) {
+    list = result
+  } else if (isObject(result) && isArray(result.invited_requests)) {
+    list = result.invited_requests
+  }
+  return convertGroupAddRequestToEvent(list)
+}
+
+async function fetchIgnoredGroupAddRequests() {
+  return convertGroupAddRequestToEvent(await fetchActionData("get_group_ignore_add_request"))
+}
+
+// 获取可疑好友申请
+async function fetchDoubtFriendAddRequests(count = 114514) {
+  const list = await fetchActionData("get_doubt_friends_add_request", { count })
+  if (isArray(list)) {
+    // 转为 request event
+    for (const req of list) {
+      req.flag = req.flag ?? req.uin
+      req.comment = req.reason ?? (req.msg || req.source)
+      req.user_name = req.nickname || req.nick
+      req.user_id = req.user_id || req.uin // uin 不是 QQ 号
+      req.approved = null
+    }
+  }
+  return list
+}
+
+// 只能同意不能拒绝
+async function fetchApproveDoubtFriendRequest(flag) {
+  return await fetchAction("set_doubt_friends_add_request", { flag, approved: true })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1532,4 +1613,11 @@ export {
   fetchGroupAdminSettings,
   fetchSendGroupNotice,
   fetchCollectionList,
+  fetchAddRequests,
+  fetchSetFriendAddRequest,
+  fetchSetGroupAddRequest,
+  fetchGroupAddRequest,
+  fetchDoubtFriendAddRequests,
+  fetchApproveDoubtFriendRequest,
+  fetchIgnoredGroupAddRequests,
 }

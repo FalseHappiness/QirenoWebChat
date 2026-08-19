@@ -316,7 +316,7 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
       const validTimeB = isValidNum(timeB);
 
       if (validTimeA !== validTimeB) return validTimeA ? -1 : 1;
-      if (validTimeA && timeA !== timeB) return timeA - timeB;
+      if (validTimeA && timeA !== timeB) return (timeA as number) - (timeB as number);
 
       const seqA = a['real_seq'];
       const seqB = b['real_seq'];
@@ -324,7 +324,7 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
       const validSeqB = isValidNum(seqB);
 
       if (validSeqA !== validSeqB) return validSeqA ? -1 : 1;
-      if (validSeqA && seqA !== seqB) return seqA - seqB;
+      if (validSeqA && seqA !== seqB) return (seqA as number) - (seqB as number);
 
       const idA = a['id'];
       const idB = b['id'];
@@ -332,7 +332,7 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
       const validIdB = isValidNum(idB);
 
       if (validIdA !== validIdB) return validIdA ? -1 : 1;
-      if (validIdA) return idA - idB;
+      if (validIdA) return (idA as number) - (idB as number);
 
       return 0;
     });
@@ -485,12 +485,23 @@ async function getContactsCore(params: Record<string, unknown> = {}): Promise<Re
   return contacts;
 }
 
+async function getAddRequestsCore(params: Record<string, unknown> = {}): Promise<Record<string, unknown>[]> {
+  /* 获取加好友/加群请求列表（核心实现） */
+  let selfId = parseInt(params['self_id']);
+  if (selfId === 0) {
+    selfId = onebotManager.getFirstSelfId() ?? 0;
+  }
+  const requests = db.getAddRequests(selfId || null);
+  return requests as unknown as Record<string, unknown>[];
+}
+
 // -------- req_backend 处理器注册 --------
 
 frontendManager.reqBackendHandlers.set('contacts', async (params) => getContactsCore(params));
 frontendManager.reqBackendHandlers.set('messages', async (params) => getMessagesCore(params));
 frontendManager.reqBackendHandlers.set('get_msg', async (params) => getMsgCore(params));
 frontendManager.reqBackendHandlers.set('sync', async (params) => syncMessagesCore(params));
+frontendManager.reqBackendHandlers.set('get_add_requests', async (params) => getAddRequestsCore(params));
 
 // ===================== 健康检查 & BOT列表接口 =====================
 
@@ -664,6 +675,16 @@ app.route({
   handler: async (request) => {
     const params = await getRequestParams(request);
     const result = await getContactsCore(params);
+    return { status: 'success', code: 200, data: result };
+  },
+});
+
+app.route({
+  method: ['GET', 'POST'],
+  url: '/api/get_add_requests',
+  handler: async (request) => {
+    const params = await getRequestParams(request);
+    const result = await getAddRequestsCore(params);
     return { status: 'success', code: 200, data: result };
   },
 });

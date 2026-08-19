@@ -101,6 +101,7 @@ class VirtualDB extends Dexie {
         post_type,
         message_type,
         notice_type,
+        request_type,
         sub_type,
         group_id,
         user_id,
@@ -156,6 +157,7 @@ class VirtualDB extends Dexie {
         post_type: messageData.post_type ?? null,
         message_type: messageData.message_type ?? null,
         notice_type: messageData.notice_type ?? null,
+        request_type: messageData.request_type ?? null,
         sub_type: messageData.sub_type ?? null,
         group_id: messageData.group_id ?? null,
         user_id: messageData.user_id ?? null,
@@ -594,6 +596,72 @@ class VirtualDB extends Dexie {
       if (!getBefore && getAfter) return result.after;
       if (getBefore && !getAfter) return result.before;
       return result;
+    };
+
+    /**
+     * 获取加好友/加群请求列表，并标记是否已通过
+     * 对应 server 端 db.ts 的 getAddRequests
+     *
+     * @returns {Promise<Array<object>>} 请求列表，每条消息的 event 已添加 approved 标记
+     */
+    this.getAddRequests = async () => {
+      // 1. 查询所有请求消息
+      const requests = await this.messages
+        .where('post_type')
+        .equals('request')
+        .filter(m => (m.request_type === 'friend' || m.request_type === 'group') &&
+                      (m.sub_type === 'add' || m.sub_type === 'invite' || m.sub_type === null || m.sub_type === undefined))
+        .toArray();
+
+      // 按 time 倒序排列，time 相同则按 id 倒序（新的在前）
+      requests.sort((a, b) => {
+        const timeA = a.time || 0;
+        const timeB = b.time || 0;
+        if (timeB !== timeA) return timeB - timeA;
+        return (b.id || 0) - (a.id || 0);
+      });
+
+      // 2. 批量查询 approved 状态
+      for (const req of requests) {
+        let approved = null;
+        let eventObj = {};
+
+        try {
+          eventObj = typeof req.event === 'string' ? JSON.parse(req.event) : (req.event || {});
+        } catch {
+          eventObj = {};
+        }
+
+        if (req.request_type === 'friend') {
+          // 查找后续 friend_add 通知
+          const friendAdd = await this.messages
+            .where('id')
+            .above(req.id)
+            .filter(m => m.post_type === 'notice' &&
+                         m.notice_type === 'friend_add' &&
+                         m.user_id === req.user_id)
+            .limit(1)
+            .toArray();
+          approved = friendAdd.length > 0 ? true : null;
+        } else if (req.request_type === 'group') {
+          // 查找后续 group_increase 通知
+          const groupApprove = await this.messages
+            .where('id')
+            .above(req.id)
+            .filter(m => m.post_type === 'notice' &&
+                         m.notice_type === 'group_increase' &&
+                         m.group_id === req.group_id &&
+                         m.user_id === req.user_id)
+            .limit(1)
+            .toArray();
+          approved = groupApprove.length > 0 ? true : null;
+        }
+
+        eventObj.approved = approved;
+        req.event = JSON.stringify(eventObj);
+      }
+
+      return requests;
     };
 
     /**

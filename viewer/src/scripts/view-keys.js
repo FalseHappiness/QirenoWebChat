@@ -10,4 +10,5 @@ export const DestKey = {
   BLANK: 'blank',
   THEME_SELECTOR: "theme_selector",
   COLLECTION: "collection",
+  ADD_REQUESTS: "add_requests",
 }

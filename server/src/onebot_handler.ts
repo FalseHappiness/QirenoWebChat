@@ -51,6 +51,7 @@ export function convertEventToMessageData(event: Record<string, unknown>): Recor
     'sender_id': event['sender_id'],
     'post_type': postType,
     'notice_type': event['notice_type'],
+    'request_type': event['request_type'],
     'message_type': messageType,
     'sub_type': event['sub_type'],
     'user_id': userId,

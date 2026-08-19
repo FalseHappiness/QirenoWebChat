@@ -7,6 +7,7 @@ import { isUndefined } from "@/scripts/types-util.js";
 import { isScreenMobile } from "@/scripts/util.js";
 import ThemeSelector from "@/components/Destination/ThemeSelector.vue";
 import CollectionView from "@/components/Destination/Collection/CollectionView.vue";
+import AddRequestsView from "@/components/Destination/AddRequestsView.vue";
 
 const viewActive = ref(false);
 const currentView = ref(DestKey.CHAT_AREA)
@@ -17,6 +18,7 @@ const isChatAreaView = computed(() => isView(DestKey.CHAT_AREA))
 const isLicenseView = computed(() => isView(DestKey.LICENSE))
 const isThemeSelectorView = computed(() => isView(DestKey.THEME_SELECTOR))
 const isCollectionView = computed(() => isView(DestKey.COLLECTION))
+const isAddRequestsView = computed(() => isView(DestKey.ADD_REQUESTS))
 
 let changeTimer = null;
 const changeView = (key, active) => {
@@ -67,6 +69,10 @@ defineExpose({
     />
     <CollectionView
       v-else-if="isCollectionView"
+      class="dest-view-component"
+    />
+    <AddRequestsView
+      v-else-if="isAddRequestsView"
       class="dest-view-component"
     />
   </div>

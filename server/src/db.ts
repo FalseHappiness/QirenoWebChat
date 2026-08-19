@@ -15,6 +15,7 @@ export interface MessageRow {
   post_type: string | null;
   message_type: string | null;
   notice_type: string | null;
+  request_type: string | null;
   sub_type: string | null;
   group_id: number | null;
   user_id: number | null;
@@ -68,6 +69,7 @@ function createTables(db: Database.Database): void {
                post_type    TEXT,
                message_type TEXT,
                notice_type  TEXT,
+               request_type TEXT,
                sub_type     TEXT,
                group_id     INTEGER,
                user_id      INTEGER,
@@ -90,7 +92,7 @@ function checkAndUpdateSchema(db: Database.Database): void {
   const columns = new Set(tableInfo.map((row) => row.name));
   const requiredColumns = new Set([
     'id', 'message_id', 'real_seq', 'time', 'self_id', 'sender_id', 'post_type',
-    'message_type', 'notice_type', 'sub_type', 'group_id', 'user_id', 'operator_id',
+    'message_type', 'notice_type', 'request_type', 'sub_type', 'group_id', 'user_id', 'operator_id',
     'target_id', 'event', 'created_at',
   ]);
 
@@ -152,9 +154,9 @@ export class DatabaseManager {
   saveMessage(messageData: Record<string, unknown>): number {
     /* 保存消息到数据库 */
     const stmt = this.db.prepare(`INSERT INTO messages
-                                  (message_id, real_seq, time, self_id, sender_id, post_type, message_type, notice_type,
+                                  (message_id, real_seq, time, self_id, sender_id, post_type, message_type, notice_type, request_type,
                                    sub_type, group_id, user_id, operator_id, target_id, event, created_at)
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     const result = stmt.run(
       messageData['message_id'] ?? null,
       messageData['real_seq'] ?? null,
@@ -164,6 +166,7 @@ export class DatabaseManager {
       messageData['post_type'] ?? null,
       messageData['message_type'] ?? null,
       messageData['notice_type'] ?? null,
+      messageData['request_type'] ?? null,
       messageData['sub_type'] ?? null,
       messageData['group_id'] ?? null,
       messageData['user_id'] ?? null,
@@ -233,6 +236,7 @@ export class DatabaseManager {
       'target_id': 'int',
       'message_type': 'str',
       'notice_type': 'str',
+      'request_type': 'str',
       'sub_type': 'str',
       'created_at': 'str',
       'raw_message': 'str',
@@ -651,6 +655,74 @@ export class DatabaseManager {
     if (getBefore && !getAfter) return result['before'] ?? null;
 
     return result;
+  }
+
+  getAddRequests(selfId: number | null = null): MessageRow[] {
+    /*
+    获取加好友/加群请求列表，并标记是否已通过
+
+    使用一次 SQL 查询 + 关联子查询批量判断 approved 状态，避免逐条查询性能问题。
+
+    Args:
+        selfId: 可选，按 self_id 筛选
+
+    Returns:
+        请求消息列表，每条消息的 event 字段已被解析并添加 approved 标记
+    */
+    const selfIdCondition = selfId !== null ? 'AND r.self_id = ?' : '';
+    const selfIdParams: unknown[] = selfId !== null ? [selfId] : [];
+
+    const query = `
+      SELECT r.*,
+             CASE
+                 WHEN r.request_type = 'friend' THEN
+                     CASE WHEN EXISTS (
+                         SELECT 1 FROM messages AS m
+                         WHERE m.id > r.id
+                           AND m.post_type = 'notice'
+                           AND m.notice_type = 'friend_add'
+                           AND m.user_id = r.user_id
+                           ${selfId !== null ? 'AND m.self_id = r.self_id' : ''}
+                         LIMIT 1
+                     ) THEN 1 ELSE NULL END
+                 WHEN r.request_type = 'group' THEN
+                     CASE WHEN EXISTS (
+                         SELECT 1 FROM messages AS m
+                         WHERE m.id > r.id
+                           AND m.post_type = 'notice'
+                           AND m.notice_type = 'group_increase'
+                           AND m.group_id = r.group_id
+                           AND m.user_id = r.user_id
+                           ${selfId !== null ? 'AND m.self_id = r.self_id' : ''}
+                         LIMIT 1
+                     ) THEN 1 ELSE NULL END
+                 ELSE NULL
+             END AS approved
+      FROM messages AS r
+      WHERE r.post_type = 'request'
+        AND r.request_type IN ('friend', 'group')
+        AND (r.sub_type IN ('add', 'invite') OR r.sub_type IS NULL)
+        ${selfIdCondition}
+      ORDER BY r.time DESC, r.id DESC
+    `;
+
+    const rows = this.db.prepare(query).all(...selfIdParams) as Array<MessageRow & { approved: number | null }>;
+
+    // 将 approved 标记写入 event 字段
+    for (const row of rows) {
+      let eventObj: Record<string, unknown> = {};
+      try {
+        eventObj = JSON.parse(row.event ?? '{}') as Record<string, unknown>;
+      } catch {
+        eventObj = {};
+      }
+      eventObj['approved'] = row.approved === 1 ? true : (row.approved === null ? null : false);
+      row.event = JSON.stringify(eventObj);
+      // 删除多余的 approved 字段（MessageRow 接口没有该字段）
+      delete (row as unknown as Record<string, unknown>)['approved'];
+    }
+
+    return rows;
   }
 
   clearMessages(): void {

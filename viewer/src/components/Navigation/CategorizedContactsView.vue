@@ -12,6 +12,8 @@ import QIcon from "../Common/Icons/QIcon.vue";
 import LoadingSpinner from "../Common/Widgets/LoadingSpinner.vue";
 import { createContactContextMenuItems } from "@/scripts/contact-content-menu.js";
 import { vCustomMenu } from "@/directives/context-menu.js"
+import EnterArrow from "@/components/Common/Widgets/EnterArrow.vue";
+import { DestKey } from "@/scripts/view-keys.js";
 
 const collapseActiveKeys = ref([-100])
 const filterTextModel = ref("")
@@ -31,6 +33,9 @@ const getLogo = (id, type) => {
 }
 
 const handleSelectContact = inject("selectContact")
+const changeDestView = inject("changeDestView")
+
+const handleEnterAddRequests = () => changeDestView(DestKey.ADD_REQUESTS)
 
 const showContactInfo = inject("showContactInfo")
 const handleContextMenu = contact => e => createContactContextMenuItems({
@@ -47,6 +52,10 @@ const handleContextMenu = contact => e => createContactContextMenuItems({
         placeholder="搜索"
         class="contacts-view-search-input"
       >
+    </div>
+    <div class="add-requests-entry" @click="handleEnterAddRequests">
+      好友/加群请求
+      <EnterArrow/>
     </div>
     <LoadingSpinner v-if="loading" no-text class="flex-1"/>
     <CustomScrollBar class="contacts-view-scroll" v-else>
@@ -204,5 +213,11 @@ const handleContextMenu = contact => e => createContactContextMenuItems({
 
 .contacts-view-scroll:deep(.ant-collapse-header) {
   padding: 8px 8px 8px 4px;
+}
+
+.add-requests-entry {
+  padding: 6px 8px 4px 16px;
+  @extend %flex-row-between;
+  cursor: pointer;
 }
 </style>
