@@ -35,7 +35,7 @@ cd viewer
 # 安装依赖
 npm install
 
-# （可选）初始化 QQ 表情资源
+# （可选）初始化 QQ 表情资源（需要 Windows 且安装 QQNT，最好使用管理员用户运行）
 npm run init-emoji
 
 # 构建前端（生成 dist 目录）

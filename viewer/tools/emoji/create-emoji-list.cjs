@@ -2,16 +2,12 @@
 const fs = require('fs');
 const path = require('path');
 const regedit = require('regedit').promisified;
+const { getAllUsersDocumentsPath } = require('./get-user-documents-path.cjs');
 
 // ====================== 配置区 ======================
 const emojiDir = path.join(process.cwd(), 'public', 'QQ', 'EmojiSystermResource');
 const targetDir = path.join(process.cwd(), 'src', 'QQ', 'EmojiConfig');
 const outputFile = path.join(process.cwd(), 'src', 'assets', 'emoji_files.json');
-// 查找 QQ 表情配置文件（用户文档目录）
-const qqEmojiPath = path.join(
-  process.env.USERPROFILE,
-  'Documents\\Tencent Files\\nt_qq\\global\\nt_data\\Emoji\\emoji-resource\\face_config.json'
-);
 
 // =====================================================
 
@@ -215,6 +211,45 @@ function findQQNTEmojiConfigByRegPath(qqRootDir) {
   }
 }
 
+/**
+ * 在所有用户 Documents 目录下查找最新的 face_config.json（按最后修改时间）
+ * @returns {string|null} 最新的 face_config.json 完整路径
+ */
+async function findFaceConfigPath() {
+  const allUserDocPaths = await getAllUsersDocumentsPath();
+  console.log('✅ 检测到用户文档目录列表：', allUserDocPaths);
+
+  /** @type {{path: string, mtime: number}[]} */
+  const candidates = [];
+
+  for (const userDoc of allUserDocPaths) {
+    const candidatePath = path.join(
+      userDoc,
+      'Tencent Files\\nt_qq\\global\\nt_data\\Emoji\\emoji-resource\\face_config.json'
+    );
+    try {
+      if (fs.existsSync(candidatePath)) {
+        const stat = fs.statSync(candidatePath);
+        candidates.push({ path: candidatePath, mtime: stat.mtimeMs });
+        console.log(`候选 face_config.json: ${candidatePath} (mtime: ${new Date(stat.mtimeMs).toISOString()})`);
+      }
+    } catch {
+      // 无法读取 stat 则跳过
+    }
+  }
+
+  if (candidates.length === 0) {
+    console.log('未找到任何 face_config.json');
+    return null;
+  }
+
+  // 按 mtime 降序排序（最新的在前）
+  candidates.sort((a, b) => b.mtime - a.mtime);
+  const best = candidates[0];
+  console.log(`✅ 选择最新的 face_config.json: ${best.path} (mtime: ${new Date(best.mtime).toISOString()})`);
+  return best.path;
+}
+
 // 主函数
 async function main() {
   try {
@@ -235,8 +270,9 @@ async function main() {
     // const copiedFiles = copyJsonFiles(emojiDir, targetDir);
     // console.log(`已复制 ${copiedFiles} 个JSON文件到 ${targetDir}`);
 
-    // 1. 复制用户目录自定义表情配置 face_config.json
-    if (fs.existsSync(qqEmojiPath)) {
+    // 1. 复制用户目录自定义表情配置 face_config.json（遍历所有用户 Documents 目录）
+    const qqEmojiPath = await findFaceConfigPath();
+    if (qqEmojiPath) {
       const targetFaceCfg = path.join(targetDir, 'face_config.json');
       fs.copyFileSync(qqEmojiPath, targetFaceCfg);
       console.log(`已复制用户表情配置到: ${targetFaceCfg}`);

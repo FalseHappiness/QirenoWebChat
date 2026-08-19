@@ -13,7 +13,6 @@ const otherFacesDescribes = {
   "430": "蛇身",
   "431": "蛇尾",
   "432": "灵蛇献瑞",
-  "435": "", // 未知
   "450": "撇嘴",
   "451": "色",
   "452": "微笑",
@@ -51,7 +50,7 @@ const otherFacesDescribes = {
 
 // 隐藏表情
 const secretEmojiids = [
-  "422", "423",
+  "422", "423", "432"
 ]
 
 function getPokeDescription(poke_id) {
