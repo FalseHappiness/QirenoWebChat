@@ -4,6 +4,7 @@ import Tooltip from "./Tooltip.vue";
 import { CalledEmitter, Emitter } from "@/composables/useEventBus.js";
 import {
   checkResponseOK,
+  fetchContactShareArk,
   fetchGroupInfo,
   fetchGroupMemberInfo,
   fetchGroupNotice, fetchProfileLikeInfo, fetchSendProfileLike,
@@ -42,7 +43,7 @@ export default defineComponent({
       profileLike: null
     }
   },
-  inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark", "activeContact"],
+  inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark", "activeContact", "flattenContacts", "selectContact"],
   methods: {
     isString,
     getGroupLogo,
@@ -53,7 +54,10 @@ export default defineComponent({
     },
     showContactInfo(options) {
       this.disappear()
-      let { position, group_user, user, group, group_id, user_id } = options
+      let { position, group_user, user, group, group_id, user_id, event } = options
+      if (event instanceof PointerEvent) {
+        position = { x: event.clientX, y: event.clientY }
+      }
       if (!position) {
         return
       }
@@ -144,9 +148,26 @@ export default defineComponent({
           this.profileLike = info
         }
       } else {
-        showErrorToast(`点赞失败: ${result?.message}`)
+        showErrorToast(`点赞失败: ${ result?.message }`)
         console.error("点赞个人配置失败:", result)
       }
+    },
+    handleShare() {
+      const contact = this.user_id
+        ? { contact_id: this.user_id, type: 'private' }
+        : { contact_id: this.group_id, type: 'group' }
+      Emitter.emit(
+        "select-contacts-send-msg",
+        (async () => [await fetchContactShareArk(contact)])()
+      )
+      this.disappear()
+    },
+    handleSendMessage() {
+      const contact = this.user_id
+        ? { contact_id: this.user_id, type: 'private' }
+        : { contact_id: this.group_id, type: 'group' }
+      this.selectContact(contact)
+      this.disappear()
     }
   },
   mounted() {
@@ -172,6 +193,12 @@ export default defineComponent({
     avatarFrameUrl() {
       if (!this.user_id) return
       return getUserAvatarFrameCache(this.user_id)
+    },
+    isContact() {
+      if (!this.user_id || !this.flattenContacts) return false
+      return this.flattenContacts.some(
+        contact => checkSameContact(contact, { contact_id: this.user_id, type: 'private' })
+      )
     }
   },
   watch: {
@@ -274,6 +301,15 @@ export default defineComponent({
               </div>
             </div>
           </div>
+        </div>
+        <div v-if="user_id || group_id" class="contact-info-actions">
+          <button class="contact-info-action-btn cancel-btn" @click="handleShare">
+            分享
+          </button>
+          <button v-if="group_id || (user_id && isContact)" class="contact-info-action-btn primary-btn"
+                  @click="handleSendMessage">
+            发消息
+          </button>
         </div>
       </div>
     </template>
@@ -398,6 +434,29 @@ export default defineComponent({
     &:focus {
       background-color: transparent !important;
       border-color: $color-primary;
+    }
+  }
+}
+
+.contact-info-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  margin-top: 8px;
+
+  .contact-info-action-btn {
+    flex: 1;
+    @include btn-base;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: $radius-card !important;
+
+    &.cancel-btn {
+      @include btn-cancel;
+    }
+
+    &.primary-btn {
+      @include btn-primary;
     }
   }
 }

@@ -31,6 +31,7 @@ export default defineComponent({
       processedFlags: new Set(),
     }
   },
+  inject:['showContactInfo'],
   computed: {
     pendingRequests() {
       return this.requests.filter(r => {
@@ -297,6 +298,21 @@ export default defineComponent({
         showErrorToast(`拒绝加群请求失败：${ e.message || '' }`)
       }
     },
+    handleShowContactInfo(event, request, isGroup = false) {
+      let group ,user
+      if (isGroup) {
+        group={
+          group_id: request.group_id,
+          group_name: request._groupDisplayName || request.group_name,
+        }
+      }else{
+        user={
+          user_id: request.user_id,
+          nickname: request._userDisplayName || request.user_name,
+        }
+      }
+      this.showContactInfo({user,group,event})
+    }
   },
   async mounted() {
     await this.loadRequests()
@@ -365,16 +381,19 @@ export default defineComponent({
                 alt=""
                 :src="getAvatarUrl(request)"
                 class="add-request-logo"
+                @click="handleShowContactInfo($event, request)"
               >
               <div class="add-request-info">
                 <div class="add-request-top">
-                  <span class="add-request-name">{{ getDisplayName(request) }}</span>
+                  <span class="add-request-name"
+                        @click="handleShowContactInfo($event, request)">{{ getDisplayName(request) }}</span>
                 </div>
                 <div class="add-request-sub-info">
                   <template v-if="isGroupRequest(request)">
-                    {{ getRequestSubTypeText(request) }}群 <span class="add-request-group-name">{{
-                      getGroupName(request)
-                    }}</span>
+                    {{ getRequestSubTypeText(request) }}群
+                    <span class="add-request-group-name"
+                          @click="handleShowContactInfo($event, request, true)"
+                    >{{ getGroupName(request) }}</span>
                   </template>
                   <template v-else>
                     {{ getRequestSubTypeText(request) }}
@@ -415,16 +434,20 @@ export default defineComponent({
                 alt=""
                 :src="getAvatarUrl(request)"
                 class="add-request-logo"
+                @click="handleShowContactInfo($event, request)"
               >
               <div class="add-request-info">
                 <div class="add-request-top">
-                  <span class="add-request-name">{{ getDisplayName(request) }}</span>
+                  <span class="add-request-name"
+                        @click="handleShowContactInfo($event, request)">{{ getDisplayName(request) }}</span>
                 </div>
                 <div class="add-request-sub-info">
                   <template v-if="isGroupRequest(request)">
-                    {{ getRequestSubTypeText(request) }}群 <span class="add-request-group-name">{{
-                      getGroupName(request)
-                    }}</span>
+                    {{ getRequestSubTypeText(request) }}群
+                    <span class="add-request-group-name"
+                          @click="handleShowContactInfo($event, request, true)">
+                      {{ getGroupName(request) }}
+                    </span>
                   </template>
                   <template v-else>
                     {{ getRequestSubTypeText(request) }}

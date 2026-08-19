@@ -1468,8 +1468,9 @@ function convertGroupAddRequestToEvent(list) {
       req.sub_type = req.invitor_uin ? 'invite' : 'add'
       req.comment = req.message
       if (!objectHasKey(req, 'flag')) {
-        req.flag = req.sub_type === 'invite' ?
-          `invite:${ req.group_id }:${ req.request_id }` : `slreq:1:${ req.request_id }:${ req.group_id }:2:0`
+        req.flag = isSnowLuma() ?
+          (req.sub_type === 'invite' ? `invite:${ req.group_id }:${ req.request_id }` : `slreq:1:${ req.request_id }:${ req.group_id }:2:0`) : // SnowLuma 应该存在
+          req.request_id // NapCat 不存在该字段
       }
     }
   }
@@ -1500,7 +1501,7 @@ async function fetchDoubtFriendAddRequests(count = 114514) {
       req.flag = req.flag ?? req.uin
       req.comment = req.reason ?? (req.msg || req.source)
       req.user_name = req.nickname || req.nick
-      req.user_id = req.user_id || req.uin // uin 不是 QQ 号
+      req.user_id = req.user_id || req.uin // 此处 uin 实际上为 uid, 不是 QQ 号
       req.approved = null
     }
   }
