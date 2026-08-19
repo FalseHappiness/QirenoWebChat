@@ -4,7 +4,7 @@ import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.j
 import '@lottiefiles/lottie-player';
 import {
   fetchAddCustomFace,
-  fetchChangeEssenceMsg,
+  fetchChangeEssenceMsg, fetchMessageEmojiLikes,
   fetchRecallMessage,
   fetchRecordToText,
   fetchSendMessage,
@@ -39,6 +39,7 @@ import {
 } from "@/scripts/user-info-util.js";
 import { createUserAvatarContextMenuItems } from "@/scripts/contact-content-menu.js";
 import { gteSnowLuma } from "@/scripts/onebot-version-util.js";
+import MessageDetailsViewer from "@/components/Destination/Chat/Message/MessageDetailsViewer.vue";
 
 const props = defineProps({
   message: {
@@ -276,6 +277,8 @@ const pttErrorText = ref(null)
 const groupTodoMessage = inject('groupTodoMessage')
 const removeGroupTodo = inject("removeGroupTodoMessage")
 
+const isShowMessageDetails = ref(false)
+
 const customMessageContextMenu = e => {
   const contact = toRaw(activeContact.value)
   const sameContact = () => checkSameContact(contact, activeContact.value)
@@ -456,6 +459,11 @@ const customMessageContextMenu = e => {
         )
       )
     ),
+    basicContextItem(
+      "详情",
+      () => isShowMessageDetails.value = true,
+      "info_circle_24"
+    )
   );
 }
 
@@ -579,6 +587,8 @@ const handleMessageContainerClick = e => {
   }
 }
 
+const messageEmojiLikes = ref(null)
+
 // 组件加载时
 onMounted(() => {
   document.addEventListener('mouseenter', handleMouseEnter, { capture: true })
@@ -606,6 +616,16 @@ onMounted(() => {
     }
   }
   getDisplayName()
+  if (isGroup.value) {
+    // fetchMessageEmojiLikes(props.message.group_id, props.message.message_id)
+    //   .then(res => {
+    //     console.log(res)
+    //     messageEmojiLikes.value = res
+    //   })
+    //   .catch(e => {
+    //     console.error('获取消息表情回复错误', e)
+    //   })
+  }
 })
 
 // 组件卸载时
@@ -648,6 +668,7 @@ onUnmounted(() => {
     ]"
     @click.capture="handleMessageContainerClick"
   >
+    <MessageDetailsViewer v-if="isShowMessageDetails" @close="isShowMessageDetails = false" :event="messageEvent"/>
     <div
       :data-has-frame="!!avatarFrameUrl"
       :style="{
