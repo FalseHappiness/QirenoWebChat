@@ -31,7 +31,7 @@ export default defineComponent({
       processedFlags: new Set(),
     }
   },
-  inject:['showContactInfo'],
+  inject: ['showContactInfo'],
   computed: {
     pendingRequests() {
       return this.requests.filter(r => {
@@ -79,6 +79,10 @@ export default defineComponent({
           if (this.isGroupRequest(request)) {
             this.loadGroupDisplayName(request)
           }
+          // group.invite 可能有 invitor_id（邀请者）
+          if (request.sub_type === 'invite' && !isNil(request.invitor_id)) {
+            this.loadInvitorDisplayName(request)
+          }
         }
       } catch (e) {
         console.error('加载请求列表失败:', e)
@@ -98,13 +102,31 @@ export default defineComponent({
       if (isNumber(request.user_id)) {
         try {
           const result = await fetchDisplayName(request.user_id, CacheNameKey.NICKNAME)
-          request._userDisplayName = result.name || `用户${ request.user_id }`
+          request._userDisplayName = result.name || `用户${request.user_id}`
         } catch {
-          request._userDisplayName = `用户${ request.user_id }`
+          request._userDisplayName = `用户${request.user_id}`
         }
       } else {
         // 非整数（字符串），直接显示 user_id 本身
         request._userDisplayName = String(request.user_id)
+      }
+    },
+    async loadInvitorDisplayName(request) {
+      // 如果后端直接提供了 invitor_name，直接使用
+      if (isString(request.invitor_name) && request.invitor_name) {
+        request._invitorDisplayName = request.invitor_name
+        return
+      }
+      // invitor_id 只有为整数时才能 fetchDisplayName
+      if (isNumber(request.invitor_id)) {
+        try {
+          const result = await fetchDisplayName(request.invitor_id, CacheNameKey.NICKNAME)
+          request._invitorDisplayName = result.name || `用户${request.invitor_id}`
+        } catch {
+          request._invitorDisplayName = `用户${request.invitor_id}`
+        }
+      } else {
+        request._invitorDisplayName = String(request.invitor_id)
       }
     },
     async loadGroupDisplayName(request) {
@@ -116,9 +138,9 @@ export default defineComponent({
       if (isNumber(request.group_id)) {
         try {
           const result = await fetchDisplayName(request.group_id, CacheNameKey.GROUP)
-          request._groupDisplayName = result.name || `群${ request.group_id }`
+          request._groupDisplayName = result.name || `群${request.group_id}`
         } catch {
-          request._groupDisplayName = `群${ request.group_id }`
+          request._groupDisplayName = `群${request.group_id}`
         }
       } else {
         request._groupDisplayName = String(request.group_id)
@@ -138,11 +160,17 @@ export default defineComponent({
       return getUserLogo(request.user_id)
     },
     getDisplayName(request) {
-      return request._userDisplayName || `用户${ request.user_id }`
+      return request._userDisplayName || `用户${request.user_id}`
     },
     getGroupName(request) {
       if (this.isGroupRequest(request)) {
-        return request._groupDisplayName || `群${ request.group_id }`
+        return request._groupDisplayName || `群${request.group_id}`
+      }
+      return ''
+    },
+    getInvitorName(request) {
+      if (request.sub_type === 'invite' && !isNil(request.invitor_id)) {
+        return request._invitorDisplayName || `用户${request.invitor_id}`
       }
       return ''
     },
@@ -173,7 +201,7 @@ export default defineComponent({
         // 可疑好友：弹出确认框是否确认
         const confirmed = await showConfirmBox(
           '确认通过',
-          `确定通过「${ this.getDisplayName(request) }」的可疑好友请求吗？`,
+          `确定通过「${this.getDisplayName(request)}」的可疑好友请求吗？`,
           '确认通过',
           '取消'
         )
@@ -183,7 +211,7 @@ export default defineComponent({
         // 好友同意：弹出设置备注，默认值为空字符串，可为空字符串，取消不触发操作
         const remark = await showPromptBox(
           '设置备注',
-          `同意好友请求「${ this.getDisplayName(request) }」，请输入备注名称：`,
+          `同意好友请求「${this.getDisplayName(request)}」，请输入备注名称：`,
           '输入备注（可选）',
           '',
           '确认添加',
@@ -196,7 +224,7 @@ export default defineComponent({
         // 群聊同意：弹出确认框是否确认
         const confirmed = await showConfirmBox(
           '确认加群',
-          `确定同意「${ this.getDisplayName(request) }」的加群请求吗？`,
+          `确定同意「${this.getDisplayName(request)}」的加群请求吗？`,
           '确认同意',
           '取消'
         )
@@ -213,7 +241,7 @@ export default defineComponent({
         // 好友拒绝：弹出确认框是否确认
         const confirmed = await showConfirmBox(
           '确认拒绝',
-          `确定拒绝「${ this.getDisplayName(request) }」的好友请求吗？`,
+          `确定拒绝「${this.getDisplayName(request)}」的好友请求吗？`,
           '确认拒绝',
           '取消'
         )
@@ -223,7 +251,7 @@ export default defineComponent({
         // 群聊拒绝：弹出输入拒绝理由，可为空字符串，取消不触发操作
         const reason = await showPromptBox(
           '拒绝理由',
-          `拒绝「${ this.getDisplayName(request) }」的加群请求，请输入拒绝理由：`,
+          `拒绝「${this.getDisplayName(request)}」的加群请求，请输入拒绝理由：`,
           '输入拒绝理由（可选）',
           '',
           '确认拒绝',
@@ -237,82 +265,88 @@ export default defineComponent({
       try {
         const result = await fetchApproveDoubtFriendRequest(request.flag)
         if (checkResponseOK(result)) {
-          showSuccessToast(`已通过可疑好友请求：${ this.getDisplayName(request) }`)
+          showSuccessToast(`已通过可疑好友请求：${this.getDisplayName(request)}`)
           this.processedFlags.add(request.flag)
         } else {
-          showErrorToast(`通过可疑好友请求失败：${ result?.message || '' }`)
+          showErrorToast(`通过可疑好友请求失败：${result?.message || ''}`)
         }
       } catch (e) {
-        showErrorToast(`通过可疑好友请求失败：${ e.message || '' }`)
+        showErrorToast(`通过可疑好友请求失败：${e.message || ''}`)
       }
     },
     async doApproveFriend(request, remark) {
       try {
         const result = await fetchSetFriendAddRequest(request.flag, true, remark, request.user_id)
         if (checkResponseOK(result)) {
-          showSuccessToast(`已同意好友请求：${ this.getDisplayName(request) }`)
+          showSuccessToast(`已同意好友请求：${this.getDisplayName(request)}`)
           this.processedFlags.add(request.flag)
         } else {
-          showErrorToast(`同意好友请求失败：${ result?.message || '' }`)
+          showErrorToast(`同意好友请求失败：${result?.message || ''}`)
         }
       } catch (e) {
-        showErrorToast(`同意好友请求失败：${ e.message || '' }`)
+        showErrorToast(`同意好友请求失败：${e.message || ''}`)
       }
     },
     async doRejectFriend(request) {
       try {
         const result = await fetchSetFriendAddRequest(request.flag, false)
         if (checkResponseOK(result)) {
-          showSuccessToast(`已拒绝好友请求：${ this.getDisplayName(request) }`)
+          showSuccessToast(`已拒绝好友请求：${this.getDisplayName(request)}`)
           this.processedFlags.add(request.flag)
         } else {
-          showErrorToast(`拒绝好友请求失败：${ result?.message || '' }`)
+          showErrorToast(`拒绝好友请求失败：${result?.message || ''}`)
         }
       } catch (e) {
-        showErrorToast(`拒绝好友请求失败：${ e.message || '' }`)
+        showErrorToast(`拒绝好友请求失败：${e.message || ''}`)
       }
     },
     async doApproveGroup(request) {
       try {
         const result = await fetchSetGroupAddRequest(request.flag, true)
         if (checkResponseOK(result)) {
-          showSuccessToast(`已同意加群请求：${ this.getDisplayName(request) }`)
+          showSuccessToast(`已同意加群请求：${this.getDisplayName(request)}`)
           this.processedFlags.add(request.flag)
         } else {
-          showErrorToast(`同意加群请求失败：${ result?.message || '' }`)
+          showErrorToast(`同意加群请求失败：${result?.message || ''}`)
         }
       } catch (e) {
-        showErrorToast(`同意加群请求失败：${ e.message || '' }`)
+        showErrorToast(`同意加群请求失败：${e.message || ''}`)
       }
     },
     async doRejectGroup(request, reason) {
       try {
         const result = await fetchSetGroupAddRequest(request.flag, false, reason)
         if (checkResponseOK(result)) {
-          showSuccessToast(`已拒绝加群请求：${ this.getDisplayName(request) }`)
+          showSuccessToast(`已拒绝加群请求：${this.getDisplayName(request)}`)
           this.processedFlags.add(request.flag)
         } else {
-          showErrorToast(`拒绝加群请求失败：${ result?.message || '' }`)
+          showErrorToast(`拒绝加群请求失败：${result?.message || ''}`)
         }
       } catch (e) {
-        showErrorToast(`拒绝加群请求失败：${ e.message || '' }`)
+        showErrorToast(`拒绝加群请求失败：${e.message || ''}`)
       }
     },
-    handleShowContactInfo(event, request, isGroup = false) {
-      let group ,user
+    handleShowContactInfo(event, request, isGroup = false, isInvitor = false) {
+      let group, user
       if (isGroup) {
-        group={
+        group = {
           group_id: request.group_id,
           group_name: request._groupDisplayName || request.group_name,
         }
-      }else{
-        user={
+      } else if (isInvitor && !isNil(request.invitor_id)) {
+        user = {
+          user_id: request.invitor_id,
+          nickname: request._invitorDisplayName || request.invitor_name,
+        }
+      } else {
+        user = {
           user_id: request.user_id,
           nickname: request._userDisplayName || request.user_name,
         }
       }
-      this.showContactInfo({user,group,event})
-    }
+      this.showContactInfo({ user, group, event })
+    },
+    isNil
   },
   async mounted() {
     await this.loadRequests()
@@ -390,7 +424,16 @@ export default defineComponent({
                 </div>
                 <div class="add-request-sub-info">
                   <template v-if="isGroupRequest(request)">
-                    {{ getRequestSubTypeText(request) }}群
+                    <template v-if="request.sub_type === 'invite' && !isNil(request.invitor_id)">
+                      被
+                      <span class="add-request-invitor-name"
+                            @click="handleShowContactInfo($event, request, false, true)"
+                      >{{ getInvitorName(request) }}</span>
+                      邀请入群
+                    </template>
+                    <template v-else>
+                      {{ getRequestSubTypeText(request) }}群
+                    </template>
                     <span class="add-request-group-name"
                           @click="handleShowContactInfo($event, request, true)"
                     >{{ getGroupName(request) }}</span>
@@ -443,7 +486,16 @@ export default defineComponent({
                 </div>
                 <div class="add-request-sub-info">
                   <template v-if="isGroupRequest(request)">
-                    {{ getRequestSubTypeText(request) }}群
+                    <template v-if="request.sub_type === 'invite' && !isNil(request.invitor_id)">
+                      被
+                      <span class="add-request-invitor-name"
+                            @click="handleShowContactInfo($event, request, false, true)"
+                      >{{ getInvitorName(request) }}</span>
+                      邀请入群
+                    </template>
+                    <template v-else>
+                      {{ getRequestSubTypeText(request) }}群
+                    </template>
                     <span class="add-request-group-name"
                           @click="handleShowContactInfo($event, request, true)">
                       {{ getGroupName(request) }}
@@ -568,6 +620,7 @@ export default defineComponent({
   flex-shrink: 0;
   margin-right: 10px;
   margin-top: 2px;
+  cursor: pointer;
 }
 
 .add-request-info {
@@ -588,6 +641,7 @@ export default defineComponent({
   font-weight: 500;
   @include text-ellipsis;
   color: $color-text-primary;
+  cursor: pointer;
 }
 
 .add-request-sub-info {
@@ -596,8 +650,13 @@ export default defineComponent({
   margin-top: 2px;
 }
 
-.add-request-group-name {
+.add-request-group-name, .add-request-invitor-name {
   color: $color-text-link;
+  cursor: pointer;
+}
+
+.add-request-invitor-sep {
+  color: $color-text-muted;
 }
 
 .add-request-comment {

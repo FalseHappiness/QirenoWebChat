@@ -338,6 +338,18 @@ const convertCategoricalFriendsSL = list => {
   return list
 }
 
+const convertGroupInviteRequestSL = list => {
+  if (isArray(list)) {
+    for (const req of list) {
+      if (objectHasKey(req, 'invited_id')) {
+        req.invitor_id = req.user_id
+        req.user_id = req.invited_id
+      }
+    }
+  }
+  return list
+}
+
 export {
   convertWrappedMsgSL,
   convertEssenceMsgListSL,
@@ -347,4 +359,5 @@ export {
   convertContactsSL,
   convertStrangerInfoSL,
   convertCategoricalFriendsSL,
+  convertGroupInviteRequestSL,
 }

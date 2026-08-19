@@ -10,7 +10,7 @@ import {
   convertEssenceMsgListSL,
   convertGroupAlbumListSL,
   convertGroupAlbumMediaListSL,
-  convertGroupFilesSL,
+  convertGroupFilesSL, convertGroupInviteRequestSL,
   convertStrangerInfoSL,
   convertWrappedMsgSL
 } from "./snow-luma-translator.js";
@@ -48,11 +48,11 @@ function replaceSiteHost(urlStr) {
   // 匹配：http://sitehost 或 http://sitehost:自定义端口
   return urlStr.replace(/(http|https|ws|wss):\/\/sitehost(:\d+)?/g, (match, proto, portPart) => {
     // 如果原链接带自定义端口，就保留端口；否则用当前页面host（自带端口）
-    const targetHost = portPart ? `${ currentHost.split(':')[0] }${ portPart }` : currentHost;
+    const targetHost = portPart ? `${currentHost.split(':')[0]}${portPart}` : currentHost;
     if (proto === 'ws' || proto === 'wss') {
-      return `${ currentWsProtocol }//${ targetHost }`;
+      return `${currentWsProtocol}//${targetHost}`;
     }
-    return `${ currentProtocol }//${ targetHost }`;
+    return `${currentProtocol}//${targetHost}`;
   });
 }
 
@@ -93,8 +93,8 @@ const fetchOptionsAction = async ({ endpoint, data, signal, timeout }) => {
     }
     return await CalledEmitter.emit(["sendAction", timeout], endpoint, data, signal, timeout)
   } catch (e) {
-    showToast("error", `Fetch action ${ endpoint } error`);
-    console.error(`Fetch action ${ endpoint } error`, e);
+    showToast("error", `Fetch action ${endpoint} error`);
+    console.error(`Fetch action ${endpoint} error`, e);
     throw e;
   }
 }
@@ -112,7 +112,7 @@ const fetchActionData = async (endpoint, params, signal) => {
   if (checkResponseOK(response)) {
     return response.data;
   }
-  throw new Error(`Action ${ endpoint } error: ` + JSON.stringify(response))
+  throw new Error(`Action ${endpoint} error: ` + JSON.stringify(response))
 }
 
 /**
@@ -129,8 +129,8 @@ const fetchBackend = async (endpoint, params = {}, signal) => {
     }
     return await CalledEmitter.emit(["reqBackend", 10 * 60 * 1000], endpoint, params, signal)
   } catch (e) {
-    showToast("error", `Fetch backend ${ endpoint } error`);
-    console.error(`Fetch backend ${ endpoint } error`, e);
+    showToast("error", `Fetch backend ${endpoint} error`);
+    console.error(`Fetch backend ${endpoint} error`, e);
     throw e;
   }
 }
@@ -140,7 +140,7 @@ const fetchBackendData = async (endpoint, params, signal) => {
   if (['success', 'ok'].includes(response.status)) {
     return response.data;
   }
-  throw new Error(`Backend ${ endpoint } error: ` + JSON.stringify(response))
+  throw new Error(`Backend ${endpoint} error: ` + JSON.stringify(response))
 }
 
 const fetchAPI = async (endpoint, params = {}, method = 'POST', data = null, signal = null) => {
@@ -150,7 +150,7 @@ const fetchAPI = async (endpoint, params = {}, method = 'POST', data = null, sig
     }
     const config = {
       method: method.toLowerCase(), // 确保方法小写
-      url: `${ apiBaseUrl }/api/${ endpoint }`,
+      url: `${apiBaseUrl}/api/${endpoint}`,
       params: method.toUpperCase() === 'GET' ? params : (data === null ? {} : params),
       data: method.toUpperCase() === 'POST' ? data || params : {} // POST请求使用data
     };
@@ -161,9 +161,9 @@ const fetchAPI = async (endpoint, params = {}, method = 'POST', data = null, sig
     const response = await axios(config);
     return response.data;
   } catch (e) {
-    showToast("error", `${ method } API ${ endpoint } error`);
-    console.error(`${ method } API ${ endpoint } error: `, e);
-    throw new Error(`${ method } API ${ endpoint } error`);
+    showToast("error", `${method} API ${endpoint} error`);
+    console.error(`${method} API ${endpoint} error: `, e);
+    throw new Error(`${method} API ${endpoint} error`);
   }
 };
 
@@ -182,7 +182,7 @@ const fetchDataInfo = async (endpoint, params) => {
     return response.data;
   }
   // showToast("error", `Request ${endpoint} error`)
-  throw new Error(`Request ${ endpoint } error: ` + JSON.stringify(response))
+  throw new Error(`Request ${endpoint} error: ` + JSON.stringify(response))
 }
 
 export const fetchGroupInfo = async (group_id) => {
@@ -441,8 +441,8 @@ const fetchSendFiles = async ({ contact, files, signal, controller, type = 'file
         }
       });
     } catch (error) {
-      console.error(`文件 ${ file.name } 转换 Base64 失败:`, error);
-      showToast('error', `文件 ${ file.name } 发送失败`)
+      console.error(`文件 ${file.name} 转换 Base64 失败:`, error);
+      showToast('error', `文件 ${file.name} 发送失败`)
     }
   }
   if (message?.length) {
@@ -539,7 +539,7 @@ const fetchSendFileStream = async (task) => {
   const timeout = calcFileSafeTTL(fileSize);
   const sha256 = await calcFileSha256(file);
   const startTimestamp = Date.now();
-  const uploadName = `${ fileName }-${ sha256 }`;
+  const uploadName = `${fileName}-${sha256}`;
 
   // console.log(`[fetchSendFileStream] 开始上传文件: ${fileName}`);
   // console.log(`[fetchSendFileStream] 文件大小: ${fileSize} 字节`);
@@ -561,12 +561,12 @@ const fetchSendFileStream = async (task) => {
     const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
     task.total_chunks = totalChunks
 
-    console.log(`[fetchSendFileStream] 文件 ${ fileName } 读取完成, 总块数: ${ totalChunks }, SHA256: ${ sha256 }`);
+    console.log(`[fetchSendFileStream] 文件 ${fileName} 读取完成, 总块数: ${totalChunks}, SHA256: ${sha256}`);
 
     for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
       // 检查是否被中止
       if (controller?.signal?.aborted) {
-        throw new Error(`${ fileName } 上传已取消`);
+        throw new Error(`${fileName} 上传已取消`);
       }
       task.chunk_index = chunkIndex
 
@@ -603,12 +603,12 @@ const fetchSendFileStream = async (task) => {
       // console.log(`[fetchSendFileStream] 分片 ${chunkIndex + 1}/${totalChunks} 响应:`, response);
 
       if (response?.status !== 'chunk_received') {
-        throw new Error(`上传分片 ${ chunkIndex } 失败: ${ JSON.stringify(response) }`);
+        throw new Error(`上传分片 ${chunkIndex} 失败: ${JSON.stringify(response)}`);
       }
     }
 
     // 所有分片发送完成，发送完成信号
-    console.log(`[fetchSendFileStream] ${ fileName } 所有分片发送完成, 请求文件合并...`);
+    console.log(`[fetchSendFileStream] ${fileName} 所有分片发送完成, 请求文件合并...`);
     task.is_calc_hash = false
     task.is_merging = true
 
@@ -668,7 +668,7 @@ const fetchSendFileStream = async (task) => {
 
       return await fetchSendMessage(contact, message, controller, timeout)
     } else {
-      throw new Error(`文件状态异常: ${ JSON.stringify(result) }`);
+      throw new Error(`文件状态异常: ${JSON.stringify(result)}`);
     }
 
   } catch (error) {
@@ -689,7 +689,7 @@ const fetchGroupList = async () => {
 
 const fetchForwardSingleMsg = async (message_id, contact) => {
   const isGroup = contact.type === 'group'
-  return await fetchAction(`forward_${ isGroup ? "group" : "friend" }_single_msg`, {
+  return await fetchAction(`forward_${isGroup ? "group" : "friend"}_single_msg`, {
     message_id,
     [isGroup ? "group_id" : "user_id"]: contact.contact_id
   })
@@ -828,7 +828,7 @@ async function fetchCategorizedContacts() {
   if (categoricalFriendsRaw?.length) {
     for (const category of categoricalFriendsRaw) {
       for (const contact of category.buddyList) {
-        const key = `private-${ contact.user_id }`
+        const key = `private-${contact.user_id}`
         friendGroupMap.set(key, {
           name: contact.remark || contact.nickname,
           real_name: contact.nickname,
@@ -841,7 +841,7 @@ async function fetchCategorizedContacts() {
   // 填充群聊映射
   if (groupsRaw?.length) {
     for (const contact of groupsRaw) {
-      const key = `group-${ contact.group_id }`
+      const key = `group-${contact.group_id}`
       friendGroupMap.set(key, {
         name: contact.group_remark || contact.group_name,
         real_name: contact.group_name,
@@ -854,7 +854,7 @@ async function fetchCategorizedContacts() {
   if (recentContactsRaw?.length) {
     const contacts = []
     for (const contact of recentContactsRaw) {
-      const key = `${ contact.type }-${ contact.contact_id }`
+      const key = `${contact.type}-${contact.contact_id}`
       const source = friendGroupMap.get(key)
       contacts.push({
         ...contact,
@@ -957,7 +957,7 @@ const getApiBaseUrl = () => {
 }
 
 const getMultimediaProxyUrl = (url) => {
-  return `${ apiBaseUrl }/api/proxy_multimedia?url=${ encodeURIComponent(url) }`
+  return `${apiBaseUrl}/api/proxy_multimedia?url=${encodeURIComponent(url)}`
 }
 
 const getFileDataUrl = (file_id, type) => {
@@ -975,7 +975,7 @@ const getFileDataUrl = (file_id, type) => {
   }
 
   type = type || 'file'
-  return `${ getApiBaseUrl() }/api/get_file_data?type=${ encodeURIComponent(type) }&file_id=${ encodeURIComponent(file_id) }`
+  return `${getApiBaseUrl()}/api/get_file_data?type=${encodeURIComponent(type)}&file_id=${encodeURIComponent(file_id)}`
 }
 
 const getStreamFileDataUrl = file_id => {
@@ -983,23 +983,23 @@ const getStreamFileDataUrl = file_id => {
     const data = file_id
     file_id = data?.data?.file_id || data?.data?.file
   }
-  return `${ getApiBaseUrl() }/api/get_stream_file_data?file_id=${ encodeURIComponent(file_id) }`
+  return `${getApiBaseUrl()}/api/get_stream_file_data?file_id=${encodeURIComponent(file_id)}`
 }
 
 const getGroupLogo = (group_id, size = 100) => {
-  return `https://p.qlogo.cn/gh/${ group_id }/${ group_id }/${ size }`
+  return `https://p.qlogo.cn/gh/${group_id}/${group_id}/${size}`
 }
 
 const getUserLogo = (user_id, size = 100) => {
-  return `https://q1.qlogo.cn/g?b=qq&nk=${ user_id }&s=${ size }`
+  return `https://q1.qlogo.cn/g?b=qq&nk=${user_id}&s=${size}`
 }
 
 const getGroupNoticePicUrl = (pic_url) => {
-  return `https://gdynamic.qpic.cn/gdynamic/${ pic_url }/0`
+  return `https://gdynamic.qpic.cn/gdynamic/${pic_url}/0`
 }
 
 const getGroupFileProxyUrl = (group_id, file_id, name, url = '') => {
-  return `${ getApiBaseUrl() }/api/proxy_group_file?group_id=${ group_id }&file_id=${ encodeURIComponent(file_id) }&name=${ encodeURIComponent(name) }&url=${ encodeURIComponent(url) }`
+  return `${getApiBaseUrl()}/api/proxy_group_file?group_id=${group_id}&file_id=${encodeURIComponent(file_id)}&name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`
 }
 
 const getPrivateFileProxyUrl = (user_id, file_id, name, url = '') => {
@@ -1009,7 +1009,7 @@ const getPrivateFileProxyUrl = (user_id, file_id, name, url = '') => {
     const targetPath = "/asn.com/qqdownloadftnv5";
     const path = urlObj.pathname;
     // 严格匹配：路径完全等于 或 路径后紧跟 ? 参数
-    const matchPath = path === targetPath || path.startsWith(`${ targetPath }?`);
+    const matchPath = path === targetPath || path.startsWith(`${targetPath}?`);
 
     // 满足条件：路径匹配 + 直连模式开启，直接返回原url
     if (matchPath && getIsDirectOnebot()) {
@@ -1020,7 +1020,7 @@ const getPrivateFileProxyUrl = (user_id, file_id, name, url = '') => {
   }
 
   // 不满足则返回代理地址
-  return `${ getApiBaseUrl() }/api/proxy_private_file?user_id=${ user_id }&file_id=${ encodeURIComponent(file_id) }&name=${ encodeURIComponent(name) }&url=${ encodeURIComponent(url) }`;
+  return `${getApiBaseUrl()}/api/proxy_private_file?user_id=${user_id}&file_id=${encodeURIComponent(file_id)}&name=${encodeURIComponent(name)}&url=${encodeURIComponent(url)}`;
 };
 
 // ===================== 账户管理 API =====================
@@ -1030,7 +1030,7 @@ const getPrivateFileProxyUrl = (user_id, file_id, name, url = '') => {
  */
 const fetchBackendHealth = async () => {
   try {
-    const response = await axios.get(`${ apiBaseUrl }/api/health`, { timeout: 5000 });
+    const response = await axios.get(`${apiBaseUrl}/api/health`, { timeout: 5000 });
     return response.data?.data?.alive === true;
   } catch {
     return false;
@@ -1043,7 +1043,7 @@ const fetchBackendHealth = async () => {
  */
 const fetchBackendBots = async () => {
   try {
-    const response = await axios.get(`${ apiBaseUrl }/api/bots`, { timeout: 10000 });
+    const response = await axios.get(`${apiBaseUrl}/api/bots`, { timeout: 10000 });
     if (response.data?.code === 200) {
       return response.data.data || [];
     }
@@ -1162,7 +1162,7 @@ async function handleApiRequest(apiPromise, successText, failText) {
     return true
   } else {
     console.error(failText, result)
-    showErrorToast(`${ failText }: ${ result?.message }`)
+    showErrorToast(`${failText}: ${result?.message}`)
     return false
   }
 }
@@ -1299,7 +1299,7 @@ function buildCustomFaceUrl(input) {
   const arr = trimStr.split('_')
   if (arr.length < 2) return ''
   const uin = arr[0]
-  return `https://p.qpic.cn/qq_expression/${ uin }/${ trimStr }/0`
+  return `https://p.qpic.cn/qq_expression/${uin}/${trimStr}/0`
 }
 
 async function fetchSetGroupTodo(group_id, message_id) {
@@ -1434,7 +1434,7 @@ async function fetchCollectionList(
 const fetchAddRequests = async () => {
   const result = await fetchBackendData('get_add_requests', {})
   if (isArray(result)) {
-    return result.map(result => JSON.parse(result.event))
+    return convertGroupInviteRequestSL(result.map(result => JSON.parse(result.event)))
   }
   return result
 }
@@ -1462,14 +1462,15 @@ function convertGroupAddRequestToEvent(list) {
     for (const req of list) {
       req.user_name = req.requester_nick || "";
       req.user_id = req.requester_uin || 0;
+      req.invitor_id = req.invitor_id ?? req.invitor_uin ?? undefined
       // req.checked true 表示已经处理 false 表示未处理
       req.approved = null
       req.request_type = 'group'
-      req.sub_type = req.invitor_uin ? 'invite' : 'add'
+      req.sub_type = req.invitor_id ? 'invite' : 'add'
       req.comment = req.message
       if (!objectHasKey(req, 'flag')) {
         req.flag = isSnowLuma() ?
-          (req.sub_type === 'invite' ? `invite:${ req.group_id }:${ req.request_id }` : `slreq:1:${ req.request_id }:${ req.group_id }:2:0`) : // SnowLuma 应该存在
+          (req.sub_type === 'invite' ? `invite:${req.group_id}:${req.request_id}` : `slreq:1:${req.request_id}:${req.group_id}:2:0`) : // SnowLuma 应该存在
           req.request_id // NapCat 不存在该字段
       }
     }
