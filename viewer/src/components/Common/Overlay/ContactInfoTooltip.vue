@@ -24,10 +24,11 @@ import {
   getUserInfoCache
 } from "@/scripts/user-info-util.js";
 import { checkSameContact, createGroupContact } from "@/scripts/contacts-util.js";
+import ProfileEditor from "@/components/Windows/ProfileEditor.vue";
 
 export default defineComponent({
   name: "ContactInfoTooltip",
-  components: { QIcon, EnterArrow, Tooltip },
+  components: { ProfileEditor, QIcon, EnterArrow, Tooltip },
   data() {
     return {
       group_user: null,
@@ -40,7 +41,8 @@ export default defineComponent({
       showTime: null,
       latestGroupNotice: null,
       remarkModel: null,
-      profileLike: null
+      profileLike: null,
+      isShowProfileEditor: false
     }
   },
   inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark", "activeContact", "flattenContacts", "selectContact"],
@@ -168,6 +170,10 @@ export default defineComponent({
         : { contact_id: this.group_id, type: 'group' }
       this.selectContact(contact)
       this.disappear()
+    },
+    handleOpenProfileEditor() {
+      this.isShowProfileEditor = true
+      this.disappear()
     }
   },
   mounted() {
@@ -217,6 +223,7 @@ export default defineComponent({
 </script>
 
 <template>
+  <ProfileEditor v-if="isShowProfileEditor" @close="isShowProfileEditor = false"/>
   <Tooltip
     v-if="position"
     :tip-position="position"
@@ -303,6 +310,9 @@ export default defineComponent({
           </div>
         </div>
         <div v-if="user_id || group_id" class="contact-info-actions">
+          <button class="contact-info-action-btn cancel-btn" @click="handleOpenProfileEditor">
+            编辑资料
+          </button>
           <button class="contact-info-action-btn cancel-btn" @click="handleShare">
             分享
           </button>

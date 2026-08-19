@@ -1513,6 +1513,11 @@ async function fetchApproveDoubtFriendRequest(flag) {
   return await fetchAction("set_doubt_friends_add_request", { flag, approved: true })
 }
 
+async function fetchSetProfileInfo(nickname, personal_note, sex) {
+  sex = ({ unknown: 0, man: 1, male: 1, female: 2, woman: 2, 0: 0, 1: 1, 2: 2 })[sex] || 0
+  return await fetchAction("set_qq_profile", { nickname, personal_note, sex })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1621,4 +1626,5 @@ export {
   fetchDoubtFriendAddRequests,
   fetchApproveDoubtFriendRequest,
   fetchIgnoredGroupAddRequests,
+  fetchSetProfileInfo,
 }

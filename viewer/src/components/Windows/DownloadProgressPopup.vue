@@ -1,6 +1,6 @@
 <script>
 import { defineComponent } from 'vue'
-import SimplePopUp from "./SimplePopUp.vue";
+import SimplePopUp from "../Common/Overlay/SimplePopUp.vue";
 
 export default defineComponent({
   name: "DownloadProgressPopup",

@@ -25,7 +25,7 @@ import { destroyContextMenu, initContextMenu } from "../directives/context-menu.
 import { CalledEmitter } from "../composables/useEventBus.js";
 import ContactInfoTooltip from "../components/Common/Overlay/ContactInfoTooltip.vue";
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
-import DownloadProgressPopup from "../components/Common/Overlay/DownloadProgressPopup.vue";
+import DownloadProgressPopup from "../components/Windows/DownloadProgressPopup.vue";
 import LoadingSpinner from "../components/Common/Widgets/LoadingSpinner.vue";
 import {
   checkMsgIsContact,
