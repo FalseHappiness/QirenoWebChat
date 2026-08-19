@@ -90,11 +90,11 @@ const handleContextMenu = contact => e => createContactContextMenuItems({
               :src="getLogo(contact.contact_id, contact.type)"
               loading="lazy"
             >
-            <span class="contacts-view-contact-name overflow-ellipsis">{{ contact.name }}</span>
+            <span class="contacts-view-contact-name overflow-ellipsis">{{ contact.name || contact.contact_id }}</span>
           </div>
         </a-collapse-panel>
       </a-collapse>
-      <div v-else style="width: 100%;">
+      <div v-else class="width-100">
         <div
           v-if="filteredContacts.length"
           v-for="contact in filteredContacts"
@@ -111,7 +111,7 @@ const handleContextMenu = contact => e => createContactContextMenuItems({
           >
           <span class="contacts-view-contact-name overflow-ellipsis">{{ contact.name }}</span>
         </div>
-        <p v-else style="color: var(--color-text-muted); text-align: center; padding: 20px;">无搜索结果</p>
+        <p v-else class="text-muted text-center" style="padding: 20px;">无搜索结果</p>
       </div>
     </CustomScrollBar>
   </div>

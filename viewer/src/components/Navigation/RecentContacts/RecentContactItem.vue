@@ -3,8 +3,7 @@
 import { computed, ref, onMounted, h, watch, inject } from "vue";
 import { parseMessagePreview, parseNoticePreview } from "@/scripts/parse-message.js";
 import { getGroupLogo, getUserLogo } from "@/scripts/backend-api.js";
-import { basicContextItem, vCustomMenu } from "@/directives/context-menu.js";
-import { copy } from "@/scripts/clipboard.js";
+import { vCustomMenu } from "@/directives/context-menu.js";
 import { formatRelativeTime, parseJSON } from "@/scripts/util.js";
 import { CacheNameKey, fetchDisplayName, getContactNameRef } from "@/scripts/user-info-util.js";
 import { createContactContextMenuItems } from "@/scripts/contact-content-menu.js";
@@ -164,7 +163,7 @@ onMounted(async () => {
             'text-error': isError,
           }"
         >
-          {{ displayName }}
+          {{ displayName || contact.contact_id }}
         </span>
         <small class="text-muted">{{ formatRelativeTime(contact.last_time) }}</small>
       </div>

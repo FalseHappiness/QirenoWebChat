@@ -310,7 +310,7 @@ export default defineComponent({
           </div>
         </div>
         <div v-if="user_id || group_id" class="contact-info-actions">
-          <button class="contact-info-action-btn cancel-btn" @click="handleOpenProfileEditor">
+          <button v-if="user_id && !notSelf" class="contact-info-action-btn cancel-btn" @click="handleOpenProfileEditor">
             编辑资料
           </button>
           <button class="contact-info-action-btn cancel-btn" @click="handleShare">

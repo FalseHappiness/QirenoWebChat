@@ -593,7 +593,7 @@ defineExpose({
       <span class="chat-area-head-name" :class="{'text-error': isError}">
         <QIcon class="chat-area-go-back-btn" name="arrow_left_24"
                @click="() => { showContactMore ? showContactMore = false : selectContact(null) }"/>
-        <span class="chat-area-head-display-name" @click="handleClickShowContactInfo">{{ displayName }}</span>
+        <span class="chat-area-head-display-name" @click="handleClickShowContactInfo">{{ displayName || activeContact.contact_id }}</span>
         <template> v-if="tempSession"
           <span>&nbsp;</span>
           <small class="text-muted font-size-100">
