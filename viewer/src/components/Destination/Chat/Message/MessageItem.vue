@@ -4,7 +4,7 @@ import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.j
 import '@lottiefiles/lottie-player';
 import {
   fetchAddCustomFace,
-  fetchChangeEssenceMsg, fetchMessageEmojiLikes,
+  fetchChangeEssenceMsg,
   fetchRecallMessage,
   fetchRecordToText,
   fetchSendMessage,
