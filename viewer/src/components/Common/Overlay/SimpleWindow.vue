@@ -58,7 +58,8 @@ export default defineComponent({
                @cancel="close"
                @confirm="close"
                :class="[ 'simple-window-popup', fillMobile ? 'fill-mobile' : '' ]"
-               :style="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }">
+               :style="{ '--width': widthString, '--height': heightString, '--bg': backgroundColor }"
+               v-bind="{ [$parent.$options.__scopeId]: '' }">
     <div class="window-title">
       {{ title }}
       <QIcon name="close_fill_24" class="window-close-btn cannot-drag"

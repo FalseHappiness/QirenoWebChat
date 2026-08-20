@@ -29,8 +29,8 @@ function qqApp(subPath, ...paths) {
   return qqWrapBase("app", subPath, ...paths)
 }
 
-function qqAppImg(name) {
-  return qqApp('img', name)
+function qqAppImg(...paths) {
+  return qqApp('img', ...paths)
 }
 
 function qqFileIcon(name) {
@@ -49,6 +49,14 @@ function qqWebFile(...paths) {
   return qqWrapBase("web", ...paths)
 }
 
+function qqAppStatusImg(name) {
+  return qqAppImg('status', name)
+}
+
+function qqSystemStatusImg(name) {
+  return qqWrapBase(name === "bg_compressed_B.png" ? "systemOnlineStatus" : "OnlineStatusSmallIcon", name)
+}
+
 export {
   useBase,
   wrapBase,
@@ -59,4 +67,6 @@ export {
   qqAppPoke,
   qqSystemEmoji,
   qqWebFile,
+  qqAppStatusImg,
+  qqSystemStatusImg,
 }

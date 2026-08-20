@@ -323,7 +323,7 @@ defineExpose({ contactDetailRef })
             :src="getGroupLogo(activeContact.contact_id)"
             alt=""
             class="contact-detail-logo">
-          <div class="overflow-ellipsis">
+          <div>
             <span :title="displayName">{{ displayName }}</span>
             <br>
             <small>{{ activeContact.contact_id }}</small>

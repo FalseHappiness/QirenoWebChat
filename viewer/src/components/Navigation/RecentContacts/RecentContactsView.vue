@@ -5,6 +5,8 @@ import VirtualScroller from "../../Common/Scrolling/VirtualScroller.vue";
 import { getUserLogo } from "@/scripts/backend-api.js";
 import LoadingSpinner from "../../Common/Widgets/LoadingSpinner.vue";
 import { checkSameContact } from "@/scripts/contacts-util.js";
+import { getOnlineStatusIcon } from "@/scripts/oneline-status.js";
+import { Emitter } from "@/composables/useEventBus.js";
 
 const selfInfo = inject("selfInfo")
 const loading = inject("isLoadingContacts")
@@ -60,12 +62,22 @@ const handleShowSelfInfo = e => {
     user: selfInfo.value
   })
 }
+
+const onlineStatusIcon = computed(() => {
+  if (!selfInfo.value) return
+  return getOnlineStatusIcon(selfInfo.value)
+})
 </script>
 
 <template>
   <div class="recent-contacts-top-side">
     <div class="self-info-container" v-if="selfInfo">
-      <img alt="" :src="getUserLogo(selfInfo.user_id)" class="self-info-logo" @click="handleShowSelfInfo">
+      <div class="self-info-logo-container">
+        <img alt="" :src="getUserLogo(selfInfo.user_id)" class="self-info-logo" @click="handleShowSelfInfo">
+        <div class="online-icon-wrap" @click="Emitter.emit('open-online-status-editor')">
+          <img alt="" class="self-info-online-status-icon" v-if="onlineStatusIcon" :src="onlineStatusIcon">
+        </div>
+      </div>
       <div class="self-info-card">
         <span class="self-info-nickname">{{ selfInfo.nickname }}</span>
         <input placeholder="编辑个性签名"
@@ -114,9 +126,43 @@ const handleShowSelfInfo = e => {
   padding: 10px;
 }
 
-.self-info-logo {
-  @include avatar-with-border(40px);
+.self-info-logo-container {
   margin-right: 10px;
+  position: relative;
+
+  .self-info-logo {
+    @include avatar-with-border(40px);
+  }
+
+  .online-icon-wrap {
+    @include square-size(10px);
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border-radius: $radius-circle;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      width: 14px;
+      height: 14px;
+      background: white;
+      border-radius: 50%;
+      clip-path: polygon(0 0, 60% 0, 50% 50%, 0 60%);
+    }
+
+    .self-info-online-status-icon {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background-color: $color-bg-page;
+      padding: 0;
+      position: absolute;
+      border-radius: $radius-circle;
+    }
+  }
 }
 
 .self-info-card {

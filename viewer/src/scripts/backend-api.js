@@ -1519,6 +1519,29 @@ async function fetchSetProfileInfo(nickname, personal_note, sex) {
   return await fetchAction("set_qq_profile", { nickname, personal_note, sex })
 }
 
+async function fetchUserOnlineStatus(user_id) {
+  const [user, status] = await Promise.all([
+    fetchStrangerInfo(user_id),
+    fetchActionData("nc_get_user_status", { user_id })
+  ])
+  if (objectHasKey(user, 'status')) {
+    status.batteryStatus = user.batteryStatus
+    status.customStatus = user.customStatus
+  } else {
+    user.status = status.status
+    user.ext_status = status.ext_status
+  }
+  return status
+}
+
+async function fetchSetOnlineStatus(status = 10, ext_status = 0, battery_status = 0) {
+  return await fetchAction("set_online_status", { status, ext_status, battery_status })
+}
+
+async function fetchSetCustomStatus(face_id, wording) {
+  return await fetchAction("set_diy_online_status", { face_id, wording, face_type: 1 })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1628,4 +1651,7 @@ export {
   fetchApproveDoubtFriendRequest,
   fetchIgnoredGroupAddRequests,
   fetchSetProfileInfo,
+  fetchUserOnlineStatus,
+  fetchSetOnlineStatus,
+  fetchSetCustomStatus,
 }

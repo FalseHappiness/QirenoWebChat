@@ -137,7 +137,7 @@ function combineKey(cacheKey, arg) {
   if (!arg) {
     return cacheKey
   }
-  return `${ cacheKey }-${ JSON.stringify(Object.fromEntries(Object.entries(arg).sort())) }`
+  return `${cacheKey}-${JSON.stringify(Object.fromEntries(Object.entries(arg).sort()))}`
 }
 
 const setCache = (key, value, arg) => {
@@ -390,7 +390,7 @@ const parseCacheArg = (idList, type, throwInvalid = true) => {
   const isPrivateInfo = isPrivate || isNickname
   const isValid = isGroupInfo || isPrivateInfo || isGroupUserInfo
   if (throwInvalid && !isValid) {
-    throw new Error(`Invalid cache name type: ${ type }`)
+    throw new Error(`Invalid cache name type: ${type}`)
   }
   if (!isArray(idList)) {
     idList = isGroupInfo ? [idList, undefined] : [undefined, idList]
@@ -599,7 +599,7 @@ const fetchDisplayName = async (
     }
     changeName()
   } catch (error) {
-    console.error('获取名称失败:', id, type, error)
+    console.warn('获取名称失败:', id, type, error)
     let idText = ''
     if (group_id) {
       idText += '群: ' + group_id
@@ -610,7 +610,7 @@ const fetchDisplayName = async (
       }
       idText += '用户: ' + user_id
     }
-    showToast('error', `获取名称失败: ${ idText }; 类型: ${ type }`)
+    // showToast('error', `获取名称失败: ${ idText }; 类型: ${ type }`)
     result.error = true
   }
   return result;

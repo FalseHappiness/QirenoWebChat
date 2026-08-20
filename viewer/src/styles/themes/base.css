@@ -48,8 +48,10 @@
     /* ---- 背景色 ---- */
     --color-bg-page: #f5f5f5;
     --color-bg-card: #fff;
-    --color-bg-hover: #EBEBEB;
-    --color-bg-active: #e0e0e0;
+    /*--color-bg-hover: #EBEBEB;*/
+    /*--color-bg-active: #e0e0e0;*/
+    --color-bg-hover-opacity: #00000014;
+    --color-bg-active-opacity: #00000029;
     --color-bg-sidebar: var(--color-bg-page); /* 已合并：使用 --color-bg-page */
     --color-bg-chat: var(--color-bg-page); /* 已合并：使用 --color-bg-page */
     --color-bg-message-in: #fff;

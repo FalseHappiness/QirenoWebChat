@@ -103,6 +103,32 @@ async function findAndCopyEmojiResources() {
   // 复制最新的目录
   await copyEntireDir(best.path, emojiDir);
   console.log(`✅ 已替换全部Emoji资源, uin: ${best.uin}`);
+
+  // ========== 复制 OnlineStatusSmallIcon 资源 ==========
+  const onlineStatusSourceDir = path.join(
+    best.userDoc, 'Tencent Files', best.uin,
+    'nt_qq', 'nt_data', 'OnlineStatus', 'OnlineStatusSmallIcon'
+  );
+  const onlineStatusDestDir = path.join(baseDir, 'OnlineStatusSmallIcon');
+
+  try {
+    await access(onlineStatusSourceDir);
+    console.log(`✅ 检测到 OnlineStatusSmallIcon 目录: ${onlineStatusSourceDir}`);
+
+    // 清理目标目录
+    await deleteAndRecreateDir(onlineStatusDestDir);
+
+    // 复制目录
+    await copyEntireDir(onlineStatusSourceDir, onlineStatusDestDir);
+    console.log(`✅ 已替换 OnlineStatusSmallIcon 资源, uin: ${best.uin}`);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(`⚠️ 未找到 OnlineStatusSmallIcon 目录: ${onlineStatusSourceDir}，跳过复制`);
+    } else {
+      console.error(`复制 OnlineStatusSmallIcon 时出错:`, err);
+      throw err;
+    }
+  }
 }
 
 findAndCopyEmojiResources().catch(console.error);

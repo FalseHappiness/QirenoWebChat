@@ -8,13 +8,13 @@ import {
   fetchGroupInfo,
   fetchGroupMemberInfo,
   fetchGroupNotice, fetchProfileLikeInfo, fetchSendProfileLike,
-  fetchStrangerInfo,
+  fetchStrangerInfo, fetchUserOnlineStatus,
   getGroupLogo,
   getUserLogo
 } from "@/scripts/backend-api.js";
 import { nanoid } from "nanoid";
 import EnterArrow from "../Widgets/EnterArrow.vue";
-import { isNumber, isString, mergeNotEmpty } from "@/scripts/types-util.js";
+import { isNumber, isObject, isString, mergeNotEmpty } from "@/scripts/types-util.js";
 import QIcon from "@/components/Common/Icons/QIcon.vue";
 import { showErrorToast } from "@/scripts/toast.js";
 import {
@@ -25,10 +25,12 @@ import {
 } from "@/scripts/user-info-util.js";
 import { checkSameContact, createGroupContact } from "@/scripts/contacts-util.js";
 import ProfileEditor from "@/components/Windows/ProfileEditor.vue";
+import { getOnlineStatusIcon, getStatusDescription } from "@/scripts/oneline-status.js";
+import OnlineStatusEditor from "@/components/Windows/OnlineStatusEditor.vue";
 
 export default defineComponent({
   name: "ContactInfoTooltip",
-  components: { ProfileEditor, QIcon, EnterArrow, Tooltip },
+  components: { OnlineStatusEditor, ProfileEditor, QIcon, EnterArrow, Tooltip },
   data() {
     return {
       group_user: null,
@@ -42,7 +44,9 @@ export default defineComponent({
       latestGroupNotice: null,
       remarkModel: null,
       profileLike: null,
-      isShowProfileEditor: false
+      isShowProfileEditor: false,
+      onlineStatus: null,
+      isShowOnlineStatusEditor: false,
     }
   },
   inject: ['selfId', "changeFriendContactRemark", "changeGroupContactRemark", "activeContact", "flattenContacts", "selectContact"],
@@ -52,7 +56,8 @@ export default defineComponent({
     getUserLogo,
     disappear() {
       this.group_user = this.user = this.group = this.group_id = this.user_id =
-        this.position = this.showId = this.showTime = this.latestGroupNotice = this.remarkModel = this.profileLike = null
+        this.position = this.showId = this.showTime = this.latestGroupNotice = this.remarkModel =
+          this.onlineStatus = this.profileLike = null
     },
     showContactInfo(options) {
       this.disappear()
@@ -93,6 +98,7 @@ export default defineComponent({
         this.user = mergeNotEmpty(user, getUserInfoCache(user_id)) || user
         fetchStrangerInfo(user_id).then(setter("user"))
         fetchProfileLikeInfo(user_id).then(setter("profileLike"))
+        fetchUserOnlineStatus(user_id).then(setter("onlineStatus"))
       }
       if (group_id && !user_id) {
         group = group || {}
@@ -150,7 +156,7 @@ export default defineComponent({
           this.profileLike = info
         }
       } else {
-        showErrorToast(`点赞失败: ${ result?.message }`)
+        showErrorToast(`点赞失败: ${result?.message}`)
         console.error("点赞个人配置失败:", result)
       }
     },
@@ -174,12 +180,18 @@ export default defineComponent({
     handleOpenProfileEditor() {
       this.isShowProfileEditor = true
       this.disappear()
+    },
+    handleOpenOnlineStatusEditor() {
+      this.isShowOnlineStatusEditor = true
+      this.disappear()
     }
   },
   mounted() {
+    Emitter.on("open-online-status-editor", this.handleOpenOnlineStatusEditor)
     document.addEventListener("mousedown", this.documentMousedown)
   },
   unmounted() {
+    Emitter.off("open-online-status-editor")
     document.removeEventListener("mousedown", this.documentMousedown)
   },
   computed: {
@@ -196,6 +208,9 @@ export default defineComponent({
       if (!this.user_id) return true
       return this.user_id !== this.selfId
     },
+    isSelf() {
+      return !this.notSelf
+    },
     avatarFrameUrl() {
       if (!this.user_id) return
       return getUserAvatarFrameCache(this.user_id)
@@ -205,6 +220,23 @@ export default defineComponent({
       return this.flattenContacts.some(
         contact => checkSameContact(contact, { contact_id: this.user_id, type: 'private' })
       )
+    },
+    isNoOnlineStatus() {
+      return this.onlineStatus?.status === 0 && this.onlineStatus?.ext_status === 0
+    },
+    onlineStatusName() {
+      const name = getStatusDescription(this.onlineStatus)
+      if (this.isNoOnlineStatus) {
+        return ""
+      }
+      if (isObject(this.onlineStatus) && !isString(name)) {
+        console.warn("未解析的在线状态", this.onlineStatus)
+      }
+      return name
+    },
+    onlineStatusIcon() {
+      if (!isObject(this.onlineStatus)) return null
+      return getOnlineStatusIcon(this.onlineStatus)
     }
   },
   watch: {
@@ -224,6 +256,7 @@ export default defineComponent({
 
 <template>
   <ProfileEditor v-if="isShowProfileEditor" @close="isShowProfileEditor = false"/>
+  <OnlineStatusEditor v-if="isShowOnlineStatusEditor" @close="isShowOnlineStatusEditor = false"/>
   <Tooltip
     v-if="position"
     :tip-position="position"
@@ -247,6 +280,17 @@ export default defineComponent({
             <div class="contact-info-header-text overflow-ellipsis">
               <span class="contact-info-name overflow-ellipsis" :title="userNickname">{{ userNickname }}</span>
               <span class="contact-info-id">QQ {{ user_id }}</span>
+              <span class="contact-info-online-status" v-if="onlineStatus && !isNoOnlineStatus"
+                    :class="{ self: isSelf }"
+                    @click="isSelf ? handleOpenOnlineStatusEditor() : 0">
+                <template v-if="isString(onlineStatusName)">
+                  <img alt="" :src="onlineStatusIcon"/>
+                  <span>{{ onlineStatusName }}</span>
+                </template>
+                <template v-else>
+                  未解析的在线状态
+                </template>
+              </span>
             </div>
             <div class="contact-profile-like" :class="{ clickable: notSelf }" v-if="profileLike"
                  @click="sendProfileLike">
@@ -284,7 +328,7 @@ export default defineComponent({
               <img class="contact-info-logo" :src="getGroupLogo(group_id)" alt="">
             </div>
             <div class="contact-info-header-text overflow-ellipsis">
-              <span class="contact-info-name">{{ group?.group_name }}</span>
+              <span class="contact-info-name overflow-ellipsis">{{ group?.group_name }}</span>
               <span class="contact-info-id">
                 {{ group_id }}
                 <span v-if="group?.member_count">（{{ group.member_count }}人）</span>
@@ -310,7 +354,8 @@ export default defineComponent({
           </div>
         </div>
         <div v-if="user_id || group_id" class="contact-info-actions">
-          <button v-if="user_id && !notSelf" class="contact-info-action-btn cancel-btn" @click="handleOpenProfileEditor">
+          <button v-if="user_id && isSelf" class="contact-info-action-btn cancel-btn"
+                  @click="handleOpenProfileEditor">
             编辑资料
           </button>
           <button class="contact-info-action-btn cancel-btn" @click="handleShare">
@@ -363,10 +408,11 @@ export default defineComponent({
 .contact-info-header-text {
   @extend %flex-column;
   justify-content: center;
-  margin-left: 16px;
+  margin-left: 13px;
   gap: 2px;
   flex: 1;
   line-height: normal;
+  padding-left: 3px;
 }
 
 .contact-profile-like {
@@ -468,6 +514,33 @@ export default defineComponent({
     &.primary-btn {
       @include btn-primary;
     }
+  }
+}
+
+.contact-info-online-status {
+  font-size: 14px;
+  border-radius: $radius-btn;
+  align-self: flex-start;
+  padding: 1px 1px;
+  cursor: pointer;
+  transform: translateX(-3px);
+
+  &.self {
+    @extend %hover-active-bg;
+  }
+
+  img {
+    @include square-size(20px);
+    margin-right: 4px;
+  }
+
+  img, span {
+    // 比 flex 更在同一水平线上？
+    vertical-align: middle;
+  }
+
+  span {
+    margin-right: 2px;
   }
 }
 </style>

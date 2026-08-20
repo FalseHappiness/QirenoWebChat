@@ -64,12 +64,12 @@
 }
 
 // ---- 按钮基础 ----
-@mixin btn-base {
+@mixin btn-base($radius: $radius-btn) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: $radius-btn;
+  border-radius: $radius;
   cursor: pointer;
   transition: background $transition-fast, opacity $transition-fast, transform 0.1s;
   outline: 0;
@@ -124,8 +124,8 @@
 }
 
 // ---- 主色按钮（#0099ff 蓝色确认按钮） ----
-@mixin btn-primary {
-  @include btn-base;
+@mixin btn-primary($radius: $radius-btn) {
+  @include btn-base($radius);
   background-color: $color-primary;
   color: $color-text-white;
 
@@ -140,8 +140,8 @@
 }
 
 // ---- 取消/边框按钮 ----
-@mixin btn-cancel {
-  @include btn-base;
+@mixin btn-cancel($radius: $radius-btn) {
+  @include btn-base($radius);
   background-color: $color-bg-card;
   color: $color-text-regular;
   border: 1px solid $color-border-cancel;

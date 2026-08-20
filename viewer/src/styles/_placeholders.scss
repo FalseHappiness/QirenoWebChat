@@ -89,6 +89,10 @@
   @extend %active-bg;
 }
 
+%hover-active-bg-opacity {
+  @include hover-active-bg($color-bg-hover-opacity, $color-bg-active-opacity);
+}
+
 // ---- 轻量悬停（rgb半透明） ----
 %hover-light {
   &:hover {
@@ -336,4 +340,9 @@
 %flex-fill-hide {
   flex: 1;
   overflow: hidden;
+}
+
+%bg-fill-no-tile {
+  background-repeat: no-repeat;
+  background-size: cover;
 }
