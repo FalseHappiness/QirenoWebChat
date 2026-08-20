@@ -81,7 +81,7 @@ export default {
         return await navigator.mediaDevices.getUserMedia({ audio: true })
       } catch (err) {
         console.error('获取录音权限失败:', err)
-        showErrorToast('获取录音权限失败')
+        showErrorToast(`获取录音权限失败: ${err}`)
         return null
       }
     },

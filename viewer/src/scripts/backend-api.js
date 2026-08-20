@@ -1500,7 +1500,7 @@ async function fetchDoubtFriendAddRequests(count = 114514) {
     // 转为 request event
     for (const req of list) {
       req.flag = req.flag ?? req.uin
-      req.comment = req.reason ?? (req.msg || req.source)
+      req.comment = req.msg ?? req.reason ?? req.source
       req.user_name = req.nickname || req.nick
       req.user_id = req.user_id || req.uin // 此处 uin 实际上为 uid, 不是 QQ 号
       req.approved = null
@@ -1545,6 +1545,10 @@ async function fetchSetCustomStatus(face_id, wording) {
 async function fetchMessageEmojiLikes(message_id) {
   if (!gteSnowLuma(1, 14, 12)) return null
   return await fetchActionData("get_msg_emoji_likes", { message_id })
+}
+
+async function fetchSetMessageEmojiLike(message_id, emoji_id, set) {
+  return await fetchAction("set_msg_emoji_like", { message_id, emoji_id, set })
 }
 
 export {
@@ -1660,4 +1664,5 @@ export {
   fetchSetOnlineStatus,
   fetchSetCustomStatus,
   fetchMessageEmojiLikes,
+  fetchSetMessageEmojiLike,
 }

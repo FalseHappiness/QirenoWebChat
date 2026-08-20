@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onUnmounted, computed, h, onMounted, inject, toRaw, watch } from 'vue'
+import { ref, onUnmounted, computed, h, onMounted, inject, toRaw, watch, reactive } from 'vue'
 import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.js";
 import '@lottiefiles/lottie-player';
 import {
@@ -8,7 +8,7 @@ import {
   fetchRecallMessage,
   fetchRecordToText,
   fetchSendMessage,
-  fetchSetGroupTodo,
+  fetchSetGroupTodo, fetchSetMessageEmojiLike,
   fetchTranslateEnglish,
   getUserLogo,
   handleApiRequest
@@ -25,7 +25,7 @@ import { vDoubleClick } from '@/directives/double-click-directive.js';
 import { formatRelativeTime, hasEnglish, parseJSON } from "@/scripts/util.js";
 import { showErrorToast, showSuccessToast, showToast } from "@/scripts/toast.js";
 import { Emitter } from "@/composables/useEventBus.js";
-import { qqAppImg } from "@/composables/useBase.js";
+import { qqAppImg, qqSystemEmoji } from "@/composables/useBase.js";
 import LoadingSpinner from "../../../Common/Widgets/LoadingSpinner.vue";
 import QIcon from "../../../Common/Icons/QIcon.vue";
 import { isFunction, isString, objectHasKey } from "@/scripts/types-util.js";
@@ -279,6 +279,8 @@ const removeGroupTodo = inject("removeGroupTodoMessage")
 
 const isShowMessageDetails = ref(false)
 
+const openEmojiLikeEditor = () => Emitter.emit('show-emoji-likes-editor', props.message.message_id)
+
 const customMessageContextMenu = e => {
   const contact = toRaw(activeContact.value)
   const sameContact = () => checkSameContact(contact, activeContact.value)
@@ -370,6 +372,12 @@ const customMessageContextMenu = e => {
         qq: userId.value
       } : null)
     }, "quote_24"),
+    basicContextItem(
+      '表情回应',
+      openEmojiLikeEditor,
+      "expression_add_24",
+      !isRecalled.value
+    ),
     basicContextItem(
       '添加到表情',
       async () => handleApiRequest(fetchAddCustomFace(imageSrc), "表情添加成功", "表情添加失败"),
@@ -587,7 +595,109 @@ const handleMessageContainerClick = e => {
   }
 }
 
-const messageEmojiLikes = ref(null)
+/**
+ * Map结构
+ * key: emoji_id
+ * value: { count:number, uids:string[] }
+ */
+const messageEmojiLikes = reactive(new Map())
+
+/**
+ * 添加用户到表情
+ * @param {string} emoji_id
+ * @param {string} user_id
+ * @returns {boolean} true=添加成功 false=已经存在
+ */
+function addEmojiUser(emoji_id, user_id) {
+  const info = messageEmojiLikes.get(emoji_id)
+  if (info) {
+    // 已存在该表情
+    if (info.uids.includes(user_id)) {
+      return false
+    }
+    info.uids.push(user_id)
+    info.count = info.uids.length
+  } else {
+    // 新建表情
+    messageEmojiLikes.set(emoji_id, {
+      count: 1,
+      uids: [user_id]
+    })
+  }
+  return true
+}
+
+/**
+ * 从表情移除用户
+ * @param {string} emoji_id
+ * @param {string} user_id
+ * @returns {boolean} true=移除成功 false=本来就不存在
+ */
+function removeEmojiUser(emoji_id, user_id) {
+  const info = messageEmojiLikes.get(emoji_id)
+  if (!info) return false
+
+  const idx = info.uids.indexOf(user_id)
+  if (idx === -1) return false
+
+  info.uids.splice(idx, 1)
+  info.count = info.uids.length
+
+  // 没人了直接删掉key，保持Map干净
+  if (info.count === 0) {
+    messageEmojiLikes.delete(emoji_id)
+  }
+  return true
+}
+
+/**
+ * 判断用户是否已点该表情
+ * @param {string} emoji_id
+ * @param {string} user_id
+ */
+function hasEmojiUser(emoji_id, user_id) {
+  const info = messageEmojiLikes.get(emoji_id)
+  if (!info) return false
+  return info.uids.includes(user_id)
+}
+
+// 处理 group_msg_emoji_like 事件
+const handleEmojiLikeUpdate = ({ message_id, sub_type, emoji_id, user_id }) => {
+  // 只处理 message / message_sent 类型的消息
+  if (!['message', 'message_sent'].includes(props.message.post_type)) return
+  if (props.message.message_id !== message_id) return
+
+  if (sub_type === 'add') {
+    addEmojiUser(emoji_id, user_id)
+  } else if (sub_type === 'remove') {
+    removeEmojiUser(emoji_id, user_id)
+  }
+}
+
+const emojiList = computed(() => {
+  const arr = []
+  for (const [emoji_id, item] of messageEmojiLikes) {
+    arr.push({
+      emoji_id,
+      count: item.count,
+      hasSelf: item.uids.includes(props.message.self_id)
+    })
+  }
+  return arr
+})
+
+const getEmojiReplyIcon = emoji_id => {
+  const getEmoji = type => qqSystemEmoji(encodeURIComponent(emoji_id), type, `${encodeURIComponent(emoji_id)}.png`)
+  return getEmoji('apng') || getEmoji('png')
+}
+
+const handleClickEmojiLike = (emoji_id, hasSelf) => {
+  handleApiRequest(
+    fetchSetMessageEmojiLike(props.message.message_id, emoji_id, !hasSelf),
+    void 0,
+    "设置失败"
+  )
+}
 
 // 组件加载时
 onMounted(() => {
@@ -626,6 +736,7 @@ onMounted(() => {
     //     console.error('获取消息表情回复错误', e)
     //   })
   }
+  Emitter.on('emoji-like-update', handleEmojiLikeUpdate)
 })
 
 // 组件卸载时
@@ -633,6 +744,8 @@ onUnmounted(() => {
   document.removeEventListener('mouseenter', handleMouseEnter, { capture: true })
   document.removeEventListener('mouseleave', handleMouseLeave, { capture: true })
   document.removeEventListener('mousedown', handleDocumentClick)
+
+  Emitter.off('emoji-like-update', handleEmojiLikeUpdate)
 
   // 清除可能存在的定时器
   if (hoverTimer) {
@@ -688,6 +801,7 @@ onUnmounted(() => {
       <div class="message-before">
         <div class="message-name-title" v-if="isGroup">
           <span class="message-name-title-display-name">{{ displayName }}</span>
+          &nbsp;
           <GroupLevelTitle :userInfo="currentGroupUserInfo"/>
         </div>
         <span class="message-send-time">{{ formatTime(message) }}</span>
@@ -736,6 +850,15 @@ onUnmounted(() => {
         <div class="message-tip" v-if="isSecretEmoji">
           隐藏表情
         </div>
+        <div class="message-tip emoji-like"
+             @click="handleClickEmojiLike(emoji_id, hasSelf)"
+             v-for="{ emoji_id, count, hasSelf } in emojiList" :class="{ self: hasSelf }">
+          <img alt="" :src="getEmojiReplyIcon(emoji_id)"/>
+          {{ count }}
+        </div>
+        <div class="message-tip emoji-like-add" v-if="emojiList?.length" @click="openEmojiLikeEditor">
+          <QIcon name="expression_add_24"/>
+        </div>
       </div>
     </div>
     <div class="message-container-checkbox">
@@ -783,7 +906,6 @@ onUnmounted(() => {
   padding: 5px 8px;
   font-size: 85%;
   margin: 5px 0;
-  direction: ltr;
   word-break: break-all;
   text-align: left;
 }
@@ -805,15 +927,34 @@ onUnmounted(() => {
   padding: 0 6px;
   align-items: center;
   @include flex-center;
-  direction: ltr;
 
   img, &:deep(svg) {
-    width: 12px;
-    height: 12px;
+    @include square-size(12px);
     margin-right: 2px;
 
     &.todo {
       color: $color-group-todo;
+    }
+  }
+
+  &.emoji-like {
+    img {
+      @include square-size(18px);
+      margin-right: 4px;
+    }
+
+    &.self {
+      background-color: color-opacity($color-primary, 0.45);
+      color: $color-text-primary;
+    }
+  }
+
+  &.emoji-like-add {
+    cursor: pointer;
+
+    svg {
+      @include square-size(16px);
+      margin: 0 4px;
     }
   }
 }
@@ -833,42 +974,47 @@ onUnmounted(() => {
   margin: 0 8px;
   height: 24px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 
   .message-send-time {
-    direction: ltr;
     display: inline-block;
   }
-
 }
 
 .message {
+  &-msg-side {
+    @extend %flex-column;
+  }
+
   &-in {
-    direction: ltr;
-    text-align: left;
-
-    .message-before {
-      direction: ltr;
-    }
-
     .message {
       @include message-bubble-in;
     }
 
     .message-avatar {
-      margin-left: 20px;
+      margin-inline-start: 20px;
     }
 
     .message-container-checkbox {
-      right: 15px;
+      inset-inline-end: 15px;
+    }
+
+    .message-msg-side {
+      align-items: flex-start;
     }
   }
 
   &-out {
-    direction: rtl;
-    text-align: right;
+    flex-direction: row-reverse;
 
     .message-before {
-      direction: rtl;
+      flex-direction: row-reverse;
+    }
+
+    .message-tips {
+      justify-content: flex-end;
     }
 
     .message {
@@ -876,11 +1022,15 @@ onUnmounted(() => {
     }
 
     .message-avatar {
-      margin-right: 20px;
+      margin-inline-end: 20px;
     }
 
     .message-container-checkbox {
-      left: 15px;
+      inset-inline-start: 15px;
+    }
+
+    .message-msg-side {
+      align-items: flex-end;
     }
   }
 }
@@ -905,11 +1055,11 @@ onUnmounted(() => {
 
 @include small-mobile {
   .message-in .message-avatar {
-    margin-left: 10px;
+    margin-inline-start: 10px;
   }
 
   .message-out .message-avatar {
-    margin-right: 10px;
+    margin-inline-end: 10px;
   }
 }
 
@@ -926,8 +1076,8 @@ onUnmounted(() => {
 }
 
 .message-in .message-avatar-container[data-has-frame]::after {
-  right: 0;
-  left: unset;
+  inset-inline-end: 0;
+  inset-inline-start: unset;
 }
 
 .private .message-avatar {
@@ -939,23 +1089,21 @@ onUnmounted(() => {
 }
 
 .message-name-title {
-  display: inline-block;
+  display: inline-flex;
   margin: 0 0 4px 0;
 
   &:deep(.message-name-title-display-name) {
-    direction: ltr;
     display: inline-block;
   }
 }
 
 .message-in .message-name-title {
-  direction: ltr;
-  margin-right: 5px;
+  margin-inline-end: 5px;
 }
 
 .message-out .message-name-title {
-  direction: rtl;
-  margin-left: 5px;
+  flex-direction: row-reverse;
+  margin-inline-start: 5px;
 }
 
 .message-msg-side {

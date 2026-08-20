@@ -22,7 +22,7 @@ import {
 } from "../scripts/backend-api.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
-import { CalledEmitter } from "../composables/useEventBus.js";
+import { CalledEmitter, Emitter } from "../composables/useEventBus.js";
 import ContactInfoTooltip from "../components/Common/Overlay/ContactInfoTooltip.vue";
 import { isSupportedNoticeMessage } from "../scripts/parse-message.js";
 import DownloadProgressPopup from "../components/Windows/DownloadProgressPopup.vue";
@@ -34,7 +34,7 @@ import {
   flattenCategorizedContacts
 } from "../scripts/contacts-util.js";
 import { parseJSON } from "../scripts/util.js";
-import { isNumber, isString } from "../scripts/types-util.js";
+import { isArray, isNumber, isString } from "../scripts/types-util.js";
 import { DestKey } from "../scripts/view-keys.js";
 import {
   getGroupListCache,
@@ -99,7 +99,7 @@ const selfId = ref(null)
 
 watch(() => isConnected.value && selfId.value, val => {
   if (val) {
-    console.log(`WebSocket ${ wsInited.value ? 're' : '' }connected, checking for missed messages...`)
+    console.log(`WebSocket ${wsInited.value ? 're' : ''}connected, checking for missed messages...`)
     wsInited.value = true;
   }
 })
@@ -156,7 +156,7 @@ const changeGroupContactRemark = async (contact_id, remark) => {
     )
   } else {
     console.log("Change group contact remark error: ", contact_id, remark, result)
-    showErrorToast(`改变群 ${ contact_id } 备注为 ${ remark } 失败`)
+    showErrorToast(`改变群 ${contact_id} 备注为 ${remark} 失败`)
   }
 }
 provide("changeGroupContactRemark", changeGroupContactRemark)
@@ -172,7 +172,7 @@ const changeSelfLongNick = async longNick => {
     selfInfo.value.long_nick = selfInfo.value.longNick = longNick;
   } else {
     console.log("Change self long nick error: ", longNick, result)
-    showErrorToast(`改变个性签名为 ${ longNick } 失败`)
+    showErrorToast(`改变个性签名为 ${longNick} 失败`)
   }
 }
 provide("changeSelfLongNick", changeSelfLongNick)
@@ -186,7 +186,7 @@ const changeFriendContactRemark = async (user_id, remark) => {
     )
   } else {
     console.log("Change private contact remark error: ", user_id, remark, result)
-    showErrorToast(`改变好友 ${ user_id } 备注为 ${ remark } 失败`)
+    showErrorToast(`改变好友 ${user_id} 备注为 ${remark} 失败`)
   }
 }
 provide("changeFriendContactRemark", changeFriendContactRemark)
@@ -219,7 +219,7 @@ const changeGroupContactName = async (contact_id, name) => {
     )
   } else {
     console.log("Change group contact remark error: ", contact_id, name, result)
-    showErrorToast(`改变群 ${ contact_id } 名称为 ${ name } 失败`)
+    showErrorToast(`改变群 ${contact_id} 名称为 ${name} 失败`)
   }
 }
 provide("changeGroupContactName", changeGroupContactName)
@@ -453,7 +453,7 @@ onMounted(() => {
     // 后端模式：如果有 self_id，附加到 wsUri 路径中
     let backendWsUri = wsUri
     if (props.account.self_id) {
-      backendWsUri = wsUri.replace(/\/frontend(?:\/|$)?/, `/frontend/${ props.account.self_id }`)
+      backendWsUri = wsUri.replace(/\/frontend(?:\/|$)?/, `/frontend/${props.account.self_id}`)
     }
     url = backendWsUri
   }
@@ -530,6 +530,19 @@ onMounted(() => {
             user_id,
             { role: sub_type === 'set' ? 'admin' : 'member' }
           )
+        } else if (notice_type === 'group_msg_emoji_like') {
+          const { likes } = event
+          if (isArray(likes)) {
+            for (const like of likes) {
+              const emoji_id = Number(like.emoji_id)
+              Emitter.emit('emoji-like-update', {
+                message_id: notice.message_id,
+                sub_type: notice.sub_type,
+                emoji_id,
+                user_id: Number(notice.user_id)
+              })
+            }
+          }
         }
 
         if (isSupportedNoticeMessage(notice)) {

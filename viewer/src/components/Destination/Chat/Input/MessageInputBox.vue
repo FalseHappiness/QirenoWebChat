@@ -25,6 +25,7 @@ import { showErrorToast, showInfoToast, showSuccessToast, showToast } from "@/sc
 import { Icon } from "@iconify/vue";
 import GroupAiRecordEditor from "./GroupAiRecordEditor.vue";
 import GroupNoticeEditor from "./GroupNoticeEditor.vue";
+import EmojiLikesEditor from "./EmojiLikesEditor.vue";
 import {
   isArray,
   isBoolean,
@@ -56,6 +57,7 @@ export default defineComponent({
     QIcon,
     GroupAiRecordEditor,
     GroupNoticeEditor,
+    EmojiLikesEditor,
     CustomScrollBar,
     ContactsPicker,
     FilesConfirm,
@@ -96,6 +98,8 @@ export default defineComponent({
       },
       showFilesUploadTasks: false,
       showGroupNoticeEditor: false,
+      showEmojiLikesEditor: false,
+      emojiLikesMessageId: null,
       remainGroupAtAll: undefined,
       isShowRecordPanel: false,
       pendingUploadInfo: {
@@ -134,6 +138,7 @@ export default defineComponent({
     Emitter.on('select-upload-group-images', this.handleSelectUploadGroupImages)
     Emitter.on('select-contacts-send-msg', this.handleSelectContactsSendMsg)
     Emitter.on('show-group-notice-editor', this.handleShowGroupNoticeEditor)
+    Emitter.on('show-emoji-likes-editor', this.handleShowEmojiLikesEditor)
   },
   beforeDestroy() {
     this.handleUnmounted()
@@ -158,12 +163,23 @@ export default defineComponent({
       Emitter.off('select-upload-group-images')
       Emitter.off('select-contacts-send-msg')
       Emitter.off('show-group-notice-editor')
+      Emitter.off('show-emoji-likes-editor')
     },
 
     handleShowGroupNoticeEditor() {
       if (this.activeContact?.type === 'group') {
         this.showGroupNoticeEditor = true
       }
+    },
+
+    handleShowEmojiLikesEditor(message_id) {
+      this.emojiLikesMessageId = message_id
+      this.showEmojiLikesEditor = true
+    },
+
+    handleCloseEmojiLikesEditor() {
+      this.showEmojiLikesEditor = false
+      this.emojiLikesMessageId = null
     },
 
     handleAddNoticeImage() {
@@ -2425,6 +2441,11 @@ export default defineComponent({
       :group-id="activeContact.contact_id"
       @close="showGroupNoticeEditor = false"
       @add-notice-image="handleAddNoticeImage"
+    />
+    <EmojiLikesEditor
+      v-if="showEmojiLikesEditor && emojiLikesMessageId"
+      :message_id="emojiLikesMessageId"
+      @close="handleCloseEmojiLikesEditor"
     />
     <Tooltip v-if="isGroup && atInputPosition && filteredAtGroupUsers?.length" :tip-position="atInputPosition"
              placement="tr">

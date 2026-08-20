@@ -14,3 +14,13 @@
 @use "./vue-toastification/src/scss/animations/bounce";
 @use "./vue-toastification/src/scss/animations/fade";
 @use "./vue-toastification/src/scss/animations/slideBlurred";
+
+.#{variables.$vt-namespace}__container {
+  &.top-center,
+  &.bottom-center {
+    left: 50%;
+    margin-left: 0;
+    transform: translateX(-50%);
+    max-width: calc(100% - 20px);
+  }
+}

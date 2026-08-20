@@ -243,11 +243,17 @@ export default defineComponent({
 }
 
 .fv-message-in .fv-message-avatar {
-  margin-left: 20px;
+  margin-inline-start: 20px;
 }
 
-.fv-message-out .fv-message-avatar {
-  margin-right: 20px;
+.fv-message-out {
+  .fv-message-avatar {
+    margin-inline-end: 20px;
+  }
+
+  .fv-message-before {
+    flex-direction: row-reverse;
+  }
 }
 
 .fv-group .fv-message-avatar {
@@ -260,11 +266,11 @@ export default defineComponent({
 
 @media (max-width: 425px) {
   .fv-message-in .fv-message-avatar {
-    margin-left: 10px;
+    margin-inline-start: 10px;
   }
 
   .fv-message-out .fv-message-avatar {
-    margin-right: 10px;
+    margin-inline-end: 10px;
   }
 }
 
@@ -283,21 +289,18 @@ export default defineComponent({
 .fv-message-before {
   font-size: 13px;
   color: $color-text-muted !important;
-  margin: 0 8px;
+  margin: 0 8px 4px;
   height: 24px;
   white-space: nowrap;
 }
 
-.fv-message-in .fv-message-before {
-  direction: ltr;
-}
-
-.fv-message-out .fv-message-before {
-  direction: rtl;
+.fv-message-before {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .fv-message-before .fv-message-send-time {
-  direction: ltr;
   display: inline-block;
 }
 
@@ -313,22 +316,18 @@ export default defineComponent({
 /* ===== 群聊显示名称 (仿 MessageItem.message-name-title) ===== */
 .fv-message-name-title {
   display: inline-block;
-  margin: 0 0 4px 0;
 }
 
 .fv-message-name-title-display-name {
-  direction: ltr;
   display: inline-block;
 }
 
 .fv-message-in .fv-message-name-title {
-  direction: ltr;
-  margin-right: 5px;
+  margin-inline-end: 5px;
 }
 
 .fv-message-out .fv-message-name-title {
-  direction: rtl;
-  margin-left: 5px;
+  margin-inline-start: 5px;
 }
 
 /* ===== 消息气泡 (仿 MessageItem.message) ===== */
@@ -340,7 +339,6 @@ export default defineComponent({
   font-size: 16px;
   min-height: 38px;
   min-width: 30px;
-  direction: ltr;
   text-align: left;
   overflow-wrap: break-word;
   word-break: break-all;
@@ -350,12 +348,11 @@ export default defineComponent({
 
 /* 对齐方向 */
 .fv-message-in {
-  direction: ltr;
   text-align: left;
 }
 
 .fv-message-out {
-  direction: rtl;
+  flex-direction: row-reverse;
   text-align: right;
 }
 

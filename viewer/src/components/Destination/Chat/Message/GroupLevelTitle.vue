@@ -43,7 +43,7 @@ const colorClass = computed(() => {
 
 <template>
   <div class="message-group-level-title-container" v-if="info">
-    &nbsp;<span v-if="!info.is_robot" class="message-group-level-title" :class="colorClass">LV{{
+    <span v-if="!info.is_robot" class="message-group-level-title" :class="colorClass">LV{{
       info.level || 0
     }}{{ title }}</span>
     <QIcon v-else-if="info.is_robot" name="robot_label_16" class="robot-icon"/>
