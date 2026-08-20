@@ -49,7 +49,19 @@ class CalledEmitterClass {
 
   off(type, handler) {
     const typeHandlers = this.#handlerMap.get(type)
-    const wrapped = typeHandlers && typeHandlers.get(handler)
+    if (!typeHandlers) return
+
+    // 如果没有传 handler，移除该类型的所有监听器
+    if (handler === undefined) {
+      for (const [, wrapped] of typeHandlers) {
+        this.#bus.off(type, wrapped)
+      }
+      typeHandlers.clear()
+      this.#handlerMap.delete(type)
+      return
+    }
+
+    const wrapped = typeHandlers.get(handler)
 
     if (wrapped) {
       this.#bus.off(type, wrapped)

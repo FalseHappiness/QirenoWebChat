@@ -1542,6 +1542,11 @@ async function fetchSetCustomStatus(face_id, wording) {
   return await fetchAction("set_diy_online_status", { face_id, wording, face_type: 1 })
 }
 
+async function fetchMessageEmojiLikes(message_id) {
+  if (!gteSnowLuma(1, 14, 12)) return null
+  return await fetchActionData("get_msg_emoji_likes", { message_id })
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1654,4 +1659,5 @@ export {
   fetchUserOnlineStatus,
   fetchSetOnlineStatus,
   fetchSetCustomStatus,
+  fetchMessageEmojiLikes,
 }

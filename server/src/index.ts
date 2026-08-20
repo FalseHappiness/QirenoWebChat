@@ -246,7 +246,10 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
       const msg = tempMergedMessages[idx]!;
       // 如果有 real_seq，就用它作为键（重复时后面的覆盖前面的）
       const realSeq = msg['real_seq'] ?? msg['message_seq'];
-      const mergedKey = `${msg['post_type'] ?? null}_${realSeq}`;
+      let mergedKey = `${msg['post_type'] ?? null}_${realSeq}`;
+      if (msg['post_type'] === 'notice') {
+        mergedKey += `_${msg['id']}`
+      }
       if (('real_seq' in msg || 'message_seq' in msg) && realSeq !== undefined && realSeq !== null) {
         msg['real_seq'] = realSeq;
         const oldMsg = merged.get(mergedKey);

@@ -551,7 +551,10 @@ export async function getMessagesCore(params, db, onebotWS) {
       const realSeq = msg.real_seq ?? msg.message_seq;
       if (!isNil(realSeq)) {
         msg.real_seq = realSeq;
-        const key = `${msg.post_type}_${realSeq}`;
+        let key = `${msg.post_type}_${realSeq}`;
+        if (msg.post_type === 'notice') {
+          key += '_' + msg.id
+        }
         const oldMsg = merged.get(key);
 
         // 处理 event 合并逻辑（与真实后端一致）

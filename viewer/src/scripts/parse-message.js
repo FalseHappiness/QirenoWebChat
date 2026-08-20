@@ -167,7 +167,7 @@ const createNameSpanByMessageId = (message_id, promises) => {
     if (msg) {
       const sender = msg?.sender
 
-      name = msg.user_id === msg.self_id ? '你' : (sender.group_id ? sender?.card || sender?.remark || sender?.nickname : "对方")
+      name = msg.user_id === msg.self_id ? '你' : (msg.group_id ? sender?.card || sender?.remark || sender?.nickname : "对方")
     } else {
       name = '未知'
     }
