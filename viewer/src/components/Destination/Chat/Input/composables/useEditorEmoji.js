@@ -2,7 +2,7 @@
  * 编辑器表情相关 composable
  * 管理表情插入、表情URL、表情描述等逻辑
  */
-import { getPokeDescription } from "@/scripts/faces-config.js"
+import { getPokeDescription, secretEmojiids } from "@/scripts/faces-config.js"
 import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js"
 
 export function useEditorEmoji(globalStore) {
@@ -87,7 +87,8 @@ export function useEditorEmoji(globalStore) {
       '汪汪': [360, 361, 362, 363, 364, 365, 366, 367, 396, 397],
       '喜花妮': [404, 405, 406, 407, 408, 409, 410, 411, 412, 413],
       '企鹅': [376, 377, 378, 379, 380, 381, 382, 383, 400, 401],
-      '噗噗星人': [368, 369, 370, 371, 372, 373, 374, 375, 398, 399]
+      '噗噗星人': [368, 369, 370, 371, 372, 373, 374, 375, 398, 399],
+      '隐藏表情': [...globalStore?.secretEmojiids]
     }
     const usedId = []
     const specialList = []
