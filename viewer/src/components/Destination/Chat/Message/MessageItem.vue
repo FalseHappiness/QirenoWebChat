@@ -4,7 +4,7 @@ import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.j
 import '@lottiefiles/lottie-player';
 import {
   fetchAddCustomFace,
-  fetchChangeEssenceMsg, fetchDatabaseEmojiLikes,
+  fetchChangeEssenceMsg, fetchDatabaseEmojiLikes, fetchMessageEmojiLikes,
   fetchRecallMessage,
   fetchRecordToText,
   fetchSendMessage,
@@ -739,7 +739,8 @@ onMounted(() => {
   }
   getDisplayName()
   if (isGroup.value && shouldFetchEmojiLikes.value) {
-    fetchDatabaseEmojiLikes(props.message.message_id)
+    const message_id = props.message.message_id;
+    (gteSnowLuma(1, 14, 13) ? fetchMessageEmojiLikes(message_id) : fetchDatabaseEmojiLikes(message_id))
       .then(res => {
         loadEmojiLikesFromApi(res)
       })

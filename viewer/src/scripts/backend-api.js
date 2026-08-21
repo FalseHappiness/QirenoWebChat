@@ -1546,9 +1546,27 @@ async function fetchSetCustomStatus(face_id, wording) {
   return await fetchAction("set_diy_online_status", { face_id, wording, face_type: 1 })
 }
 
-async function fetchMessageEmojiLikes(message_id) {
+async function fetchMessageEmojiLikes(message_id, format = true) {
+  // 到 1 14 13 才没问题？
   if (!gteSnowLuma(1, 14, 12)) return null
-  return await fetchActionData("get_msg_emoji_likes", { message_id })
+  const raw = await fetchActionData("get_msg_emoji_likes", { message_id })
+
+  if (format && isArray(raw)) {
+    const result = new Map()
+    for (const item of raw) {
+      const emojiId = Number(item.emoji_id)
+      if (!result.has(emojiId)) {
+        result.set(emojiId, new Set())
+      }
+      const userIdSet = result.get(emojiId)
+      for (const u of item.users ?? []) {
+        userIdSet.add(u.user_id)
+      }
+    }
+    return result
+  }
+
+  return raw
 }
 
 async function fetchSetMessageEmojiLike(message_id, emoji_id, set) {
@@ -1564,7 +1582,7 @@ async function fetchDatabaseEmojiLikes(message_id, format = true) {
 }
 
 /**
- * 解析原始notice数组
+ * 解析从数据库传来的原始notice数组
  * 输出 Map<number, Set<number>>
  * @param {Array} rawList 接口返回data数组
  * @returns {Map<number, Set<number>>}
