@@ -1,5 +1,5 @@
 import { parseJSON, stringifyJSON } from "./util.js";
-import { isArray, isObject, objectHasKey } from "./types-util.js";
+import { isArray, isObject, isString, objectHasKey } from "./types-util.js";
 
 const convertNoticeSL = event => {
   event = parseJSON(event);
@@ -19,6 +19,10 @@ const convertNoticeSL = event => {
         if (!notice.sender_id) {
           notice.sender_id = notice.user_id
         }
+      }
+    } else if (notice.notice_type === 'group_msg_emoji_like') {
+      if (!objectHasKey(notice, 'is_add') && isString(notice.sub_type)) {
+        notice.is_add = notice.sub_type === 'add'
       }
     }
     return notice

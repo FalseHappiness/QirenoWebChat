@@ -2,20 +2,22 @@
 import { defineComponent } from 'vue'
 import SimpleWindow from "@/components/Common/Overlay/SimpleWindow.vue";
 import CustomScrollBar from "@/components/Common/Scrolling/CustomScrollBar.vue";
+import LoadingSpinner from "@/components/Common/Widgets/LoadingSpinner.vue";
 import { useEditorEmoji } from "./composables/useEditorEmoji.js";
 import { useGlobalStore } from "@/store/global.js";
-import { fetchSetMessageEmojiLike } from "@/scripts/backend-api.js";
+import { fetchSetMessageEmojiLike, fetchDatabaseEmojiLikes } from "@/scripts/backend-api.js";
 import { showToast } from "@/scripts/toast.js";
 
 export default defineComponent({
   name: "EmojiLikesEditor",
-  components: { SimpleWindow, CustomScrollBar },
+  components: { SimpleWindow, CustomScrollBar, LoadingSpinner },
   props: {
     message_id: {
       type: [Number, String],
       default: null
     },
   },
+  inject: ['selfId'],
   emits: ['close'],
   setup() {
     const global = useGlobalStore()
@@ -25,9 +27,30 @@ export default defineComponent({
   },
   data() {
     return {
-      // 本地维护已设置的表情回应列表（接口暂无法获取当前设置，所以用本地状态）
-      selectedEmoji: [],
+      loading: false,
+      emojiLikesMap: null, // Map<number, Set<number>> — 从后端获取的完整表情回应数据
+      selectedEmoji: new Set(), // 当前用户已设置的表情ID（字符串）集合
       settingEmojiId: null,
+    }
+  },
+  async mounted() {
+    this.loading = true
+    try {
+      const map = await fetchDatabaseEmojiLikes(this.message_id, true)
+      this.emojiLikesMap = map
+      // 根据 selfId 判断哪些表情已被当前用户设置
+      const selfIdNum = Number(this.selfId)
+      if (map && selfIdNum) {
+        for (const [emojiId, userSet] of map) {
+          if (userSet.has(selfIdNum)) {
+            this.selectedEmoji.add(String(emojiId))
+          }
+        }
+      }
+    } catch (e) {
+      console.error('获取表情回应数据失败', e)
+    } finally {
+      this.loading = false
     }
   },
   methods: {
@@ -36,32 +59,32 @@ export default defineComponent({
       this.settingEmojiId = emoji_id
       const emojiIdStr = String(emoji_id)
       // 判断当前是否已设置（从本地状态判断）
-      const isSet = this.selectedEmoji.includes(emojiIdStr)
+      const isSet = this.selectedEmoji.has(emojiIdStr)
       try {
         const result = await fetchSetMessageEmojiLike(this.message_id, emojiIdStr, isSet ? 0 : 1)
         if (result?.status === 'ok') {
           if (isSet) {
-            this.selectedEmoji = this.selectedEmoji.filter(id => id !== emojiIdStr)
+            this.selectedEmoji.delete(emojiIdStr)
           } else {
-            this.selectedEmoji.push(emojiIdStr)
+            this.selectedEmoji.add(emojiIdStr)
           }
           showToast('success', isSet ? '已取消表情回应' : '已添加表情回应')
         } else {
           // 接口失败但兼容：切换本地状态以保持UI响应
           if (isSet) {
-            this.selectedEmoji = this.selectedEmoji.filter(id => id !== emojiIdStr)
+            this.selectedEmoji.delete(emojiIdStr)
           } else {
-            this.selectedEmoji.push(emojiIdStr)
+            this.selectedEmoji.add(emojiIdStr)
           }
           showToast('success', isSet ? '已取消表情回应' : '已添加表情回应')
         }
       } catch (e) {
         // 接口失败时仍然切换本地状态以兼容
         if (isSet) {
-          this.selectedEmoji = this.selectedEmoji.filter(id => id !== emojiIdStr)
+          this.selectedEmoji.delete(emojiIdStr)
         } else {
-          this.selectedEmoji = this.selectedEmoji.filter(id => id !== emojiIdStr)
-          this.selectedEmoji.push(emojiIdStr)
+          this.selectedEmoji.delete(emojiIdStr)
+          this.selectedEmoji.add(emojiIdStr)
         }
         showToast('success', isSet ? '已取消表情回应' : '已添加表情回应')
         console.error('设置表情回应失败', e)
@@ -71,7 +94,7 @@ export default defineComponent({
     },
 
     isSelected(emoji_id) {
-      return this.selectedEmoji.includes(String(emoji_id))
+      return this.selectedEmoji.has(String(emoji_id))
     },
 
     handleClose() {
@@ -90,7 +113,8 @@ export default defineComponent({
     @close="handleClose"
     class="emoji-likes-editor">
     <div class="emoji-likes-editor-body">
-      <CustomScrollBar class="emoji-likes-editor-scroll">
+      <LoadingSpinner v-if="loading" text="加载中..." />
+      <CustomScrollBar v-else class="emoji-likes-editor-scroll">
         <template v-for="(category, i) in emojiGroupList" :key="i">
           <p class="emoji-likes-editor-category-title">
             {{ category.title }}

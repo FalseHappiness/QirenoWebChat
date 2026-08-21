@@ -498,6 +498,21 @@ async function getAddRequestsCore(params: Record<string, unknown> = {}): Promise
   return requests as unknown as Record<string, unknown>[];
 }
 
+async function getMsgLikesCore(params: Record<string, unknown>): Promise<MessageRow[]> {
+  /* 获取消息点赞列表（核心实现），根据 message_id 和 self_id 查找所有 notice_type 为 group_msg_emoji_like 的消息 */
+  const messageId = parseInt(params['message_id'], 0);
+  let selfId = parseInt(params['self_id']);
+  if (selfId === 0) {
+    selfId = onebotManager.getFirstSelfId() ?? 0;
+  }
+
+  if (messageId === 0) {
+    throw new Error(`Missing required parameter: message_id`);
+  }
+
+  return db.getMsgLikes(messageId, selfId);
+}
+
 // -------- req_backend 处理器注册 --------
 
 frontendManager.reqBackendHandlers.set('contacts', async (params) => getContactsCore(params));
@@ -505,6 +520,7 @@ frontendManager.reqBackendHandlers.set('messages', async (params) => getMessages
 frontendManager.reqBackendHandlers.set('get_msg', async (params) => getMsgCore(params));
 frontendManager.reqBackendHandlers.set('sync', async (params) => syncMessagesCore(params));
 frontendManager.reqBackendHandlers.set('get_add_requests', async (params) => getAddRequestsCore(params));
+frontendManager.reqBackendHandlers.set('get_msg_likes', async (params) => getMsgLikesCore(params));
 
 // ===================== 健康检查 & BOT列表接口 =====================
 
@@ -689,6 +705,24 @@ app.route({
     const params = await getRequestParams(request);
     const result = await getAddRequestsCore(params);
     return { status: 'success', code: 200, data: result };
+  },
+});
+
+app.route({
+  method: ['GET', 'POST'],
+  url: '/api/get_msg_likes',
+  handler: async (request, reply) => {
+    try {
+      const params = await getRequestParams(request);
+      const result = await getMsgLikesCore(params);
+      return { status: 'success', code: 200, data: result };
+    } catch (err) {
+      return reply.status(400).send({
+        status: 'fail',
+        code: 400,
+        error: String(err),
+      });
+    }
   },
 });
 

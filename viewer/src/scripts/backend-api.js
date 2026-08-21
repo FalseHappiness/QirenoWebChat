@@ -1551,6 +1551,59 @@ async function fetchSetMessageEmojiLike(message_id, emoji_id, set) {
   return await fetchAction("set_msg_emoji_like", { message_id, emoji_id, set })
 }
 
+async function fetchDatabaseEmojiLikes(message_id, format = true) {
+  const result = await fetchBackendData("get_msg_likes", { message_id })
+  if (format && isArray(result)) {
+    return parseEmojiNoticeList(result)
+  }
+  return result
+}
+
+/**
+ * 解析原始notice数组
+ * 输出 Map<number, Set<number>>
+ * @param {Array} rawList 接口返回data数组
+ * @returns {Map<number, Set<number>>}
+ */
+function parseEmojiNoticeList(rawList) {
+  // 按时间升序，保证事件时序正确
+  const sorted = [...rawList].sort((a, b) => a.time - b.time)
+  const tempMap = new Map()
+
+  for (const row of sorted) {
+    if (row.notice_type !== 'group_msg_emoji_like') continue
+
+    let event
+    try {
+      event = parseJSON(convertWrappedMsgSL(row).event)
+    } catch {
+      continue
+    }
+
+    const { is_add, user_id, likes } = event
+    if (!Array.isArray(likes)) continue
+    const uid = Number(user_id)
+
+    for (const like of likes) {
+      const emojiId = Number(like.emoji_id)
+      if (!tempMap.has(emojiId)) {
+        tempMap.set(emojiId, new Set())
+      }
+      const userSet = tempMap.get(emojiId)
+
+      is_add ? userSet.add(uid) : userSet.delete(uid)
+    }
+  }
+
+  // 清理空表情
+  for (const [emojiId, set] of tempMap) {
+    if (set.size === 0) {
+      tempMap.delete(emojiId)
+    }
+  }
+  return tempMap
+}
+
 export {
   fetchContacts,
   fetchMessages,
@@ -1665,4 +1718,5 @@ export {
   fetchSetCustomStatus,
   fetchMessageEmojiLikes,
   fetchSetMessageEmojiLike,
+  fetchDatabaseEmojiLikes,
 }

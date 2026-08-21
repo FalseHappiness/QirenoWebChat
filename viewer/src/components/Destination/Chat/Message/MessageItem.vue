@@ -4,7 +4,7 @@ import { formatTime, parseMessage, parseNotice } from "@/scripts/parse-message.j
 import '@lottiefiles/lottie-player';
 import {
   fetchAddCustomFace,
-  fetchChangeEssenceMsg,
+  fetchChangeEssenceMsg, fetchDatabaseEmojiLikes,
   fetchRecallMessage,
   fetchRecordToText,
   fetchSendMessage,
@@ -597,54 +597,46 @@ const handleMessageContainerClick = e => {
 
 /**
  * Map结构
- * key: emoji_id
- * value: { count:number, uids:string[] }
+ * key: emoji_id (number)
+ * value: Set<number>  // 用户id集合(数字)，自动去重
  */
 const messageEmojiLikes = reactive(new Map())
 
 /**
  * 添加用户到表情
- * @param {string} emoji_id
- * @param {string} user_id
+ * @param {number} emoji_id
+ * @param {number} user_id
  * @returns {boolean} true=添加成功 false=已经存在
  */
 function addEmojiUser(emoji_id, user_id) {
-  const info = messageEmojiLikes.get(emoji_id)
-  if (info) {
-    // 已存在该表情
-    if (info.uids.includes(user_id)) {
+  let userSet = messageEmojiLikes.get(emoji_id)
+  if (userSet) {
+    if (userSet.has(user_id)) {
       return false
     }
-    info.uids.push(user_id)
-    info.count = info.uids.length
+    userSet.add(user_id)
   } else {
-    // 新建表情
-    messageEmojiLikes.set(emoji_id, {
-      count: 1,
-      uids: [user_id]
-    })
+    userSet = new Set([user_id])
+    messageEmojiLikes.set(emoji_id, userSet)
   }
   return true
 }
 
 /**
  * 从表情移除用户
- * @param {string} emoji_id
- * @param {string} user_id
+ * @param {number} emoji_id
+ * @param {number} user_id
  * @returns {boolean} true=移除成功 false=本来就不存在
  */
 function removeEmojiUser(emoji_id, user_id) {
-  const info = messageEmojiLikes.get(emoji_id)
-  if (!info) return false
+  const userSet = messageEmojiLikes.get(emoji_id)
+  if (!userSet) return false
 
-  const idx = info.uids.indexOf(user_id)
-  if (idx === -1) return false
+  if (!userSet.has(user_id)) return false
 
-  info.uids.splice(idx, 1)
-  info.count = info.uids.length
+  userSet.delete(user_id)
 
-  // 没人了直接删掉key，保持Map干净
-  if (info.count === 0) {
+  if (userSet.size === 0) {
     messageEmojiLikes.delete(emoji_id)
   }
   return true
@@ -652,39 +644,55 @@ function removeEmojiUser(emoji_id, user_id) {
 
 /**
  * 判断用户是否已点该表情
- * @param {string} emoji_id
- * @param {string} user_id
+ * @param {number} emoji_id
+ * @param {number} user_id
  */
 function hasEmojiUser(emoji_id, user_id) {
-  const info = messageEmojiLikes.get(emoji_id)
-  if (!info) return false
-  return info.uids.includes(user_id)
+  const userSet = messageEmojiLikes.get(emoji_id)
+  if (!userSet) return false
+  return userSet.has(user_id)
+}
+
+/**
+ * 获取当前表情点赞人数
+ * @param {number} emoji_id
+ * @returns {number}
+ */
+function getEmojiLikeCount(emoji_id) {
+  const userSet = messageEmojiLikes.get(emoji_id)
+  return userSet ? userSet.size : 0
 }
 
 // 处理 group_msg_emoji_like 事件
-const handleEmojiLikeUpdate = ({ message_id, sub_type, emoji_id, user_id }) => {
+const handleEmojiLikeUpdate = ({ message_id, is_add, emoji_id, user_id }) => {
   // 只处理 message / message_sent 类型的消息
   if (!['message', 'message_sent'].includes(props.message.post_type)) return
   if (props.message.message_id !== message_id) return
-
-  if (sub_type === 'add') {
-    addEmojiUser(emoji_id, user_id)
-  } else if (sub_type === 'remove') {
-    removeEmojiUser(emoji_id, user_id)
-  }
+  is_add ? addEmojiUser(emoji_id, user_id) : removeEmojiUser(emoji_id, user_id)
 }
 
 const emojiList = computed(() => {
   const arr = []
-  for (const [emoji_id, item] of messageEmojiLikes) {
+  for (const [emoji_id, userSet] of messageEmojiLikes) {
     arr.push({
       emoji_id,
-      count: item.count,
-      hasSelf: item.uids.includes(props.message.self_id)
+      count: userSet.size,
+      hasSelf: userSet.has(props.message.self_id)
     })
   }
   return arr
 })
+
+/**
+ * 全量覆盖加载
+ * @param {Array} parsed
+ */
+function loadEmojiLikesFromApi(parsed) {
+  messageEmojiLikes.clear()
+  for (const [emojiId, userSet] of parsed) {
+    messageEmojiLikes.set(emojiId, userSet)
+  }
+}
 
 const getEmojiReplyIcon = emoji_id => {
   const getEmoji = type => qqSystemEmoji(encodeURIComponent(emoji_id), type, `${encodeURIComponent(emoji_id)}.png`)
@@ -735,6 +743,13 @@ onMounted(() => {
     //   .catch(e => {
     //     console.error('获取消息表情回复错误', e)
     //   })
+    fetchDatabaseEmojiLikes(props.message.message_id)
+      .then(res => {
+        loadEmojiLikesFromApi(res)
+      })
+      .catch(e => {
+        console.error('获取消息表情回复错误', e)
+      })
   }
   Emitter.on('emoji-like-update', handleEmojiLikeUpdate)
 })
@@ -915,6 +930,7 @@ onUnmounted(() => {
   justify-self: start;
   padding: 1px 9px;
   gap: 5px;
+  flex-wrap: wrap;
 }
 
 .message-tip {

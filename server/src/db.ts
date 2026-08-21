@@ -477,7 +477,7 @@ export class DatabaseManager {
                               AND group_id != 0
                               AND notice_type IN (
                                                   'notify', 'essence', 'group_ban', 'group_increase',
-                                                  'group_decrease', 'group_msg_emoji_like', 'group_admin',
+                                                  'group_decrease', 'group_admin',
                                                   'group_recall', 'friend_recall'
                               )
                               AND (
@@ -490,8 +490,8 @@ export class DatabaseManager {
                                                        'group_name', 'leave'
                                       )
                                   )
-                                  -- 撤回消息，sub_type 可以为空，不再校验
-                                  OR notice_type IN ('group_recall', 'friend_recall')
+                                  -- sub_type 可以为空，不再校验
+                                  OR notice_type IN ('group_recall', 'friend_recall', 'group_msg_emoji_like')
                               )
                           )
                       )
@@ -723,6 +723,30 @@ export class DatabaseManager {
     }
 
     return rows;
+  }
+
+  getMsgLikes(messageId: number, selfId: number): MessageRow[] {
+    /*
+    获取指定消息的所有表情点赞通知
+
+    根据 message_id 和 self_id 查找所有 notice_type 为 group_msg_emoji_like 的消息
+
+    Args:
+        messageId: 原始消息的 message_id
+        selfId: 机器人账号的 self_id
+
+    Returns:
+        匹配的消息记录列表
+    */
+    const stmt = this.db.prepare(
+      `SELECT *
+       FROM messages
+       WHERE notice_type = 'group_msg_emoji_like'
+         AND message_id = ?
+         AND self_id = ?
+       ORDER BY id ASC`,
+    );
+    return stmt.all(messageId, selfId) as MessageRow[];
   }
 
   clearMessages(): void {

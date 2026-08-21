@@ -385,6 +385,26 @@ export async function getAddRequestsCore(db) {
   return requests;
 }
 
+/**
+ * 获取消息点赞列表
+ * 根据 message_id 和 self_id 查找所有 notice_type 为 group_msg_emoji_like 的消息
+ * 对应 server 端 index.ts 的 getMsgLikesCore
+ *
+ * @param {object} params - { message_id, self_id }
+ * @param {object} db - virtualDB 实例
+ * @returns {Promise<{likes: Array, self_id: number, message_id: number}>}
+ */
+export async function getMsgLikesCore(params, db) {
+  const messageId = parseInt(params.message_id, 10);
+  let selfId = params.self_id ? parseInt(params.self_id, 10) : 0;
+
+  if (!messageId) {
+    throw new Error('Missing required parameter: message_id');
+  }
+
+  return await db.getMsgLikes(messageId, selfId);
+}
+
 export async function getMessagesCore(params, db, onebotWS) {
   const limit = parseInt(params.limit, 10) || 100;
   const cursor = params.cursor ? parseInt(params.cursor, 10) : null;

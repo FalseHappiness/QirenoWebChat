@@ -27,28 +27,28 @@ function extractContactInfo(msg) {
 
     // 1. 私聊普通消息
     if (targetId && targetId !== 0 && subType === 'friend' &&
-        (postType === 'message' || postType === 'message_sent')) {
+      (postType === 'message' || postType === 'message_sent')) {
       contactId = targetId;
       contactType = 'private';
       name = (event?.sender?.user_id === targetId ? event?.sender?.nickname : null) ?? null;
     }
     // 2. 私聊戳一戳通知
     else if (userId && userId !== 0 && !groupId && subType === 'poke' &&
-             noticeType === 'notify' && postType === 'notice') {
+      noticeType === 'notify' && postType === 'notice') {
       contactId = userId;
       contactType = 'private';
     }
     // 3. 群聊普通消息
     else if (groupId && groupId !== 0 && subType === 'normal' &&
-             (postType === 'message' || postType === 'message_sent')) {
+      (postType === 'message' || postType === 'message_sent')) {
       contactId = groupId;
       contactType = 'group';
       name = event?.group_name ?? null;
     }
     // 4. 群聊通知
     else if (groupId && groupId !== 0 && postType === 'notice' &&
-             ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null, 'group_name', 'leave'].includes(subType) &&
-             ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease', 'group_msg_emoji_like', 'group_recall', 'friend_recall'].includes(noticeType)) {
+      ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null, 'group_name', 'leave'].includes(subType) &&
+      ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease', 'group_msg_emoji_like', 'group_recall', 'friend_recall'].includes(noticeType)) {
       contactId = groupId;
       contactType = 'group';
       name = event?.group_name ?? null;
@@ -140,6 +140,40 @@ class VirtualDB extends Dexie {
       if (contactMap.size > 0) {
         await contacts.bulkAdd([...contactMap.values()]);
       }
+    });
+
+    // v4: 增加 [notice_type+message_id+self_id] 复合索引，加速 getMsgLikes 查询
+    this.version(4).stores({
+      messages: `
+        ++id,
+        message_id,
+        real_seq,
+        time,
+        self_id,
+        sender_id,
+        post_type,
+        message_type,
+        notice_type,
+        request_type,
+        sub_type,
+        group_id,
+        user_id,
+        operator_id,
+        target_id,
+        *created_at,
+        [self_id+id],
+        [self_id+group_id+id],
+        [self_id+target_id+id],
+        [notice_type+message_id+self_id]
+      `,
+      meta: 'key',
+      contacts: `
+        &[self_id+type+contact_id],
+        self_id,
+        type,
+        contact_id,
+        [self_id+last_timestamp]
+      `,
     });
 
     /**
@@ -477,6 +511,26 @@ class VirtualDB extends Dexie {
     };
 
     /**
+     * 获取指定消息的所有表情点赞通知
+     * 根据 message_id 和 self_id 查找所有 notice_type 为 group_msg_emoji_like 的消息
+     * 对应 server 端 db.ts 的 getMsgLikes
+     *
+     * 使用 [notice_type+message_id+self_id] 复合索引，避免 filter() 全表扫描
+     *
+     * @param {number} messageId - 原始消息的 message_id
+     * @param {number} selfId - 机器人账号的 self_id
+     * @returns {Promise<Array>} 匹配的消息记录列表
+     */
+    this.getMsgLikes = async (messageId, selfId) => {
+      const selfIdNum = parseInt(selfId, 10);
+      const messageIdNum = parseInt(messageId, 10);
+      return await this.messages
+        .where('[notice_type+message_id+self_id]')
+        .equals(['group_msg_emoji_like', messageIdNum, selfIdNum])
+        .sortBy('id');
+    };
+
+    /**
      * 处理撤回事件，更新原始消息的 event 字段
      * 对应 Python db.py 的 process_recall_event
      * @param {object} event - 撤回事件
@@ -610,7 +664,7 @@ class VirtualDB extends Dexie {
         .where('post_type')
         .equals('request')
         .filter(m => (m.request_type === 'friend' || m.request_type === 'group') &&
-                      (m.sub_type === 'add' || m.sub_type === 'invite' || m.sub_type === null || m.sub_type === undefined))
+          (m.sub_type === 'add' || m.sub_type === 'invite' || m.sub_type === null || m.sub_type === undefined))
         .toArray();
 
       // 按 time 倒序排列，time 相同则按 id 倒序（新的在前）
@@ -638,8 +692,8 @@ class VirtualDB extends Dexie {
             .where('id')
             .above(req.id)
             .filter(m => m.post_type === 'notice' &&
-                         m.notice_type === 'friend_add' &&
-                         m.user_id === req.user_id)
+              m.notice_type === 'friend_add' &&
+              m.user_id === req.user_id)
             .limit(1)
             .toArray();
           approved = friendAdd.length > 0 ? true : null;
@@ -649,9 +703,9 @@ class VirtualDB extends Dexie {
             .where('id')
             .above(req.id)
             .filter(m => m.post_type === 'notice' &&
-                         m.notice_type === 'group_increase' &&
-                         m.group_id === req.group_id &&
-                         m.user_id === req.user_id)
+              m.notice_type === 'group_increase' &&
+              m.group_id === req.group_id &&
+              m.user_id === req.user_id)
             .limit(1)
             .toArray();
           approved = groupApprove.length > 0 ? true : null;

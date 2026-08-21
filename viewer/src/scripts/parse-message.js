@@ -902,7 +902,7 @@ function renderNoticeChildren(event, isPreview, promises) {
 
       children.push(
         canSelfName(operator_id),
-        sub_type === 'add' ? '回应了' : "取消回应了",
+        event.is_add ? '回应了' : "取消回应了",
         nameSpan,
         ': ',
         emojiEl
@@ -1000,7 +1000,7 @@ const isSupportedNoticeMessage = notice => {
     (notice_type === 'group_ban' && ['ban', 'lift_ban'].includes(sub_type)) ||
     (notice_type === 'group_increase' && ['approve', 'invite'].includes(sub_type)) ||
     (notice_type === 'group_decrease' && ['kick_me', 'kick'].includes(sub_type)) ||
-    (notice_type === 'group_msg_emoji_like' && ['add', 'remove'].includes(sub_type)) ||
+    (notice_type === 'group_msg_emoji_like' && ['add', 'remove', null].includes(sub_type)) ||
     (notice_type === 'group_admin' && ['set', 'unset'].includes(sub_type)) ||
     ['group_recall', "friend_recall"].includes(notice_type)
   )

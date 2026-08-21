@@ -10,6 +10,7 @@ import {
   getMsgCore,
   syncMessagesCore,
   getAddRequestsCore,
+  getMsgLikesCore,
 } from './handler.js';
 import { virtualDB } from './db.js';
 import VirtualProtocol, {
@@ -243,6 +244,10 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
       case 'get_add_requests': {
         const requests = await getAddRequestsCore(virtualDB);
         return { status: 'success', data: requests };
+      }
+      case 'get_msg_likes': {
+        const result = await getMsgLikesCore(params, virtualDB);
+        return { status: 'success', data: result };
       }
       default:
         throw new Error(`Unknown backend endpoint: ${ endpoint }`);

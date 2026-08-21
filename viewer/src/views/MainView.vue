@@ -534,11 +534,10 @@ onMounted(() => {
           const { likes } = event
           if (isArray(likes)) {
             for (const like of likes) {
-              const emoji_id = Number(like.emoji_id)
               Emitter.emit('emoji-like-update', {
                 message_id: notice.message_id,
-                sub_type: notice.sub_type,
-                emoji_id,
+                is_add: event.is_add,
+                emoji_id: Number(like.emoji_id),
                 user_id: Number(notice.user_id)
               })
             }
