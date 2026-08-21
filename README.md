@@ -276,6 +276,7 @@
     - `GET/POST /api/sync` — 同步新消息
     - `GET/POST /api/contacts` — 获取联系人列表（DB + API 合并）
     - `GET/POST /api/get_add_requests` — 获取添加请求列表
+    - `GET/POST /api/get_msg_likes` — 获取消息表情回应列表
     - `GET /api/health` — 健康检查
     - `GET /api/bots` — 获取已连接 BOT 列表
     - `GET/POST /api/proxy_multimedia` — 多媒体代理（限安全域名）
