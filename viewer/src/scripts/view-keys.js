@@ -11,4 +11,5 @@ export const DestKey = {
   THEME_SELECTOR: "theme_selector",
   COLLECTION: "collection",
   ADD_REQUESTS: "add_requests",
+  MESSAGE_SETTINGS: "message_settings",
 }

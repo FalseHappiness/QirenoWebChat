@@ -8,6 +8,7 @@ import { isScreenMobile } from "@/scripts/util.js";
 import ThemeSelector from "@/components/Destination/ThemeSelector.vue";
 import CollectionView from "@/components/Destination/Collection/CollectionView.vue";
 import AddRequestsView from "@/components/Destination/AddRequestsView.vue";
+import MessageSettings from "@/components/Destination/Settings/MessageSettings.vue";
 
 const viewActive = ref(false);
 const currentView = ref(DestKey.CHAT_AREA)
@@ -19,6 +20,7 @@ const isLicenseView = computed(() => isView(DestKey.LICENSE))
 const isThemeSelectorView = computed(() => isView(DestKey.THEME_SELECTOR))
 const isCollectionView = computed(() => isView(DestKey.COLLECTION))
 const isAddRequestsView = computed(() => isView(DestKey.ADD_REQUESTS))
+const isMessageSettingsView = computed(() => isView(DestKey.MESSAGE_SETTINGS))
 
 let changeTimer = null;
 const changeView = (key, active) => {
@@ -73,6 +75,10 @@ defineExpose({
     />
     <AddRequestsView
       v-else-if="isAddRequestsView"
+      class="dest-view-component"
+    />
+    <MessageSettings
+      v-else-if="isMessageSettingsView"
       class="dest-view-component"
     />
   </div>

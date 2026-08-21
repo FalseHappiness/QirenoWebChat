@@ -113,6 +113,9 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
   const noticeBeforeCursor = parseInt(params['notice_before_message'], -1);
   const noticeAfterCursor = parseInt(params['notice_after_message'], -1);
 
+  // 是否显示群聊表情回应灰色提示
+  const showEmojiLikeNotice = parseBool(params['show_emoji_like_notice'] ?? false);
+
   // 获取筛选参数
   const postType = params['post_type'] as string | undefined;
   const messageType = params['message_type'] as string | undefined;
@@ -140,11 +143,15 @@ async function getMessagesCore(params: Record<string, unknown>): Promise<Record<
 
   if (postType === undefined && messageType !== undefined && userId === -1) {
     if (messageType === 'group' || messageType === 'private') {
+      const noticeTypes: string[] = ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',
+        'group_admin', 'group_recall', 'friend_recall'];
+      if (showEmojiLikeNotice) {
+        noticeTypes.push('group_msg_emoji_like');
+      }
       const noticeFilter: Record<string, FilterValue> = {
         'sub_type': ['poke', 'add', 'ban', 'lift_ban', 'approve', 'invite', 'kick_me', 'remove', 'kick',
           'set', 'unset', 'title', null, 'group_name', 'leave'],
-        'notice_type': ['notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',
-          'group_msg_emoji_like', 'group_admin', 'group_recall', 'friend_recall'],
+        'notice_type': noticeTypes,
         'post_type': 'notice',
       };
       filters['post_type'] = ['message', 'message_sent'];
@@ -421,7 +428,8 @@ async function getContactsCore(params: Record<string, unknown> = {}): Promise<Re
   if (selfId === 0) {
     selfId = onebotManager.getFirstSelfId() ?? 0;
   }
-  const dbContacts = db.getContacts(selfId || null);
+  const showEmojiLikeNotice = parseBool(params['show_emoji_like_notice'] ?? false);
+  const dbContacts = db.getContacts(selfId || null, showEmojiLikeNotice);
   const apiContacts = await onebotHandler.getRecentContacts(selfId || null);
   const contactDict = new Map<string, Record<string, unknown>>();
 

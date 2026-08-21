@@ -157,21 +157,30 @@ export default defineComponent({
         使用弹窗展示公告
         <ASwitch v-model:checked="showPopup" size="small"/>
       </div>
-      <div class="notice-editor-switch">
-        需群成员确认收到
-        <ASwitch v-model:checked="confirmRequired" size="small"/>
+      <div>
+        <div class="notice-editor-switch">
+          需群成员确认收到
+          <ASwitch v-model:checked="confirmRequired" size="small"/>
+        </div>
+        <p class="notice-editor-switch-desc">开启后，需群成员确认该公告且可统计确认情况。</p>
       </div>
       <div class="notice-editor-switch">
         设为置顶
         <ASwitch v-model:checked="pinned" size="small"/>
       </div>
-      <div class="notice-editor-switch">
-        发送给新成员
-        <ASwitch v-model:checked="sendToNewMembers" size="small"/>
+      <div>
+        <div class="notice-editor-switch">
+          发送给新成员
+          <ASwitch v-model:checked="sendToNewMembers" size="small"/>
+        </div>
+        <p class="notice-editor-switch-desc">开启后，本公告会自动发送给新成员，仅可设置一条。</p>
       </div>
-      <div class="notice-editor-switch">
-        引导新成员修改群昵称
-        <ASwitch v-model:checked="isShowEditCard" size="small"/>
+      <div>
+        <div class="notice-editor-switch">
+          引导新成员修改群昵称
+          <ASwitch v-model:checked="isShowEditCard" size="small"/>
+        </div>
+        <p class="notice-editor-switch-desc">开启后，群成员可以通过公告底部按钮修改群昵称。</p>
       </div>
 
       <div class="notice-editor-actions">
@@ -324,5 +333,12 @@ export default defineComponent({
 .notice-editor-switch {
   @extend .notice-editor-area, %flex-row-between;
   display: flex;
+
+  &-desc {
+    color: $color-text-muted;
+    padding: 2px 8px;
+    font-size: 90%;
+    margin-bottom: 0;
+  }
 }
 </style>

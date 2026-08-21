@@ -16,6 +16,9 @@ const handleEnterLicense = () => {
 const handleEnterThemeSelector = () => {
   changeDestView(DestKey.THEME_SELECTOR)
 }
+const handleEnterMessageSettings = () => {
+  changeDestView(DestKey.MESSAGE_SETTINGS)
+}
 </script>
 
 <template>
@@ -38,6 +41,11 @@ const handleEnterThemeSelector = () => {
 
     <div class="settings-actions-area enter-view" @click="handleEnterThemeSelector">
       <span class="overflow-ellipsis">主题设置</span>
+      <EnterArrow/>
+    </div>
+
+    <div class="settings-actions-area enter-view" @click="handleEnterMessageSettings">
+      <span class="overflow-ellipsis">消息设置</span>
       <EnterArrow/>
     </div>
 

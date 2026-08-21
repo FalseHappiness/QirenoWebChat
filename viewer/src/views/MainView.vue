@@ -20,6 +20,7 @@ import {
   checkResponseOK,
   fetchGroupMutedList, fetchSetGroupName, fetchGroupTodoMessage, fetchCancelGroupTodo
 } from "../scripts/backend-api.js";
+import { useGlobalStore } from "@/store/global.js";
 import { showErrorToast, showToast } from "../scripts/toast.js";
 import { destroyContextMenu, initContextMenu } from "../directives/context-menu.js";
 import { CalledEmitter, Emitter } from "../composables/useEventBus.js";
@@ -90,6 +91,8 @@ const flattenContacts = computed(() => {
 
 provide("categorizedContacts", categorizedContacts)
 provide("flattenContacts", flattenContacts)
+
+const global = useGlobalStore()
 
 // bridge实例，onMounted内部初始化
 let bridge = null
@@ -545,7 +548,11 @@ onMounted(() => {
         }
 
         if (isSupportedNoticeMessage(notice)) {
-          chatArea.value?.$refs?.scroller?.addMessage(notice)
+          if (notice_type === 'group_msg_emoji_like' && !global.messageSettings?.showEmojiLikeNotice) {
+            // 不显示群聊表情回应灰色提示
+          } else {
+            chatArea.value?.$refs?.scroller?.addMessage(notice)
+          }
         }
       }
     },

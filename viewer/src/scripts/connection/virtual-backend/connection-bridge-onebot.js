@@ -223,7 +223,7 @@ export class ConnectionBridgeOnebot extends AbstractConnectionBridge {
     }
     switch (endpoint) {
       case 'contacts': {
-        const contacts = await getContactsCore(virtualDB, this.onebotWS);
+        const contacts = await getContactsCore(virtualDB, this.onebotWS, params);
         return { status: 'success', data: contacts };
       }
       case 'messages': {

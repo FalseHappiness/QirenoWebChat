@@ -149,6 +149,11 @@ export const useGlobalStore = defineStore(
 
     const theme = ref('default')
 
+    const messageSettings = reactive({
+      fetchEmojiLikes: true,
+      showEmojiLikeNotice: false,
+    })
+
     return {
       normalEmojiids,
       superEmojiids,
@@ -163,6 +168,7 @@ export const useGlobalStore = defineStore(
         app_version: "0.0.0"
       },
       theme,
+      messageSettings,
     };
   },
   // 持久化配置
@@ -170,7 +176,7 @@ export const useGlobalStore = defineStore(
     persist: {
       key: 'store-global', // 本地存储键名
       storage: localStorage,
-      pick: ['theme'], // 只持久化 theme
+      pick: ['theme', 'messageSettings'],
     }
   }
 );

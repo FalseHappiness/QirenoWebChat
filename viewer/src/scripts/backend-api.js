@@ -32,6 +32,7 @@ import {
 } from "./user-info-util.js";
 import { isGroupContact } from "@/scripts/contacts-util.js";
 import { gteSnowLuma, isSnowLuma } from "@/scripts/onebot-version-util.js";
+import { useGlobalStore } from "@/store/global.js";
 
 /**
  * 替换URL中的 sitehost 为当前页面真实主机（支持 sitehost:自定义端口 格式）
@@ -250,17 +251,17 @@ const fetchUserInfo = async (user_id) => {
 }
 
 const fetchMessages = async (params) => {
-  const result = await fetchBackendData(
-    'messages',
-    Object.assign(
-      {},
-      {
-        limit: 20,
-        direction: 'prev',
-      },
-      params,
-    )
+  const global = useGlobalStore();
+  const mergedParams = Object.assign(
+    {},
+    {
+      limit: 20,
+      direction: 'prev',
+    },
+    params,
   )
+  mergedParams.show_emoji_like_notice = global.messageSettings?.showEmojiLikeNotice ?? false;
+  const result = await fetchBackendData('messages', mergedParams)
   const messages = result.messages
   if (Array.isArray(messages)) {
     for (const index in messages) {
@@ -945,7 +946,10 @@ async function fetchKickGroupUser(group_id, user_id, reject_add_request = false)
 }
 
 const fetchContacts = async () => {
-  return convertContactsSL(await fetchBackendData("contacts"))
+  const global = useGlobalStore();
+  const params = {};
+  params.show_emoji_like_notice = global.messageSettings?.showEmojiLikeNotice ?? false;
+  return convertContactsSL(await fetchBackendData("contacts", params))
 }
 
 const getApiBaseUrl = () => {

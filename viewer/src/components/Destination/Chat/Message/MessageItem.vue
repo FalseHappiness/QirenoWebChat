@@ -58,6 +58,10 @@ const groupUsers = inject("groupUsers")
 
 const global = useGlobalStore()
 
+const shouldFetchEmojiLikes = computed(() => {
+  return global.messageSettings.fetchEmojiLikes
+})
+
 const emit = defineEmits([
   'quote-message',
   'click-show-contact-info',
@@ -734,15 +738,7 @@ onMounted(() => {
     }
   }
   getDisplayName()
-  if (isGroup.value) {
-    // fetchMessageEmojiLikes(props.message.group_id, props.message.message_id)
-    //   .then(res => {
-    //     console.log(res)
-    //     messageEmojiLikes.value = res
-    //   })
-    //   .catch(e => {
-    //     console.error('获取消息表情回复错误', e)
-    //   })
+  if (isGroup.value && shouldFetchEmojiLikes.value) {
     fetchDatabaseEmojiLikes(props.message.message_id)
       .then(res => {
         loadEmojiLikesFromApi(res)

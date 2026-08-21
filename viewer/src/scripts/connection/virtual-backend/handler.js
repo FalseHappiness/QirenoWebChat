@@ -233,7 +233,7 @@ export async function getRecentContacts(onebotWS) {
  * @param {object} onebotWS - OneBotWSConnection 实例
  * @returns {Promise<Array>} 联系人列表
  */
-export async function getContactsCore(db, onebotWS) {
+export async function getContactsCore(db, onebotWS, params = {}) {
   const selfId = onebotWS.selfId;
   const dbContacts = await db.getContacts(selfId);
   const apiContacts = await getRecentContacts(onebotWS);
@@ -416,6 +416,7 @@ export async function getMessagesCore(params, db, onebotWS) {
   const noticeMessage = params.notice_message === true || params.notice_message === 'true';
   const noticeBeforeCursor = parseInt(params.notice_before_message, 10) || -1;
   const noticeAfterCursor = parseInt(params.notice_after_message, 10) || -1;
+  const showEmojiLikeNotice = params.show_emoji_like_notice !== false;
 
   const groupId = parseInt(params.group_id, 10) || -1;
   const targetId = parseInt(params.target_id, 10) || -1;
@@ -442,15 +443,19 @@ export async function getMessagesCore(params, db, onebotWS) {
 
   if (postType === undefined && messageType && userId === -1) {
     // 同时查消息和通知
+    const noticeTypes = [
+      'notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',
+      'group_recall', 'friend_recall'
+    ];
+    if (showEmojiLikeNotice) {
+      noticeTypes.push('group_msg_emoji_like');
+    }
     const noticeFilter = {
       sub_type: [
         'poke', 'add', 'ban', 'lift_ban', 'approve', 'invite',
         'kick_me', 'remove', 'kick', 'set', 'unset', 'title', null, 'group_name', 'leave'
       ],
-      notice_type: [
-        'notify', 'essence', 'group_ban', 'group_increase', 'group_decrease',
-        'group_msg_emoji_like', 'group_recall', 'friend_recall'
-      ],
+      notice_type: noticeTypes,
       post_type: 'notice',
     };
     msgFilter.post_type = ['message', 'message_sent'];

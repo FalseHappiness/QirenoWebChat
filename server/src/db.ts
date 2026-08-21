@@ -395,7 +395,7 @@ export class DatabaseManager {
     return result;
   }
 
-  getContacts(selfId: number | null = null): ContactRow[] {
+  getContacts(selfId: number | null = null, showEmojiLikeNotice: boolean = false): ContactRow[] {
     /* 获取联系人列表 */
     const selfIdCondition = selfId !== null ? 'AND self_id = ?' : '';
     const selfIdParams: unknown[] = selfId !== null ? [ selfId, selfId ] : [];
@@ -479,6 +479,7 @@ export class DatabaseManager {
                                                   'notify', 'essence', 'group_ban', 'group_increase',
                                                   'group_decrease', 'group_admin',
                                                   'group_recall', 'friend_recall'
+                                                  ${showEmojiLikeNotice ? ", 'group_msg_emoji_like'" : ''}
                               )
                               AND (
                               -- 普通通知 需要 sub_type
@@ -491,7 +492,7 @@ export class DatabaseManager {
                                       )
                                   )
                                   -- sub_type 可以为空，不再校验
-                                  OR notice_type IN ('group_recall', 'friend_recall', 'group_msg_emoji_like')
+                                  OR notice_type IN ('group_recall', 'friend_recall'${showEmojiLikeNotice ? ", 'group_msg_emoji_like'" : ''})
                               )
                           )
                       )
