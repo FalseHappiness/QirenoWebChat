@@ -12,7 +12,7 @@ import {
 import { qqAppImg } from "@/composables/useBase.js";
 import { isNumber, isString, isUndefined } from "@/scripts/types-util.js";
 import { gteSnowLuma } from "@/scripts/onebot-version-util.js";
-import { getGroupInfoCacheFromAll, isGroupOperator } from "@/scripts/user-info-util.js";
+import { getGroupInfoCacheFromAll, isGroupOperator, isGroupOwner } from "@/scripts/user-info-util.js";
 import { showConfirmBox } from "@/scripts/popup-box-api.js";
 import { showErrorToast, showSuccessToast } from "@/scripts/toast.js";
 import {
@@ -78,6 +78,7 @@ watch(() => props.showContactMore, val => {
 // 群相关信息
 const groupSelfInfo = computed(() => props.groupUsers?.find(user => user.user_id === selfInfo.value?.user_id))
 const selfGroupOperator = computed(() => isGroupOperator(groupSelfInfo.value))
+const selfGroupOwner = computed(() => isGroupOwner(groupSelfInfo.value))
 
 const groupSelfCardModel = ref(null)
 const groupRemarkModel = ref(null)
@@ -226,11 +227,11 @@ function handleSettingChange(requestFn) {
       const result = await requestFn(val)
       if (!checkResponseOK(result)) {
         console.error('Update group settings error:', result)
-        showErrorToast(`更新失败: ${ result?.message || '' }`)
+        showErrorToast(`更新失败: ${result?.message || ''}`)
       }
     } catch (e) {
       console.error('Update group settings error:', e)
-      showErrorToast(`更新失败: ${ e?.message || '' }`)
+      showErrorToast(`更新失败: ${e?.message || ''}`)
     }
   }
 }
@@ -443,33 +444,35 @@ defineExpose({ contactDetailRef })
           v-if="selfGroupOperator && !isSnowLumaAdmin"
           class="contact-detail-area with-title area-container member-permissions"
           data-title="成员权限">
-          <div class="contact-detail-container-area">
-            上传相册
-            <ASelect v-model:value="allowGroupMemberUploadAlbum" size="small">
-              <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="false">不允许</ASelectOption>
-              <ASelectOption :value="true">允许</ASelectOption>
-            </ASelect>
-          </div>
-          <hr>
-          <div class="contact-detail-container-area">
-            发起临时会话
-            <ASelect v-model:value="allowGroupMemberTempSession" size="small">
-              <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="false">不允许</ASelectOption>
-              <ASelectOption :value="true">允许</ASelectOption>
-            </ASelect>
-          </div>
-          <hr>
-          <div class="contact-detail-container-area">
-            发起新的群聊
-            <ASelect v-model:value="allowGroupMemberCreateGroup" size="small">
-              <ASelectOption :value="null">不修改</ASelectOption>
-              <ASelectOption :value="false">不允许</ASelectOption>
-              <ASelectOption :value="true">允许</ASelectOption>
-            </ASelect>
-          </div>
-          <hr>
+          <template v-if="selfGroupOwner">
+            <div class="contact-detail-container-area">
+              上传相册
+              <ASelect v-model:value="allowGroupMemberUploadAlbum" size="small">
+                <ASelectOption :value="null">不修改</ASelectOption>
+                <ASelectOption :value="false">不允许</ASelectOption>
+                <ASelectOption :value="true">允许</ASelectOption>
+              </ASelect>
+            </div>
+            <hr>
+            <div class="contact-detail-container-area">
+              发起临时会话
+              <ASelect v-model:value="allowGroupMemberTempSession" size="small">
+                <ASelectOption :value="null">不修改</ASelectOption>
+                <ASelectOption :value="false">不允许</ASelectOption>
+                <ASelectOption :value="true">允许</ASelectOption>
+              </ASelect>
+            </div>
+            <hr>
+            <div class="contact-detail-container-area">
+              发起新的群聊
+              <ASelect v-model:value="allowGroupMemberCreateGroup" size="small">
+                <ASelectOption :value="null">不修改</ASelectOption>
+                <ASelectOption :value="false">不允许</ASelectOption>
+                <ASelectOption :value="true">允许</ASelectOption>
+              </ASelect>
+            </div>
+            <hr>
+          </template>
           <div class="contact-detail-container-area">
             加群用户默认可见聊天记录
             <ASelect v-model:value="groupNewMemberHistoryVisible" size="small">
@@ -486,24 +489,26 @@ defineExpose({ contactDetailRef })
           class="contact-detail-area with-title area-container member-permissions"
           data-title="成员权限">
           <template v-if="adminSettingsLoaded">
-            <div
-              class="contact-detail-container-area">
-              上传相册
-              <ASwitch v-model:checked="allowGroupMemberUploadAlbum" size="small"/>
-            </div>
-            <hr>
-            <div
-              class="contact-detail-container-area">
-              发起临时会话
-              <ASwitch v-model:checked="allowGroupMemberTempSession" size="small"/>
-            </div>
-            <hr>
-            <div
-              class="contact-detail-container-area">
-              发起新的群聊
-              <ASwitch v-model:checked="allowGroupMemberCreateGroup" size="small"/>
-            </div>
-            <hr>
+            <template v-if="selfGroupOwner">
+              <div
+                class="contact-detail-container-area">
+                上传相册
+                <ASwitch v-model:checked="allowGroupMemberUploadAlbum" size="small"/>
+              </div>
+              <hr>
+              <div
+                class="contact-detail-container-area">
+                发起临时会话
+                <ASwitch v-model:checked="allowGroupMemberTempSession" size="small"/>
+              </div>
+              <hr>
+              <div
+                class="contact-detail-container-area">
+                发起新的群聊
+                <ASwitch v-model:checked="allowGroupMemberCreateGroup" size="small"/>
+              </div>
+              <hr>
+            </template>
             <div
               class="contact-detail-container-area">
               加群用户默认可见聊天记录
