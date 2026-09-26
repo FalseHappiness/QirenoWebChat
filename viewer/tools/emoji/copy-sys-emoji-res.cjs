@@ -18,23 +18,47 @@ async function deleteAndRecreateDir(dirPath) {
 }
 
 async function copyEntireDir(srcDir, destDir) {
-  try {
-    // 使用 filter 排除 .DS_Store 文件
-    await fs.promises.cp(srcDir, destDir, {
-      recursive: true,
-      force: true,
-      filter: (src) => {
-        const filename = path.basename(src);
-        // 排除 .DS_Store normal_emojiids.json super_emojiids.json 文件
-        const excludeFiles = ['.DS_Store', 'normal_emojiids.json', 'super_emojiids.json', 'redheart_emojiids.json'];
-        return !excludeFiles.includes(filename);
+  // 只创建目标目录，不删除原有内容，已存在直接复用
+  await fs.promises.mkdir(destDir, { recursive: true });
+  const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
+  // 排除 .DS_Store normal_emojiids.json super_emojiids.json 文件
+  const excludeFiles = new Set(['.DS_Store', 'normal_emojiids.json', 'super_emojiids.json', 'redheart_emojiids.json']);
+
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry.name);
+    const destPath = path.join(destDir, entry.name);
+
+    // 跳过符号链接
+    if (entry.isSymbolicLink()) {
+      console.log(`跳过符号链接: ${srcPath}`);
+      continue;
+    }
+    // 黑名单跳过文件
+    if (excludeFiles.has(entry.name)) continue;
+
+    if (entry.isDirectory()) {
+      await copyEntireDir(srcPath, destPath);
+    } else if (entry.isFile()) {
+      try {
+        // 复制文件：源有则覆盖目标同名文件；源没有的目标文件直接保留，不会被删除
+        await fs.promises.copyFile(srcPath, destPath);
+        // 可选：校验文件大小，防止截断
+        const srcStat = await fs.promises.stat(srcPath);
+        const destStat = await fs.promises.stat(destPath);
+        if (srcStat.size !== destStat.size) {
+          throw new Error(`文件大小不一致 ${entry.name}`);
+        }
+      } catch (err) {
+        // 文件被占用的提示
+        if (err.code === 'EBUSY' || err.code === 'EPERM') {
+          console.warn(`⚠️ 文件被占用，跳过：${srcPath}`);
+        } else {
+          console.error(`❌ 文件复制失败 ${srcPath}:`, err);
+        }
       }
-    });
-    console.log(`已复制目录: ${srcDir} -> ${destDir}`);
-  } catch (err) {
-    console.error(`复制目录时出错: ${srcDir}`, err);
-    throw err;
+    }
   }
+  // console.log(`✅ 目录处理完成: ${srcDir} -> ${destDir}`);
 }
 
 async function findAndCopyEmojiResources() {
@@ -97,12 +121,12 @@ async function findAndCopyEmojiResources() {
   const best = candidates[0];
   console.log(`✅ 选择最新资源目录: ${best.path} (uin: ${best.uin}, mtime: ${new Date(best.mtime).toISOString()})`);
 
-  // 清理目标目录
-  await deleteAndRecreateDir(emojiDir);
+  // 【修改】不再删除重建目标目录，直接增量合并复制，原有多余文件保留
+  // await deleteAndRecreateDir(emojiDir);
 
-  // 复制最新的目录
+  // 复制最新的目录（增量合并，源不存在的文件目标保留）
   await copyEntireDir(best.path, emojiDir);
-  console.log(`✅ 已替换全部Emoji资源, uin: ${best.uin}`);
+  console.log(`✅ 已增量合并Emoji资源, uin: ${best.uin}`);
 
   // ========== 复制 OnlineStatusSmallIcon 资源 ==========
   const onlineStatusSourceDir = path.join(
@@ -115,12 +139,12 @@ async function findAndCopyEmojiResources() {
     await access(onlineStatusSourceDir);
     console.log(`✅ 检测到 OnlineStatusSmallIcon 目录: ${onlineStatusSourceDir}`);
 
-    // 清理目标目录
-    await deleteAndRecreateDir(onlineStatusDestDir);
+    // 【修改】不再删除重建目标目录，增量合并
+    // await deleteAndRecreateDir(onlineStatusDestDir);
 
-    // 复制目录
+    // 复制目录（增量合并，源不存在的文件目标保留）
     await copyEntireDir(onlineStatusSourceDir, onlineStatusDestDir);
-    console.log(`✅ 已替换 OnlineStatusSmallIcon 资源, uin: ${best.uin}`);
+    console.log(`✅ 已增量合并 OnlineStatusSmallIcon 资源, uin: ${best.uin}`);
   } catch (err) {
     if (err.code === 'ENOENT') {
       console.log(`⚠️ 未找到 OnlineStatusSmallIcon 目录: ${onlineStatusSourceDir}，跳过复制`);
