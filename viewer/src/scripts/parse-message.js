@@ -35,6 +35,7 @@ import ViewLocationShare from "@/components/Destination/Chat/Message/Types/JSON/
 import FlashTransferMessage from "@/components/Destination/Chat/Message/Types/FlashTransferMessage.vue";
 import { isSnowLuma } from "@/scripts/onebot-version-util.js";
 import InlineKeyboardMessage from "../components/Destination/Chat/Message/Types/InlineKeyboardMessage.vue";
+import GameCenterButton from "@/components/Destination/Chat/Message/Types/JSON/GameCenterButton.vue";
 
 const formatTime = (message) => {
   if (!message?.time) return
@@ -505,7 +506,8 @@ const parseMessage = (wrappedMsg) => {
                 "com.tencent.multimsg": MultiMsg,
                 "com.tencent.feed.lua": FeedLua,
                 "com.tencent.contact.lua": ContactLua,
-                "com.tencent.activity.md": ActivityMD
+                "com.tencent.activity.md": ActivityMD,
+                "com.tencent.gamecenter.qqsy": GameCenterButton,
               }
               const view_components_map = {
                 "news": ViewNews,

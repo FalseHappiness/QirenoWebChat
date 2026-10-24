@@ -36,7 +36,6 @@ export default defineComponent({
   width: 270px;
   max-width: 100%;
   text-decoration: none !important;
-  padding: 8px 8px 2px 8px !important;
   @include card();
   color: $color-text-primary;
   @extend %flex-column;
@@ -44,7 +43,7 @@ export default defineComponent({
 }
 
 .title {
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .preview-image {

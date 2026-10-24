@@ -29,7 +29,6 @@ export default defineComponent({
   width: 270px;
   max-width: 100%;
   text-decoration: none !important;
-  padding: 8px 8px 2px !important;
   @include card();
   color: $color-text-primary;
   @extend %flex-column;

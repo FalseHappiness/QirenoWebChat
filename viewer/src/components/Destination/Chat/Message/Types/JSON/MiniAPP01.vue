@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { qqAppImg } from "@/composables/useBase.js";
+import AdvancedBox from "@/components/Destination/Chat/Message/Types/JSON/Base/AdvancedBox.vue";
 
 const props = defineProps({
   json: Object
@@ -15,8 +16,11 @@ const isLoaded = ref(false)
 </script>
 
 <template>
-  <a class="message-box-less message-mini-app-01" target="_blank"
-     :href="detail.url.startsWith('http')?'':'https://'+detail.url">
+  <AdvancedBox
+    class="message-box-less message-mini-app-01"
+    :jump-url="detail.url.startsWith('http')?'':'https://'+detail.url"
+    :footer-icon="qqAppImg('qq_mini_app.ico')"
+    footer-text="QQ小程序">
     <div class="header">
       <img alt="" :src="detail.icon">
       <span class="text-muted">{{ detail.title }}</span>
@@ -24,12 +28,7 @@ const isLoaded = ref(false)
     <span class="desc">{{ detail.desc }}</span>
     <img :style="{ height: isLoaded ? 'auto' : '196px' }" @load="isLoaded = true" alt="" :src="detail.preview"
          class="preview-image"/>
-    <hr>
-    <div class="footer">
-      <img alt="" :src="qqAppImg('qq_mini_app.ico')">
-      <span class="text-muted">QQ小程序</span>
-    </div>
-  </a>
+  </AdvancedBox>
 </template>
 
 <style scoped lang="scss">
@@ -40,7 +39,6 @@ const isLoaded = ref(false)
   @include card($radius-sm);
   color: black;
   text-decoration: none !important;
-  padding: 8px 12px 5px 12px;
   height: auto;
 }
 
@@ -59,25 +57,7 @@ const isLoaded = ref(false)
 .preview-image {
   width: 100%;
   border-radius: $radius-xs;
-}
-
-hr {
-  height: 1px;
-  border: 0;
-  margin: 10px 0 5px 0;
-  width: 100%;
-  background-color: $color-border-light;
-}
-
-.footer img {
-  height: 15px;
-  width: 15px;
-  vertical-align: center;
-}
-
-.footer span {
-  vertical-align: center;
-  margin-left: 5px;
+  margin-bottom: 3px;
 }
 
 .text-muted {

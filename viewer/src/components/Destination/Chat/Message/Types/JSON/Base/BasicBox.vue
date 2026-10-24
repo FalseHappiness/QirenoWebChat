@@ -8,9 +8,14 @@ export default defineComponent({
 </script>
 
 <template>
-  <a class="message-box-less message-json-basic-box" target="_blank" :href="jumpUrl">
+  <component
+    :is="jumpUrl ? 'a' : 'div'"
+    class="message-box-less message-json-basic-box"
+    :target="jumpUrl"
+    :href="jumpUrl"
+  >
     <slot></slot>
-  </a>
+  </component>
 </template>
 
 <style scoped lang="scss">
