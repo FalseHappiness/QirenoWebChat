@@ -2,7 +2,7 @@
  * 编辑器表情相关 composable
  * 管理表情插入、表情URL、表情描述等逻辑
  */
-import { getPokeDescription, secretEmojiids } from "@/scripts/faces-config.js"
+import { getPokeDescription } from "@/scripts/faces-config.js"
 import { qqAppPoke, qqSystemEmoji } from "@/composables/useBase.js"
 
 export function useEditorEmoji(globalStore) {
@@ -103,7 +103,7 @@ export function useEditorEmoji(globalStore) {
     })
     return [
       ...specialList,
-      { title: 'QQ 黄脸', list: globalStore?.superEmojiids?.filter(id => !usedId.includes(parseInt(id))), big: true },
+      { title: '超级表情', list: globalStore?.superEmojiids?.filter(id => !usedId.includes(parseInt(id))), big: true },
       { title: '小黄脸表情', list: globalStore?.normalEmojiids },
       { title: 'emoji 表情', list: globalStore?.emojiEmojiids }
     ]

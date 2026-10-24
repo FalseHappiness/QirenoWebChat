@@ -489,7 +489,7 @@ const isSecretEmoji = computed(() => {
   if (event?.message?.length === 1) {
     const item = event.message[0];
     if (item.type === 'face') {
-      return global.secretEmojiids.includes(String(item.data.id))
+      return global.secretEmojiids.includes(parseInt(item.data.id))
     }
   }
   return false

@@ -77,7 +77,7 @@ const otherFacesDescribes = {
 
 // 隐藏表情
 const secretEmojiids = [
-  "422", "423", "432", "488", "503", "515"
+  422, 423, 432, 488, 503, 515
 ]
 
 function getPokeDescription(poke_id) {
