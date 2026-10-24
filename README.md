@@ -347,6 +347,9 @@ cd viewer
 
 # 安装依赖
 npm install
+# 放行必要包的后置编译脚本（npm 12+ 需要）
+npm install-scripts approve @parcel/watcher esbuild core-js vue-demi
+npm rebuild
 
 # （可选）初始化 QQ 表情资源（需要 Windows 且安装 QQNT，最好使用管理员用户运行）
 npm run init-emoji

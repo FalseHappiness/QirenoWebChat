@@ -414,19 +414,17 @@ const parseMessage = (wrappedMsg) => {
       if (message.length === 1) {
         const item = message[0];
         if (['dice', 'rps', 'face'].includes(item.type)) {
-          const is_face = item.type === 'face'
-          const face_id = is_face ? item.data.id : {
+          // 互动表情（包剪锤 骰子 篮球）不循环播放
+          const not_interactive = item.type === 'face' && Number.parseInt(item.data.id) !== 114
+          const face_id = not_interactive ? item.data.id : {
             'dice': 358,
             'rps': 359
           }[item.type]
 
-          let resultId
+          let resultId = item.data.resultId;
 
-          if (!is_face) {
-            resultId = item.data.result
-          }
-          if (item.data.resultId) {
-            resultId = item.data.resultId
+          if (not_interactive && parseInt(resultId) === 0) {
+            resultId = undefined
           }
 
           const emojiFiles = useGlobalStore().emojiFiles;
@@ -437,7 +435,7 @@ const parseMessage = (wrappedMsg) => {
             children.push(
               h(LottieDot, {
                 animationUrl: lottiePath,
-                loop: is_face && Number.parseInt(face_id) !== 114,
+                loop: not_interactive,
                 autoplay: true,
                 class: 'message-super-emoji-lottie message-box-less',
                 'data-face-id': face_id,
