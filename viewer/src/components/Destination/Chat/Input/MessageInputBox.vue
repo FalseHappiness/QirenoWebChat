@@ -249,8 +249,8 @@ export default defineComponent({
     getAnimationEmojiUrl(emoji_id) {
       return this.editorEmoji?.getAnimationEmojiUrl(emoji_id)
     },
-    insertEmojiAtCursor(emoji_id) {
-      this.editorEmoji?.insertEmojiAtCursor(emoji_id, this.insertNodeAtCursor)
+    insertEmojiAtCursor(emoji_id, resultId) {
+      this.editorEmoji?.insertEmojiAtCursor(emoji_id, this.insertNodeAtCursor, resultId)
     },
 
     // 处理拖动开始（支持多元素）
@@ -1091,6 +1091,9 @@ export default defineComponent({
                 replacement.classList.add("message-input-editor-emoji");
                 replacement.src = this.getAnimationEmojiUrl(emojiId);
                 replacement.dataset.emoji = emojiId
+                if (img.dataset.resultId !== undefined && img.dataset.resultId !== '') {
+                  replacement.dataset.resultId = img.dataset.resultId
+                }
 
                 img.parentNode.replaceChild(replacement, img);
               }
@@ -1340,6 +1343,10 @@ export default defineComponent({
         if (img.classList.contains("message-input-editor-emoji")) {
           newImg.classList.add('message-input-editor-emoji');
           newImg.dataset.emoji = img.dataset.emoji
+          // 保留动画变体信息（resultId）
+          if (img.dataset.resultId !== undefined && img.dataset.resultId !== '') {
+            newImg.dataset.resultId = img.dataset.resultId
+          }
         } else {
           newImg.classList.add('message-input-editor-image');
           const { summary, subType } = img.dataset
@@ -1519,11 +1526,15 @@ export default defineComponent({
       });
     },
 
-    handleExpressionSelectEmoji(emoji) {
+    handleExpressionSelectEmoji(payload) {
+      // 兼容旧格式（纯 emoji 值）与新格式（{ emoji, resultId }）
+      const isObjectPayload = isObject(payload) && !(payload instanceof Node)
+      const emoji = isObjectPayload ? payload.emoji : payload
+      const resultId = isObjectPayload ? payload.resultId : undefined
       if (this.isPokeEmoji(emoji)) {
         this.handleMessageInputShake(this.getPokeEmojiNum(emoji))
       } else {
-        this.insertEmojiAtCursor(emoji)
+        this.insertEmojiAtCursor(emoji, resultId)
       }
     },
 
@@ -1550,8 +1561,12 @@ export default defineComponent({
         }
         return addMessage(messages, 'image', data)
       }
-      const addEmoji = (id, messages) => {
-        return addMessage(messages, 'face', { id })
+      const addEmoji = (id, messages, resultId) => {
+        const data = { id }
+        if (resultId !== undefined && resultId !== null) {
+          data.resultId = Number(resultId)
+        }
+        return addMessage(messages, 'face', data)
       }
       const addGroupAt = (qq, messages) => {
         return addMessage(messages, 'at', { qq })
@@ -1593,7 +1608,11 @@ export default defineComponent({
                   if (this.global.emojiEmojiids.includes(emoji_id)) {
                     addText(emoji_id, parent_messages)
                   } else {
-                    addEmoji(emoji_id, parent_messages)
+                    const rawResultId = node.dataset.resultId
+                    const resultId = (rawResultId !== undefined && rawResultId !== '')
+                      ? Number(rawResultId)
+                      : undefined
+                    addEmoji(emoji_id, parent_messages, resultId)
                   }
                 }
               } else if (node.classList.contains('message-input-editor-video')) {

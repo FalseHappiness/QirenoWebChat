@@ -1,9 +1,10 @@
 <template>
   <div ref="lottieContainer" class="lottie-container">
+    <!-- 优先使用已缓存的 JSON 数据渲染，避免重复网络请求 -->
     <DotLottieVue
       ref="dotPlayer"
-      v-if="animationUrl"
-      :src="animationUrl"
+      v-if="animJsonStr"
+      :data="animJsonStr"
       :loop="loop"
       :autoplay="autoplay"
       auto-resize-canvas
@@ -13,8 +14,8 @@
     />
     <DotLottieVue
       ref="dotPlayer"
-      v-else-if="animJsonStr"
-      :data="animJsonStr"
+      v-else-if="animationUrl"
+      :src="animationUrl"
       :loop="loop"
       :autoplay="autoplay"
       auto-resize-canvas
@@ -27,6 +28,7 @@
 
 <script>
 import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
+import { useGlobalStore } from '@/store/global.js'
 
 export default {
   name: 'LottieDot',
@@ -48,6 +50,15 @@ export default {
       dotInstance: null
     }
   },
+  computed: {
+    globalStore() {
+      return useGlobalStore()
+    }
+  },
+  created() {
+    // 同步命中缓存时，首帧即可用 data 渲染，避免先请求后渲染的闪烁
+    this.loadAnimation()
+  },
   mounted() {
     this.$nextTick(() => {
       this.bindDotInstance()
@@ -68,19 +79,43 @@ export default {
         this.observer = null
       }
     },
+    applyBoxSize() {
+      const box = this.$refs.lottieContainer
+      if (box && this.width && this.height) {
+        box.style.width = `${this.width}px`
+        box.style.height = `${this.height}px`
+      }
+    },
     async loadAnimation() {
-      // 优先本地对象，转字符串
+      // 1. 外部直接传入的数据优先
       if (this.animationData) {
         this.animJsonStr = JSON.stringify(this.animationData)
-        const box = this.$refs.lottieContainer
-        if (this.width && this.height) {
-          box.style.width = `${this.width}px`
-          box.style.height = `${this.height}px`
-        }
+        this.applyBoxSize()
         return
       }
-      // 远程url不需要处理data，直接走src
+
+      const url = this.animationUrl
+      if (!url) {
+        this.animJsonStr = null
+        return
+      }
+
+      // 2. 命中全局缓存：直接使用已解析的 JSON，跳过网络请求
+      const cached = this.globalStore?.getLottieData?.(url)
+      if (cached) {
+        this.animJsonStr = JSON.stringify(cached)
+        this.applyBoxSize()
+        return
+      }
+
+      // 3. 未命中：先走 src 立即展示（浏览器自身缓存生效），
+      //    同时后台拉取 JSON 存入全局缓存，供其它实例复用
       this.animJsonStr = null
+      this.applyBoxSize()
+      const data = await this.globalStore?.ensureLottieLoaded?.(url)
+      // 组件可能已被销毁或 url 已变更
+      if (!data || this.animationUrl !== url) return
+      this.animJsonStr = JSON.stringify(data)
     },
     play() {
       this.dotInstance?.play()

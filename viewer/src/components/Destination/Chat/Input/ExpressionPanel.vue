@@ -5,6 +5,7 @@
 <script>
 import Tooltip from "../../../Common/Overlay/Tooltip.vue"
 import CustomScrollBar from "../../../Common/Scrolling/CustomScrollBar.vue"
+import LottieDot from "../../../Common/Media/LottieDot.vue"
 import { useEditorEmoji } from "./composables/useEditorEmoji.js"
 import QIcon from "@/components/Common/Icons/QIcon.vue";
 import {
@@ -38,6 +39,7 @@ export default {
     QIcon,
     Tooltip,
     CustomScrollBar,
+    LottieDot,
   },
   directives: {
     customMenu: vCustomMenu
@@ -55,19 +57,36 @@ export default {
       getPngEmojiUrl,
       getApngEmojiUrl,
       getEmojiDescription,
+      getEmojiAnimationVariants,
+      preloadEmojiLotties,
       isPokeEmoji,
       getPokeEmojiNum,
       getEmojiGroupList
     } = useEditorEmoji(props.global)
     const emojiGroupList = getEmojiGroupList()
-    return { getPngEmojiUrl, getApngEmojiUrl, getEmojiDescription, isPokeEmoji, getPokeEmojiNum, emojiGroupList }
+    return {
+      getPngEmojiUrl,
+      getApngEmojiUrl,
+      getEmojiDescription,
+      getEmojiAnimationVariants,
+      preloadEmojiLotties,
+      isPokeEmoji,
+      getPokeEmojiNum,
+      emojiGroupList
+    }
   },
   mounted() {
     this.updateCustomFaces()
     Emitter.on("add-custom-face-success", this.handleAddCustomFaceSuccess)
+    // 预加载面板中所有多动画表情的 lottie 数据（含默认与各变体）
+    this.preloadEmojiLotties?.()
   },
   unmounted() {
     Emitter.off("add-custom-face-success")
+  },
+  beforeCreate() {
+    // 非响应式：避免函数式 ref 在每次渲染赋值时触发额外更新
+    this.emojiTooltipRefs = {}
   },
   data() {
     return {
@@ -87,9 +106,39 @@ export default {
         }
         if (target) {
           const emoji = target.dataset.emoji
-          this.$emit('select-emoji', emoji)
+          // 直接点击面板：不指定 resultId，沿用默认行为
+          this.$emit('select-emoji', { emoji })
         }
       }
+    },
+
+    /**
+     * 记录表情对应的 Tooltip 组件实例（同一 emoji 可能出现在多个分组，存数组）
+     */
+    setEmojiTooltipRef(emoji, el) {
+      const key = String(emoji)
+      if (el) {
+        const list = (this.emojiTooltipRefs[key] ||= [])
+        if (!list.includes(el)) list.push(el)
+      } else {
+        this.emojiTooltipRefs[key] = []
+      }
+    },
+
+    /**
+     * 选择具体动画变体（来自 tooltip 内的变体列表）
+     * @param {string|number} emoji 表情 ID
+     * @param {number} resultId 0=默认，N=动画N
+     */
+    handleSelectVariant(emoji, resultId) {
+      this.$emit('select-emoji', { emoji: String(emoji), resultId: Number(resultId) })
+      // 选择后立即隐藏该表情的所有 tooltip
+      const tooltips = this.emojiTooltipRefs[String(emoji)] || []
+      tooltips.forEach(tooltip => {
+        if (!tooltip) return
+        tooltip.showFlag = false
+        tooltip.show = false
+      })
     },
     showDefaultPanel() {
       this.isDefaultPanel = true
@@ -191,6 +240,10 @@ export default {
               v-for="(emoji, index) in category.list"
               :key="index"
               z-index="1002"
+              :can-hover-interact="true"
+              :hover-leave-delay="200"
+              :width="220"
+              :ref="el => setEmojiTooltipRef(emoji, el)"
             >
               <template #target>
                 <div
@@ -214,8 +267,39 @@ export default {
               </template>
               <template #content>
                 <div class="tooltip-style message-input-expression-emoji-tooltip"
-                     v-if="getEmojiDescription(emoji)">
-                  {{ getEmojiDescription(emoji) }}
+                     v-if="getEmojiDescription(emoji) || getEmojiAnimationVariants(emoji)">
+                  <template v-if="getEmojiAnimationVariants(emoji)">
+                    <!-- 多动画变体选择 -->
+                    <div class="emoji-variant-tooltip-title">
+                      {{ getEmojiDescription(emoji) || emoji }}
+                    </div>
+                    <div class="emoji-variant-list">
+                      <div
+                        v-for="variant in getEmojiAnimationVariants(emoji)"
+                        :key="variant.resultId"
+                        class="emoji-variant-item"
+                        @click.stop="handleSelectVariant(emoji, variant.resultId)"
+                      >
+                        <LottieDot
+                          v-if="variant.url"
+                          :animation-url="variant.url"
+                          :loop="true"
+                          :autoplay="true"
+                          class="emoji-variant-preview"
+                        />
+                        <img
+                          v-else
+                          :src="getPngEmojiUrl(emoji, true)"
+                          class="emoji-variant-preview"
+                          alt=""
+                        />
+                        <span class="emoji-variant-label">{{ variant.label }}</span>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    {{ getEmojiDescription(emoji) }}
+                  </template>
                 </div>
               </template>
             </Tooltip>
@@ -328,6 +412,56 @@ export default {
 .tooltip-style.message-input-expression-emoji-tooltip {
   font-size: 11px;
   padding: 3px;
+}
+
+.emoji-variant-tooltip-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: $color-text-primary;
+  padding: 2px 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.emoji-variant-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  max-width: 210px;
+}
+
+.emoji-variant-item {
+  width: 90px;
+  padding: 4px 2px;
+  border-radius: $radius-btn;
+  cursor: pointer;
+  @extend %flex-column;
+  align-items: center;
+  gap: 2px;
+
+  &:hover {
+    background-color: $color-bg-hover-alt;
+  }
+
+  &:active {
+    background-color: $color-bg-active-alt;
+  }
+}
+
+.emoji-variant-preview {
+  width: 80px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.emoji-variant-label {
+  font-size: 10px;
+  color: $color-text-muted;
+  white-space: nowrap;
 }
 
 .message-input-expression-panel-switch {

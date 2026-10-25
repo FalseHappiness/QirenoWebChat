@@ -86,6 +86,37 @@ function getEmojiDescribes(default_config, face_config) {
 }
 
 /**
+ * 预遍历全部表情资源，构建「多动画表情 → 变体序号列表」映射
+ * 规则：lottie 目录下存在 `{id}_N.json`（N>=1）即视为该表情有多个动画变体
+ * 匹配时要求文件名主体与目录 id 一致，以排除 lottie/surprise/100.json 之类的特殊动画
+ *
+ * @param {string[]} files - emoji_files.json 中的资源路径列表
+ * @returns {Object<string, number[]>} 形如 { "114": [1,2,3,4,5], "358": [1,2,3,4,5,6] }
+ */
+function buildEmojiAnimationVariants(files) {
+  const variantNumsMap = new Map()
+  // 仅匹配标准 lottie 变体：/QQ/EmojiSystermResource/{dirId}/lottie/{fileId}_{N}.json
+  const variantRegex = /^\/QQ\/EmojiSystermResource\/([^/]+)\/lottie\/(\d+)_(\d+)\.json$/
+
+  files.forEach(file => {
+    const match = file.match(variantRegex)
+    if (!match) return
+    const [, dirId, fileId, num] = match
+    // 文件名主体必须与目录 id 一致，排除特殊目录动画
+    if (fileId !== dirId) return
+    if (!variantNumsMap.has(dirId)) variantNumsMap.set(dirId, new Set())
+    variantNumsMap.get(dirId).add(Number(num))
+  })
+
+  const result = {}
+  variantNumsMap.forEach((nums, id) => {
+    if (!nums.size) return
+    result[id] = Array.from(nums).sort((a, b) => a - b)
+  })
+  return result
+}
+
+/**
  * 将数组中的数字/字符串整数从小到大排序，其他元素按码位排序放到最后
  * @param {Array} arr - 待排序的数组
  * @return {Array} 排序后的数组
@@ -145,6 +176,84 @@ export const useGlobalStore = defineStore(
       emojiFaceConfig
     )
 
+    // 预遍历一次，构建多动画表情 → 变体序号映射（应用启动时完成，运行时 O(1) 查询）
+    const emojiAnimationVariants = buildEmojiAnimationVariants(emojiFiles)
+
+    // ============ Lottie 动画数据缓存 ============
+    // url -> 已解析的 lottie JSON 对象
+    const lottieDataCache = new Map()
+    // url -> 正在进行的 Promise（防止并发重复请求）
+    const lottiePendingMap = new Map()
+    // 已失败的 url，避免反复重试
+    const lottieFailedSet = new Set()
+
+    /**
+     * 确保指定 lottie 动画已加载到缓存
+     * @param {string} url lottie json 地址
+     * @returns {Promise<Object|null>} 解析后的 lottie JSON
+     */
+    function ensureLottieLoaded(url) {
+      if (!url) return Promise.resolve(null)
+      if (lottieDataCache.has(url)) return Promise.resolve(lottieDataCache.get(url))
+      if (lottieFailedSet.has(url)) return Promise.resolve(null)
+      if (lottiePendingMap.has(url)) return lottiePendingMap.get(url)
+
+      const promise = fetch(url, { cache: 'force-cache' })
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          return res.json()
+        })
+        .then(data => {
+          lottieDataCache.set(url, data)
+          lottiePendingMap.delete(url)
+          return data
+        })
+        .catch(err => {
+          console.warn('[lottie] 加载失败:', url, err)
+          lottieFailedSet.add(url)
+          lottiePendingMap.delete(url)
+          return null
+        })
+
+      lottiePendingMap.set(url, promise)
+      return promise
+    }
+
+    /**
+     * 从缓存同步读取 lottie 数据（未缓存则返回 null）
+     * @param {string} url
+     * @returns {Object|null}
+     */
+    function getLottieData(url) {
+      if (!url) return null
+      return lottieDataCache.get(url) || null
+    }
+
+    /**
+     * 批量预加载 lottie（并发受控，避免瞬时大量请求）
+     * @param {string[]} urls
+     * @param {number} concurrency 并发数
+     * @returns {Promise<void>}
+     */
+    async function preloadLotties(urls, concurrency = 4) {
+      const list = [...new Set((urls || []).filter(Boolean))]
+        .filter(u => !lottieDataCache.has(u) && !lottieFailedSet.has(u))
+      if (!list.length) return
+
+      let cursor = 0
+      const worker = async () => {
+        while (cursor < list.length) {
+          const url = list[cursor++]
+          await ensureLottieLoaded(url)
+        }
+      }
+      const workers = Array.from(
+        { length: Math.min(concurrency, list.length) },
+        () => worker()
+      )
+      await Promise.all(workers)
+    }
+
     const responseCacheMap = reactive(new Map());
 
     const theme = ref('default')
@@ -161,8 +270,14 @@ export const useGlobalStore = defineStore(
       secretEmojiids,
       emojiFiles,
       emojiDescribes,
+      emojiAnimationVariants,
       allEmojiids,
       responseCacheMap,
+      // Lottie 缓存与预加载
+      lottieDataCache,
+      ensureLottieLoaded,
+      getLottieData,
+      preloadLotties,
       apiVersionInfo: {
         app_name: "NapCat.Onebot",
         app_version: "0.0.0"

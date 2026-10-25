@@ -61,16 +61,93 @@ export function useEditorEmoji(globalStore) {
     }
   }
 
-  function insertEmojiAtCursor(emoji_id, insertNodeAtCursor) {
+  // 渲染用的变体视图缓存（以全局预构建映射为数据源，O(1) 查询）
+  const variantsViewCache = new Map()
+
+  /**
+   * 获取表情的多动画变体列表
+   * 数据源为全局 store 中启动时预遍历构建好的 emojiAnimationVariants 映射，
+   * 运行时无需再遍历 emojiFiles
+   *
+   * @param {string|number} emoji_id
+   * @returns {Array<{resultId: number, label: string, url: string}>|null} 非多动画返回 null
+   */
+  function getEmojiAnimationVariants(emoji_id) {
     emoji_id = String(emoji_id)
+    if (variantsViewCache.has(emoji_id)) {
+      return variantsViewCache.get(emoji_id)
+    }
+
+    const variantNums = globalStore?.emojiAnimationVariants?.[emoji_id]
+    if (!variantNums?.length) {
+      variantsViewCache.set(emoji_id, null)
+      return null
+    }
+
+    const variants = [{ resultId: 0, label: '默认', url: getEmojiLottieUrl(emoji_id, 0) }]
+    variantNums.forEach(num => {
+      variants.push({ resultId: num, label: `动画${num}`, url: getEmojiLottieUrl(emoji_id, num) })
+    })
+    variantsViewCache.set(emoji_id, variants)
+    return variants
+  }
+
+  /**
+   * 获取指定 resultId 的 lottie URL
+   * @param {string|number} emoji_id
+   * @param {number} resultId 0=默认（无后缀），N=动画N（_N 后缀）
+   * @returns {string|null}
+   */
+  function getEmojiLottieUrl(emoji_id, resultId) {
+    emoji_id = String(emoji_id)
+    resultId = Number(resultId)
+    const suffix = resultId === 0 ? '' : `_${resultId}`
+    const path = qqSystemEmoji(
+      encodeURIComponent(emoji_id),
+      'lottie',
+      `${encodeURIComponent(emoji_id)}${suffix}.json`
+    )
+    return (globalStore?.emojiFiles || []).includes(path) ? path : null
+  }
+
+  function insertEmojiAtCursor(emoji_id, insertNodeAtCursor, resultId) {
+    emoji_id = String(emoji_id)
+    // resultId 为 undefined/null 表示从面板直接点击，不指定动画变体
+    const hasResultId = resultId !== undefined && resultId !== null
     const img = document.createElement('img')
     img.classList.add('message-input-editor-emoji')
+    // 编辑器内始终用 apng/png 作为可视化预览（lottie 是 JSON，不能作为 img.src）
     img.src = getAnimationEmojiUrl(emoji_id)
     img.dataset.emoji = emoji_id
+    if (hasResultId) {
+      img.dataset.resultId = String(Number(resultId))
+    }
     img.draggable = true
     if (img.src) {
       insertNodeAtCursor(img)
     }
+  }
+
+  /**
+   * 预加载表情面板中所有多动画表情的 lottie 数据（含默认与各变体）
+   * 仅针对存在变体的表情，避免无谓请求
+   * @returns {Promise<void>}
+   */
+  async function preloadEmojiLotties() {
+    const variantsMap = globalStore?.emojiAnimationVariants || {}
+    const urls = []
+    Object.entries(variantsMap).forEach(([emojiId, nums]) => {
+      // 默认动画
+      const baseUrl = getEmojiLottieUrl(emojiId, 0)
+      if (baseUrl) urls.push(baseUrl)
+      // 各变体
+      ;(nums || []).forEach(num => {
+        const url = getEmojiLottieUrl(emojiId, num)
+        if (url) urls.push(url)
+      })
+    })
+    if (!urls.length) return
+    await globalStore?.preloadLotties?.(urls, 4)
   }
 
   /**
@@ -116,6 +193,9 @@ export function useEditorEmoji(globalStore) {
     getApngEmojiUrl,
     getAnimationEmojiUrl,
     getEmojiDescription,
+    getEmojiAnimationVariants,
+    getEmojiLottieUrl,
+    preloadEmojiLotties,
     insertEmojiAtCursor,
     getEmojiGroupList,
   }
