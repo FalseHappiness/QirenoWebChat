@@ -415,12 +415,13 @@ const parseMessage = (wrappedMsg) => {
       if (message.length === 1) {
         const item = message[0];
         if (['dice', 'rps', 'face'].includes(item.type)) {
-          // 互动表情（篮球 包剪锤 骰子）不循环播放
-          const not_interactive = item.type === 'face' && ![114, 358, 359].includes(Number.parseInt(item.data.id))
-          const face_id = not_interactive ? item.data.id : {
+          const face_id = item.type === 'face' ? Number.parseInt(item.data.id) : {
             'dice': 358,
             'rps': 359
           }[item.type]
+
+          // 互动表情（篮球 包剪锤 骰子）不循环播放
+          const not_interactive = ![114, 358, 359].includes(face_id)
 
           let resultId = item.data.resultId;
 

@@ -168,44 +168,44 @@ export default {
       const { face_id } = face
       const sameFace = f => f.face_id === face_id
       return () => formatBasicContextItems(
-        basicContextItem(
-          "移至最前",
-          async () =>
-            await handleApiRequest(fetchMoveCustomFaceToFront(face_id)) &&
-            moveItemToFront(this.customFaces, sameFace, true)
-          ,
-          undefined,
-          isSnowLuma()
-        ),
-        basicContextItem(
-          "删除",
-          async () =>
-            await showConfirmBox("确认删除") &&
-            await handleApiRequest(fetchDeleteCustomFace(face), '删除成功') &&
-            removeItems(this.customFaces, sameFace, true)
-        ),
-        basicContextItem(
-          "修改备注",
-          async () => {
-            const desc = await showPromptBox(
-              "修改备注",
+          basicContextItem(
+              "移至最前",
+              async () =>
+                  await handleApiRequest(fetchMoveCustomFaceToFront(face_id)) &&
+                  moveItemToFront(this.customFaces, sameFace, true)
+              ,
               undefined,
-              "请输入备注",
-              face.desc || ""
-            )
-            if (!isNil(desc)) {
-              await handleApiRequest(
-                fetchModifyCustomFaceDescription(face, desc),
-                '修改成功'
-              ) && modifyExistItems(
-                this.customFaces,
-                sameFace,
-                f => f.desc = desc,
-                false
-              )
-            }
-          }
-        )
+              isSnowLuma()
+          ),
+          basicContextItem(
+              "删除",
+              async () =>
+                  await showConfirmBox("确认删除") &&
+                  await handleApiRequest(fetchDeleteCustomFace(face), '删除成功') &&
+                  removeItems(this.customFaces, sameFace, true)
+          ),
+          basicContextItem(
+              "修改备注",
+              async () => {
+                const desc = await showPromptBox(
+                    "修改备注",
+                    undefined,
+                    "请输入备注",
+                    face.desc || ""
+                )
+                if (!isNil(desc)) {
+                  await handleApiRequest(
+                      fetchModifyCustomFaceDescription(face, desc),
+                      '修改成功'
+                  ) && modifyExistItems(
+                      this.customFaces,
+                      sameFace,
+                      f => f.desc = desc,
+                      false
+                  )
+                }
+              }
+          )
       )
     },
     handleAddCustomFaceSuccess(data) {
@@ -235,33 +235,33 @@ export default {
           </p>
           <div class="message-input-expression-category" :class="{ big: category.big }">
             <Tooltip
-              :distance-from-target="0"
-              use-target-slot
-              v-for="(emoji, index) in category.list"
-              :key="index"
-              z-index="1002"
-              :can-hover-interact="true"
-              :hover-leave-delay="200"
-              :width="220"
-              :ref="el => setEmojiTooltipRef(emoji, el)"
+                :distance-from-target="0"
+                use-target-slot
+                v-for="(emoji, index) in category.list"
+                :key="index"
+                z-index="1002"
+                :can-hover-interact="true"
+                :hover-leave-delay="200"
+                :width="220"
+                :ref="el => setEmojiTooltipRef(emoji, el)"
             >
               <template #target>
                 <div
-                  class="message-input-expression-emoji-box"
-                  @click="handleExpressionInput"
-                  :data-emoji="emoji"
+                    class="message-input-expression-emoji-box"
+                    @click="handleExpressionInput"
+                    :data-emoji="emoji"
                 >
                   <img
-                    :src="getPngEmojiUrl(emoji, true)"
-                    alt=""
-                    :data-emoji-animation="getApngEmojiUrl(emoji) ? 'static' : ''"
+                      :src="getPngEmojiUrl(emoji, true)"
+                      alt=""
+                      :data-emoji-animation="getApngEmojiUrl(emoji) ? 'static' : ''"
                   />
 
                   <img
-                    v-if="getApngEmojiUrl(emoji)"
-                    :src="getApngEmojiUrl(emoji)"
-                    alt=""
-                    data-emoji-animation="animation"
+                      v-if="getApngEmojiUrl(emoji)"
+                      :src="getApngEmojiUrl(emoji)"
+                      alt=""
+                      data-emoji-animation="animation"
                   />
                 </div>
               </template>
@@ -271,27 +271,27 @@ export default {
                   <template v-if="getEmojiAnimationVariants(emoji)">
                     <!-- 多动画变体选择 -->
                     <div class="emoji-variant-tooltip-title">
-                      {{ getEmojiDescription(emoji) || emoji }}
+                      {{ getEmojiDescription(emoji) || emoji }} (变体选择可能不生效)
                     </div>
                     <div class="emoji-variant-list">
                       <div
-                        v-for="variant in getEmojiAnimationVariants(emoji)"
-                        :key="variant.resultId"
-                        class="emoji-variant-item"
-                        @click.stop="handleSelectVariant(emoji, variant.resultId)"
+                          v-for="variant in getEmojiAnimationVariants(emoji)"
+                          :key="variant.resultId"
+                          class="emoji-variant-item"
+                          @click.stop="handleSelectVariant(emoji, variant.resultId)"
                       >
                         <LottieDot
-                          v-if="variant.url"
-                          :animation-url="variant.url"
-                          :loop="true"
-                          :autoplay="true"
-                          class="emoji-variant-preview"
+                            v-if="variant.url"
+                            :animation-url="variant.url"
+                            :loop="category.title !== '互动表情' || variant.resultId === 0"
+                            :autoplay="true"
+                            class="emoji-variant-preview"
                         />
                         <img
-                          v-else
-                          :src="getPngEmojiUrl(emoji, true)"
-                          class="emoji-variant-preview"
-                          alt=""
+                            v-else
+                            :src="getPngEmojiUrl(emoji, true)"
+                            class="emoji-variant-preview"
+                            alt=""
                         />
                         <span class="emoji-variant-label">{{ variant.label }}</span>
                       </div>
@@ -330,8 +330,8 @@ export default {
       </CustomScrollBar>
     </div>
     <div class="message-input-expression-panel-switch">
-      <QIcon name="expression_24" class="control-icon" @click="showDefaultPanel"/>
-      <QIcon name="like_24" class="control-icon" @click="showCustomFacePanel"/>
+      <QIcon name="expression_24" :class="{ active: isDefaultPanel }" class="control-icon" @click="showDefaultPanel"/>
+      <QIcon name="like_24" :class="{ active: isCustomFacePanel }" class="control-icon" @click="showCustomFacePanel"/>
     </div>
   </div>
 </template>
@@ -473,6 +473,10 @@ export default {
 
   .control-icon {
     @include btn-svg($size: 36px, $padding: 5px, $color: $color-text-primary, $radius: $radius-btn);
+
+    &.active {
+      background-color: $color-bg-hover-opacity;
+    }
   }
 }
 
