@@ -18,14 +18,14 @@ import GroupEssenceMsgViewer from "./Group/GroupEssenceMsgViewer.vue";
 import GroupFilesViewer from "./Group/GroupFilesViewer.vue";
 import GroupAlbumViewer from "./Group/GroupAlbumViewer.vue";
 import ImageViewer from "../../Common/Media/ImageViewer.vue";
-import { isEmptyObject, isObject, isString } from "@/scripts/types-util.js";
+import { isEmptyObject, isNil, isObject, isString } from "@/scripts/types-util.js";
 import VideoPlayer from "../../Common/Media/VideoPlayer.vue";
 import QIcon from "../../Common/Icons/QIcon.vue";
 import { getContactNameRef, isGroupOperator } from "@/scripts/user-info-util.js";
 import GroupSignView from "@/components/Destination/Chat/Group/GroupSignView.vue";
 import { checkSameContact } from "@/scripts/contacts-util.js";
 import ContactDetail from './ContactDetail/ContactDetail.vue'
-import { parseMessagePreview, parseNotice } from "@/scripts/parse-message.js";
+import { parseMessagePreview } from "@/scripts/parse-message.js";
 import { showErrorToast, showSuccessToast, showWarningToast } from "@/scripts/toast.js";
 import { showConfirmBox } from "@/scripts/popup-box-api.js";
 
@@ -46,8 +46,8 @@ const handleChatAreaClick = e => {
   const target = e?.target
   if (target) {
     if (
-      !contactDetailRef.value?.contactDetailRef?.contains(target) &&
-      !target.closest?.('.chat-area-ctrl-show-more, .resizable-t')
+        !contactDetailRef.value?.contactDetailRef?.contains(target) &&
+        !target.closest?.('.chat-area-ctrl-show-more, .resizable-t')
     ) {
       showContactMore.value = false;
     }
@@ -77,15 +77,15 @@ const getMessagesWrapped = async (msg, count, include = false, direction = 'next
   const cursor_time = msg?.time || null
   const cursor = notice_message ? msg.id : msg?.real_seq
   return await getMessages(
-    msg?.message_id || (notice_message ? null : 0),
-    cursor,
-    count,
-    include,
-    direction,
-    cursor_time,
-    msg?.notice_before_cursor,
-    msg?.notice_after_cursor,
-    notice_message
+      msg?.message_id || (notice_message ? null : 0),
+      cursor,
+      count,
+      include,
+      direction,
+      cursor_time,
+      msg?.notice_before_cursor,
+      msg?.notice_after_cursor,
+      notice_message
   )
 }
 
@@ -98,7 +98,7 @@ const getOlderMessages = async (msg, _, count, include) => {
 }
 
 const getMsgId = msg => {
-  return `${ msg?.id }_${ msg?.real_seq }_${ msg?.time }`
+  return `${msg?.id}_${msg?.real_seq}_${msg?.time}`
 }
 
 const detectMsgCursor = (msg, key) => {
@@ -314,7 +314,7 @@ const findMessage = async (message_id) => {
   let msg;
   if (vm && Array.isArray(vm)) {
     msg = vm.find(
-      item => item.message_id === parseInt(message_id) && ['message', 'message_sent'].includes(item.post_type)
+        item => item.message_id === parseInt(message_id) && ['message', 'message_sent'].includes(item.post_type)
     )
   }
   if (!msg || isEmptyObject(msg)) {
@@ -481,9 +481,15 @@ const groupTodoMessageTemp = computed(() => {
   if (!isObject(msg)) return null
   msg = { ...msg }
   msg.group_id = activeContact.value?.contact_id
-  msg.self_id = selfId
+  msg.self_id = selfId.value
   msg.message_type = 'group'
   msg.post_type = 'message'
+  if (isNil(msg.message)) {
+    msg.message = [{
+      type: "text",
+      data: { "text": msg.text }
+    }]
+  }
   return msg
 })
 
@@ -499,8 +505,8 @@ watch(groupTodoMessage, async (newVal, oldVal) => {
 const groupTodoHtml = computed(() => {
   if (!isObject(groupTodoMessage.value)) return
   return h(
-    "span",
-    parseMessagePreview(groupTodoMessageTemp.value)
+      "span",
+      parseMessagePreview(groupTodoMessageTemp.value)
   );
 });
 
@@ -561,39 +567,40 @@ defineExpose({
 <template>
   <div class="chat-area" @click="handleChatAreaClick">
     <GroupAnnounceViewer
-      v-if="showGroupAnnounceViewer && isGroup"
-      :group_id="activeContact?.contact_id"
-      :notices="groupNotifications || []"
-      :isOperator="groupSelfOperator"
-      @close="() => changeShowGroupAnnounce(false)"
-      @update-group-notice="getGroupNotice"
+        v-if="showGroupAnnounceViewer && isGroup"
+        :group_id="activeContact?.contact_id"
+        :notices="groupNotifications || []"
+        :isOperator="groupSelfOperator"
+        @close="() => changeShowGroupAnnounce(false)"
+        @update-group-notice="getGroupNotice"
     />
     <GroupEssenceMsgViewer
-      v-if="showGroupEssenceListViewer && isGroup"
-      @close="() => changeShowGroupEssenceList(false)"
+        v-if="showGroupEssenceListViewer && isGroup"
+        @close="() => changeShowGroupEssenceList(false)"
     />
     <GroupFilesViewer
-      v-if="showGroupFilesViewer && isGroup"
-      :group_id="activeContact?.contact_id"
-      @close="() => changeShowGroupFiles(false)"
+        v-if="showGroupFilesViewer && isGroup"
+        :group_id="activeContact?.contact_id"
+        @close="() => changeShowGroupFiles(false)"
     />
     <GroupAlbumViewer
-      v-if="showGroupAlbumViewer && isGroup"
-      :group_id="activeContact?.contact_id"
-      @close="() => changeShowGroupAlbum(false)"
+        v-if="showGroupAlbumViewer && isGroup"
+        :group_id="activeContact?.contact_id"
+        @close="() => changeShowGroupAlbum(false)"
     />
     <ImageViewer ref="imageViewer"/>
     <VideoPlayer ref="videoPlayer"/>
     <GroupSignView
-      v-if="showGroupSignView && isGroup"
-      @close="() => changeShowGroupSign(false)"
+        v-if="showGroupSignView && isGroup"
+        @close="() => changeShowGroupSign(false)"
     />
 
     <div v-if="activeContact" class="border-bottom chat-area-head">
       <span class="chat-area-head-name overflow-ellipsis" :class="{'text-error': isError}">
         <QIcon class="chat-area-go-back-btn" name="arrow_left_24"
                @click="() => { showContactMore ? showContactMore = false : selectContact(null) }"/>
-        <span class="chat-area-head-display-name overflow-ellipsis" @click="handleClickShowContactInfo">{{ displayName || activeContact.contact_id }}</span>
+        <span class="chat-area-head-display-name overflow-ellipsis"
+              @click="handleClickShowContactInfo">{{ displayName || activeContact.contact_id }}</span>
         <template> v-if="tempSession"
           <span>&nbsp;</span>
           <small class="text-muted font-size-100">
@@ -606,15 +613,15 @@ defineExpose({
       </span>
       <span class="chat-area-head-control">
         <Tooltip
-          content="更多"
-          use-target-slot
-          placement="bottom"
+            content="更多"
+            use-target-slot
+            placement="bottom"
         >
           <template #target>
             <QIcon
-              name="more_24"
-              class="chat-area-head-control-btn chat-area-ctrl-show-more"
-              @click="showContactMore = !showContactMore"/>
+                name="more_24"
+                class="chat-area-head-control-btn chat-area-ctrl-show-more"
+                @click="showContactMore = !showContactMore"/>
           </template>
         </Tooltip>
       </span>
@@ -633,20 +640,20 @@ defineExpose({
     </Transition>
 
     <ContactDetail
-      ref="contactDetailRef"
-      :show-contact-more="showContactMore"
-      :display-name="displayName"
-      :is-group="isGroup"
-      :active-contact="activeContact"
-      :group-users="groupUsers"
-      :group-notifications="groupNotifications"
-      :latest-group-notice-msg="latestGroupNoticeMsg"
-      @show-group-announce="changeShowGroupAnnounce"
-      @show-essence-list="changeShowGroupEssenceList"
-      @show-group-files="changeShowGroupFiles"
-      @show-group-album="changeShowGroupAlbum"
-      @show-group-sign="changeShowGroupSign"
-      @show-contact-info="({ e, user_id }) => handleClickShowContactInfo(e, user_id)"
+        ref="contactDetailRef"
+        :show-contact-more="showContactMore"
+        :display-name="displayName"
+        :is-group="isGroup"
+        :active-contact="activeContact"
+        :group-users="groupUsers"
+        :group-notifications="groupNotifications"
+        :latest-group-notice-msg="latestGroupNoticeMsg"
+        @show-group-announce="changeShowGroupAnnounce"
+        @show-essence-list="changeShowGroupEssenceList"
+        @show-group-files="changeShowGroupFiles"
+        @show-group-album="changeShowGroupAlbum"
+        @show-group-sign="changeShowGroupSign"
+        @show-contact-info="({ e, user_id }) => handleClickShowContactInfo(e, user_id)"
     />
 
     <div v-if="!activeContact" class="display-flex justify-content-center align-items-center height-100">
@@ -656,34 +663,34 @@ defineExpose({
     </div>
 
     <page-scroller
-      v-else-if="activeContact"
-      class="messages-container"
-      ref="scroller"
-      :get-id-function="getMsgId"
-      :detect-is-latest-msg-function="detectIsLatestMsg"
-      :detect-is-oldest-msg-function="detectIsOldestMsg"
-      :page-size="30"
-      :at-bottom-distance="100"
-      :get-newer-messages="getNewerMessages"
-      :get-older-messages="getOlderMessages"
-      :container-class="$style['chat-container']"
-      :wrapper-class="[
+        v-else-if="activeContact"
+        class="messages-container"
+        ref="scroller"
+        :get-id-function="getMsgId"
+        :detect-is-latest-msg-function="detectIsLatestMsg"
+        :detect-is-oldest-msg-function="detectIsOldestMsg"
+        :page-size="30"
+        :at-bottom-distance="100"
+        :get-newer-messages="getNewerMessages"
+        :get-older-messages="getOlderMessages"
+        :container-class="$style['chat-container']"
+        :wrapper-class="[
         $style['chat-wrapper'],
         activeContact.type === 'group' ? $style['chat-wrapper-group'] : $style['chat-wrapper-private']
         ]"
-      :key="activeContact.contact_id"
-      :colors="{ loadingSpinner: '#0099ff' }"
-      @mounted="handleScrollerMounted"
-      @load-messages="handleVisibleMessagesLoadMore"
+        :key="activeContact.contact_id"
+        :colors="{ loadingSpinner: '#0099ff' }"
+        @mounted="handleScrollerMounted"
+        @load-messages="handleVisibleMessagesLoadMore"
     >
       <template #message="{ message, index, messages }">
         <MessageItem
-          :message="message"
-          :show-time-notice="isShowTimeTip(messages?.[index - 1], message)"
-          @quote-message="(msg, user) => {quoteMessage(msg, user)}"
-          @click-show-contact-info="handleClickShowContactInfo"
-          @change-show-group-notice="changeShowGroupAnnounce"
-          @change-show-essence-list="changeShowGroupEssenceList"
+            :message="message"
+            :show-time-notice="isShowTimeTip(messages?.[index - 1], message)"
+            @quote-message="(msg, user) => {quoteMessage(msg, user)}"
+            @click-show-contact-info="handleClickShowContactInfo"
+            @change-show-group-notice="changeShowGroupAnnounce"
+            @change-show-essence-list="changeShowGroupEssenceList"
         />
       </template>
       <template #empty="{ initializing }">
@@ -702,9 +709,9 @@ defineExpose({
     </page-scroller>
 
     <message-input-box
-      class="message-input-box"
-      :class="{ display: activeContact }"
-      ref="inputer"
+        class="message-input-box"
+        :class="{ display: activeContact }"
+        ref="inputer"
     ></message-input-box>
   </div>
 </template>
