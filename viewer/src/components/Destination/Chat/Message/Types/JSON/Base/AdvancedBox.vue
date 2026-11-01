@@ -1,6 +1,7 @@
 <script>
 import { defineComponent } from 'vue'
 import BasicBox from "./BasicBox.vue";
+import { isNil } from "@/scripts/types-util.js";
 
 export default defineComponent({
   name: "AdvancedBox",
@@ -9,8 +10,14 @@ export default defineComponent({
   props: {
     footerIcon: String,
     footerText: String,
+    showFooter: { Boolean, default: undefined },
     jumpUrl: { String, default: "" },
     coverUrl: { String, default: "" },
+  },
+  computed: {
+    isShowFooter() {
+      return isNil(this.showFooter) ? (this.footerIcon || this.footerText) : !!this.showFooter
+    }
   }
 })
 </script>
@@ -22,11 +29,13 @@ export default defineComponent({
       <div class="advanced-box-slot">
         <slot></slot>
       </div>
-      <hr>
-      <div class="footer">
-        <img v-if="footerIcon" alt="" :src="footerIcon">
-        <span class="text-muted">{{ footerText }}</span>
-      </div>
+      <template v-if="isShowFooter">
+        <hr>
+        <div class="footer">
+          <img v-if="footerIcon" alt="" :src="footerIcon">
+          <span class="text-muted">{{ footerText }}</span>
+        </div>
+      </template>
     </div>
   </BasicBox>
 </template>

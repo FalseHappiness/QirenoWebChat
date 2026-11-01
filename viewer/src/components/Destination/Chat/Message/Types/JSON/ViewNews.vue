@@ -17,10 +17,10 @@ export default defineComponent({
 
 <template>
   <AdvancedBox
-    class="message-struct-msg"
-    :footer-icon="view.tagIcon"
-    :footer-text="view.tag"
-    :jump-url="view.jumpUrl">
+      class="message-struct-msg"
+      :footer-icon="view.tagIcon"
+      :footer-text="view.tag"
+      :jump-url="view.jumpUrl">
     <div class="top-side">
       <p class="title text-truncate">{{ view.title }}</p>
       <div class="middle-content">
@@ -40,6 +40,14 @@ export default defineComponent({
   color: $color-text-primary;
   @extend %flex-column;
   justify-content: space-between;
+}
+
+.top-side {
+  padding: 2px 0 4px;
+}
+
+:deep(.advanced-box-container) {
+  padding: 6px 6px 2px;
 }
 
 .title {
